@@ -1,0 +1,73 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.12'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+allprojects {
+    repositories {
+        mavenLocal()
+        maven {
+            name 'aliyun-public'
+            url 'https://maven.aliyun.com/repository/public'
+        }
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply {
+        plugin('java')
+        plugin('org.springframework.boot')
+        plugin('io.spring.dependency-management')
+    }
+
+    group = 'io.github.oldmerman'
+    version = '0.0.1-SNAPSHOT'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    // 通用依赖
+    dependencies {
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+    }
+
+    // 2. 针对特定项目单独配置依赖，避免使用复杂的 if-return 逻辑导致 Bug
+    if (name == 'common-dao') {
+        dependencies {
+            implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+            annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+            implementation project(':merman-model')
+        }
+    }
+
+    if (name != 'common-config' && name != 'merman-model' && name != 'common-dao') {
+        dependencies {
+            implementation 'org.springframework.boot:spring-boot-starter-web'
+            testImplementation 'org.springframework.boot:spring-boot-starter-test'
+            testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+            implementation 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.15'
+            runtimeOnly 'com.mysql:mysql-connector-j:9.0.0'
+
+            // 业务模块通常依赖这些基础模块
+            implementation project(':common-config')
+            implementation project(':common-dao')
+            implementation project(':merman-model')
+        }
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
+}

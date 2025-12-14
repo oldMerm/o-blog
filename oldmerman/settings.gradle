@@ -1,0 +1,9 @@
+rootProject.name = 'oldmerman'
+
+include(
+   'o-web',
+   'o-app',
+   'common-config',
+   'common-dao',
+   'merman-model'
+)
