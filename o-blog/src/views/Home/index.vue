@@ -4,6 +4,8 @@ import ontice from './components/onotice.vue';
 import mcontent from './components/mcontent.vue';
 import userInfo from './components/userInfo.vue';
 import ucontent from './components/ucontent.vue';
+import utitle from './components/utitle.vue';
+import bcontent from './components/bcontent.vue';
 </script>
 
 <template>
@@ -13,7 +15,11 @@ import ucontent from './components/ucontent.vue';
         <mcontent/>
         <div class="a">
             <user-info/>
+            <utitle/>
             <ucontent/>
+        </div>
+        <div class="b">
+            <bcontent/>
         </div>
 </div>
 </template>
@@ -28,5 +34,11 @@ import ucontent from './components/ucontent.vue';
 
 .a {
     width: 28%;
+}
+
+.b {
+    position: absolute;
+    width: 100%;
+    bottom: 0;
 }
 </style>

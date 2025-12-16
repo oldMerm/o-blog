@@ -4,6 +4,8 @@ import { ref } from 'vue';
 const articleList = ref([
   { title: '早上赖床心里过意不去怎么办？', likes: 1240, favs: 856 },
   { title: '以为同学在上厕所，敲门出来的是陌生人怎么办？', likes: 3502, favs: 1204 },
+  { title: '以为同学在上厕所，敲门出来的是陌生人怎么办？', likes: 3502, favs: 1204 },
+  { title: '以为同学在上厕所，敲门出来的是陌生人怎么办？', likes: 3502, favs: 1204 },
   { title: '骑车打学时日常！！！', likes: 890, favs: 430 },
   { title: '上课迟到不打报告假装上厕所', likes: 1560, favs: 980 }
 ]);

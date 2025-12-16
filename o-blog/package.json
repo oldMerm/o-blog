@@ -14,12 +14,17 @@
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
+    "dompurify": "^3.3.1",
+    "github-markdown-css": "^5.8.1",
+    "markdown-it": "^14.1.0",
+    "markdown-it-prism": "^3.0.1",
     "pinia": "^3.0.4",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.3",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.2",
     "@vue/tsconfig": "^0.8.1",

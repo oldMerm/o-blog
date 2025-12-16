@@ -2,7 +2,6 @@
 // 这里预留给你的 TS 逻辑
 // const username = ref('趣问用户')
 // ...
-import ucontent from './ucontent.vue';
 </script>
 
 <template>
@@ -136,6 +135,7 @@ import ucontent from './ucontent.vue';
     text-align: center;
     font-weight: 400;
     transition: all 0.2s ease;
+    border-bottom: 1px solid #ccc;
 }
 
 .action-btn:hover {
