@@ -43,13 +43,12 @@ const handleClick = (item: { id: number; text: string }) => {
 <style scoped>
 .notice-container {
   /* --- 核心尺寸约束 (保持不变) --- */
-  margin: 10px 10px;
-  width: 15%;
+  width: 100%;
   height: 20rem;
 
   /* --- 整体色调：高亮灰白 --- */
   background-color: #ffffff;      /* 纯白背景 */
-  border: 1px solid #ebeef5;      /* 极浅的灰色边框 */
+  border: 1px solid #dadee5;      /* 极浅的灰色边框 */
   border-radius: 8px;             
   /* 阴影调整得非常轻柔，增加“悬浮感”和亮度 */
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05); 

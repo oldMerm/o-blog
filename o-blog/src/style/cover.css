@@ -4,3 +4,8 @@
     box-sizing: border-box;
     text-decoration: none;
 }
+
+body {
+  overflow-x: auto; /* 需要时显示横向滚动条 */
+  min-width: 1200px; /* 设置最小宽度，小于这个值就出现滚动条 */
+}

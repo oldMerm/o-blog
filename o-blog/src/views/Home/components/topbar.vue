@@ -25,10 +25,11 @@
     height: 8vh;
     font-size: 1.3rem;
     color: rgb(46, 46, 46);
-    background-color: rgb(241, 241, 241);
+    background-color: rgb(227, 227, 227);
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    margin-bottom: 5px;
 }
 
 .lt {

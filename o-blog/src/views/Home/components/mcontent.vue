@@ -54,7 +54,7 @@ const articleList = ref([
 
   /* --- 整体色调 --- */
   background-color: #ffffff;
-  border: 1px solid #ebeef5;
+  border: 1px solid #dadee5;
   border-radius: 12px;
   box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
   

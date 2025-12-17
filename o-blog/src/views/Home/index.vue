@@ -5,13 +5,19 @@ import mcontent from './components/mcontent.vue';
 import userInfo from './components/userInfo.vue';
 import ucontent from './components/ucontent.vue';
 import utitle from './components/utitle.vue';
+import utitle2 from './components/utitle2.vue';
 import bcontent from './components/bcontent.vue';
+import chatCard from './components/chatCard.vue';
 </script>
 
 <template>
     <div class="main">
         <topbar/>
-        <ontice/>
+        <div class="c">
+            <ontice/>
+            <utitle2/>
+            <chat-card/>
+        </div>
         <mcontent/>
         <div class="a">
             <user-info/>
@@ -30,6 +36,11 @@ import bcontent from './components/bcontent.vue';
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
+}
+
+.c {
+    width: 15%;
+    margin: 10px 10px;
 }
 
 .a {
