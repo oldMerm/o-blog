@@ -55,6 +55,7 @@ subprojects {
     if (name != 'common-config' && name != 'merman-model' && name != 'common-dao') {
         dependencies {
             implementation 'org.springframework.boot:spring-boot-starter-web'
+            implementation 'org.springframework.boot:spring-boot-starter-security'
             testImplementation 'org.springframework.boot:spring-boot-starter-test'
             testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
             implementation 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.15'

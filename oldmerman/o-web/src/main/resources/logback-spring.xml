@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 引入Spring Boot的默认配置 -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- 1. 定义时间戳变量：key="bySecond" -->
+    <!-- datePattern 定义文件名的格式，这里精确到秒，确保每次启动文件名都不一样 -->
+    <timestamp key="bySecond" datePattern="yyyyMMddHHmmss"/>
+
+    <!-- 2. 定义基础路径 -->
+    <property name="BASE_LOG_PATH" value="D:/merman-blog/cache/web"/>
+
+    <!-- INFO Appender: 存放在 info 目录，文件名为 {时间戳}.log -->
+    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 核心修改：路径变为 info/时间戳.log -->
+        <file>${BASE_LOG_PATH}/info/${bySecond}.log</file>
+
+        <!-- 过滤器：只记录 INFO 级别 (过滤掉 WARN 和 ERROR) -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>${FILE_LOG_CHARSET}</charset>
+        </encoder>
+
+        <!-- 滚动策略：当文件超过10MB或跨天时，归档文件 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 归档文件名的格式，保留原时间戳前缀，后面加上日期和索引 -->
+            <fileNamePattern>${BASE_LOG_PATH}/info/${bySecond}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- ERROR Appender: 存放在 error 目录，文件名为 {时间戳}.log -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 核心修改：路径变为 error/时间戳.log -->
+        <file>${BASE_LOG_PATH}/error/${bySecond}.log</file>
+
+        <!-- 过滤器：接收 WARN 及以上级别 -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>${FILE_LOG_CHARSET}</charset>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${BASE_LOG_PATH}/error/${bySecond}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 根日志配置 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="INFO_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </root>
+</configuration>
