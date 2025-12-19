@@ -95,8 +95,8 @@ const buildTocTree = (mdStr: string) => {
     const match = line.match(regex)
 
     if (match) {
-      const level = match[1].length
-      const text = match[2].trim()
+      const level = match[1]!.length
+      const text = match[2]!.trim()
       const slug = text // 简单 ID 生成
 
       const node: TocNode = {
@@ -163,6 +163,127 @@ const handleParentClick = (item: TocNode) => {
   }
 }
 
+// 文章标题（取首个 H1）
+const title = computed(() => {
+  const m = source.value.match(/^#\s+(.+)$/m)
+  return m?.[1]?.trim() ?? '文章'
+})
+
+// 聊天/留言区域的数据结构（支持一级回复）
+interface Reply {
+  id: number
+  author: string
+  content: string
+  time: string
+}
+interface Comment {
+  id: number
+  author: string
+  content: string
+  time: string
+  replies: Reply[]
+}
+
+const comments = ref<Comment[]>([])
+const newComment = ref('')
+const sending = ref(false)
+
+// 只允许对一级评论回复：维护哪个评论正在回复中，以及输入内容
+const openReplyId = ref<number | null>(null)
+const replyTexts = ref<Record<number, string>>({})
+
+// 文章点赞状态（本地缓存）
+const likes = ref<number>(0)
+const liked = ref<boolean>(false)
+
+const emit = defineEmits<{
+  (e: 'comment', payload: { content: string }): void
+  (e: 'like', payload: { liked: boolean }): void
+}>()
+
+const storageKeyFor = (t: string) => `article_like_${encodeURIComponent(t)}`
+
+const loadLikeState = () => {
+  try {
+    const key = storageKeyFor(title.value)
+    const raw = localStorage.getItem(key)
+    if (raw) {
+      const s = JSON.parse(raw)
+      likes.value = s.likes ?? 0
+      liked.value = !!s.liked
+    }
+  } catch (e) { /* ignore */ }
+}
+
+loadLikeState()
+watch(title, loadLikeState)
+
+const saveLikeState = () => {
+  try {
+    const key = storageKeyFor(title.value)
+    localStorage.setItem(key, JSON.stringify({ likes: likes.value, liked: liked.value }))
+  } catch (e) { /* ignore */ }
+}
+
+const toggleLike = () => {
+  if (!liked.value) {
+    likes.value += 1
+    liked.value = true
+  } else {
+    likes.value = Math.max(0, likes.value - 1)
+    liked.value = false
+  }
+  saveLikeState()
+  emit('like', { liked: liked.value })
+}
+
+const formatTime = (d = new Date()) => d.toLocaleString()
+
+const handleSend = async () => {
+  const content = newComment.value.trim()
+  if (!content) return
+  sending.value = true
+  // 小模拟延迟以提供更好的 UX
+  await new Promise(r => setTimeout(r, 250))
+  const c: Comment = { id: Date.now(), author: '匿名', content, time: formatTime(), replies: [] }
+  comments.value.push(c)
+  emit('comment', { content })
+  newComment.value = ''
+  sending.value = false
+  await nextTick()
+  const el = document.querySelector('.comment-list')
+  if (el) el.scrollTop = el.scrollHeight
+}
+
+// 打开某条一级评论的回复输入（如果从回复操作触发，会 prefill @用户名）
+const openReply = (parentId: number, suggested?: string) => {
+  openReplyId.value = parentId
+  if (suggested) replyTexts.value[parentId] = `@${suggested} `
+  nextTick(() => {
+    const el = document.querySelector(`.reply-input[data-for="${parentId}"]`) as HTMLTextAreaElement | null
+    if (el) el.focus()
+  })
+}
+
+const handleSendReply = async (parentId: number) => {
+  const content = (replyTexts.value[parentId] || '').trim()
+  if (!content) return
+  sending.value = true
+  await new Promise(r => setTimeout(r, 250))
+  const r: Reply = { id: Date.now(), author: '匿名', content, time: formatTime() }
+  const parent = comments.value.find(c => c.id === parentId)
+  if (parent) {
+    parent.replies.push(r)
+  }
+  replyTexts.value[parentId] = ''
+  openReplyId.value = null
+  sending.value = false
+  await nextTick()
+  // 滚动到该父评论位置
+  const el = document.querySelector(`.comment-item[data-comment-id="${parentId}"]`)
+  if (el) (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+}
+
 </script>
 
 <template>
@@ -211,22 +332,82 @@ const handleParentClick = (item: TocNode) => {
 
     <!-- 右侧 Markdown 内容 -->
     <main class="content-wrapper">
-      <div class="markdown-body" v-html="html"></div>
+      <div class="content-inner">
+        <div class="markdown-body" v-html="html"></div>
+
+        <!-- 评论/聊天栏（与文章内容同宽） -->
+        <section class="comment-panel" aria-label="评论区">
+          <div class="comment-container">
+            <div class="comment-header">
+              <strong>留言与讨论</strong>
+              <small class="comment-note">支持 Markdown 渲染（后续接入后端）</small>
+            </div>
+
+            <ul class="comment-list" role="list">
+              <li v-for="c in comments" :key="c.id" class="comment-item" :data-comment-id="c.id">
+                <div class="avatar">{{ c.author.charAt(0) }}</div>
+                <div class="comment-body">
+                  <div class="comment-top">
+                    <span class="author">{{ c.author }}</span>
+                    <span class="time">{{ c.time }}</span>
+                    <button class="btn-reply" @click="openReply(c.id, c.author)">回复</button>
+                  </div>
+
+                  <div class="comment-content">{{ c.content }}</div>
+
+                  <ul class="reply-list" v-if="c.replies && c.replies.length">
+                    <li v-for="r in c.replies" :key="r.id" class="reply-item">
+                      <div class="reply-meta">
+                        <span class="reply-author">{{ r.author }}</span>
+                        <span class="reply-time">{{ r.time }}</span>
+                        <button class="btn-reply-tiny" @click="openReply(c.id, r.author)">回复</button>
+                      </div>
+                      <div class="reply-content">{{ r.content }}</div>
+                    </li>
+                  </ul>
+
+                  <div v-if="openReplyId === c.id" class="reply-input-row">
+                    <textarea
+                      v-model="replyTexts[c.id]"
+                      class="reply-input"
+                      :data-for="c.id"
+                      placeholder="写回复…（按 Enter 发送，Shift+Enter 换行）"
+                      @keydown.enter.exact.prevent="handleSendReply(c.id)"
+                      @keydown.enter.shift.stop
+                      rows="2"
+                    ></textarea>
+                    <button class="btn-send-reply" :disabled="sending || !(replyTexts[c.id] || '').trim()" @click="handleSendReply(c.id)">
+                      {{ sending ? '发送中...' : '回复' }}
+                    </button>
+                  </div>
+                </div>
+              </li>
+
+              <li v-if="comments.length === 0" class="comment-empty">暂无留言，成为第一个留言的人吧～</li>
+            </ul>
+
+            <div class="comment-input-row">
+              <textarea
+                v-model="newComment"
+                class="comment-input"
+                placeholder="写下你的留言…（按 Enter 发送，Shift+Enter 换行）"
+                @keydown.enter.exact.prevent="handleSend"
+                @keydown.enter.shift.stop
+                rows="2"
+              ></textarea>
+              <button class="btn-send" :disabled="sending || !newComment.trim()" @click="handleSend">
+                {{ sending ? '发送中...' : '发送' }}
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </div>
     </main>
   </div>
 </template>
 
 <style scoped>
-/* 
-  🎨 浅色温带海洋色系 (Light Temperate Ocean)
-  Background: #EAF6F6 (极浅青) ~ #FFFFFF
-  Sidebar Bg: #F0FBFC
-  Text Dark: #2C3E50 (深海灰)
-  Text Light: #5D7A88 (浅海灰)
-  Accent: #4DB6AC (海藻绿/青)
-  Hover: #D1EFF2
-*/
-
 .light-ocean-layout {
   display: flex;
   height: 100vh;
@@ -346,17 +527,183 @@ const handleParentClick = (item: TocNode) => {
 /* --- 右侧内容 --- */
 .content-wrapper {
   flex: 1;
-  padding: 30px 30px;
+  /* 左移一点：减小左侧内边距，让内容更靠近侧边栏 */
+  padding: 20px 30px 24px 64px;
   overflow-y: auto;
   scroll-behavior: smooth;
 }
 
 /* 简单的 Markdown 内容样式微调 */
+.content-inner {
+  max-width: 900px;
+  margin: 0  auto 0 0; /* 左对齐，靠近侧边 */
+  width: 100%;
+}
+
+.like-btn {
+  border: 1px solid transparent;
+  background: linear-gradient(180deg,#f7fdfd,#f0fbfb);
+  color: #007b6b;
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.like-btn .heart { font-size: 1.05rem }
+.like-btn.liked {
+  background: linear-gradient(180deg,#ffdde1,#ffc5cc);
+  color: #c62828;
+  box-shadow: 0 4px 12px rgba(198,40,40,0.08);
+  transform: translateY(-1px);
+}
+
+/* 回复相关样式 */
+.reply-list {
+  margin-top: 10px;
+  padding-left: 48px; /* 与 avatar 对齐 */
+}
+.reply-item {
+  padding: 8px 0;
+  border-left: 2px dashed rgba(132, 201, 194, 0.15);
+  margin-bottom: 6px;
+  padding-left: 12px;
+}
+.reply-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.reply-author { font-weight: 700; color: #23333a }
+.reply-time { color: #88959a; font-size: 0.82rem }
+.btn-reply, .btn-reply-tiny {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: #007b6b;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.reply-input-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  align-items: flex-end;
+}
+.reply-input { flex: 1; min-height: 36px; padding: 8px 10px; border: 1px solid #E6F3F3; border-radius: 6px }
+.btn-send-reply { background: #00bfa5; color: white; border: none; padding: 8px 10px; border-radius: 6px }
+.btn-send-reply:disabled { opacity: 0.6; cursor: not-allowed }
+
+
 .markdown-body {
   max-width: 900px;
   word-break: break-all;     /* 允许在单词内换行 */
   overflow-wrap: break-word; /* 长单词强制换行 */
-  margin-left: 30px;
+  margin: 0 auto;
+  background: rgba(250, 255, 255, 0.6);
+  padding: 28px 32px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(61, 80, 87, 0.06);
+}
+
+/* 评论区域 */
+.comment-panel {
+  margin-top: 26px;
+}
+.comment-container {
+  background: #ffffff;
+  border: 1px solid #EAF6F6;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 6px 18px rgba(61, 80, 87, 0.03);
+}
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.comment-note {
+  color: #8f9aa0;
+  font-size: 0.8rem;
+}
+.comment-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px 4px;
+  margin: 0 0 12px 0;
+}
+.comment-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 6px;
+  align-items: flex-start;
+}
+.avatar {
+  min-width: 36px;
+  height: 36px;
+  background: linear-gradient(180deg,#80cbc4,#4db6ac);
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+.comment-body {
+  flex: 1;
+}
+.comment-top {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.author {
+  font-weight: 700;
+  color: #23333a;
+}
+.time {
+  font-size: 0.82rem;
+  color: #88959a;
+}
+.comment-content {
+  line-height: 1.5;
+}
+.comment-empty {
+  color: #8f9aa0;
+  padding: 12px;
+  text-align: center;
+}
+.comment-input-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+.comment-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #E6F3F3;
+  border-radius: 8px;
+  resize: vertical;
+  min-height: 44px;
+  font-size: 0.95rem;
+}
+.btn-send {
+  background: linear-gradient(180deg,#00bfa5,#00a28a);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* 针对 Prism 代码块的微调，让它融入浅色主题 */
