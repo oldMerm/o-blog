@@ -7,10 +7,8 @@
         <processorPath useClasspath="false">
           <entry name="$PROJECT_DIR$/../../gradle/gradle-8.12.1/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.42/8365263844ebb62398e0dc33057ba10ba472d3b8/lombok-1.18.42.jar" />
         </processorPath>
-        <module name="oldmerman.common-config.main" />
         <module name="oldmerman.merman-model.main" />
-        <module name="oldmerman.o-app.main" />
-        <module name="oldmerman.o-web.main" />
+        <module name="oldmerman.common-config.main" />
       </profile>
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
@@ -18,7 +16,8 @@
           <entry name="$PROJECT_DIR$/../../gradle/gradle-8.12.1/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.42/8365263844ebb62398e0dc33057ba10ba472d3b8/lombok-1.18.42.jar" />
           <entry name="$PROJECT_DIR$/../../maven/repository/org/mapstruct/mapstruct-processor/1.5.5.Final/mapstruct-processor-1.5.5.Final.jar" />
         </processorPath>
-        <module name="oldmerman.common-dao.main" />
+        <module name="oldmerman.o-app.main" />
+        <module name="oldmerman.o-web.main" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="17" />
