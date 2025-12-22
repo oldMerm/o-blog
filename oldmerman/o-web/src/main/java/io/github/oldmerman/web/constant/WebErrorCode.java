@@ -9,7 +9,10 @@ import lombok.Getter;
 public enum WebErrorCode implements IResultCode {
 
     TOKEN_EXPIRED(1001,"令牌过期"),
-    TOKEN_PARSING_FAILED(1002, "令牌解析出错")
+    TOKEN_PARSING_FAILED(1002, "令牌解析出错"),
+
+    WRONG_EMAIL_FORMAT(1003, "邮箱格式错误"),
+
     ;
 
     private final Integer code;

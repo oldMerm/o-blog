@@ -1,0 +1,7 @@
+2025-12-18T17:09:46.210+08:00  WARN 20520 --- [web] [main] o.m.s.mapper.ClassPathMapperScanner      : No MyBatis mapper was found in '[io.github.oldmerman.web]' package. Please check your configuration.
+2025-12-18T17:09:46.770+08:00  WARN 20520 --- [web] [main] .s.s.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: 038805b3-6ebd-490b-96f7-33d431b5eef5
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+

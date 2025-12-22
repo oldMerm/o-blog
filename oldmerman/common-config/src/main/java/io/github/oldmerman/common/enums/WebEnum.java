@@ -9,9 +9,10 @@ import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor
-public enum JwtEnum implements EnumVal{
+public enum WebEnum implements EnumVal{
 
     AUTHORIZATION("Authorization"),
+    BASE64_IMAGE_PREFIX("data:image/png;base64,"),
     AUTH_PREFIX("Bearer ")
     ;
 
@@ -19,7 +20,7 @@ public enum JwtEnum implements EnumVal{
 
     public static Set<String> valuesSet() {
         return Arrays.stream(values())
-                .map(JwtEnum::getValue)
+                .map(WebEnum::getValue)
                 .collect(Collectors.toUnmodifiableSet());
     }
 }

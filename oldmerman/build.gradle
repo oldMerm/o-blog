@@ -48,6 +48,7 @@ subprojects {
         dependencies {
             implementation 'org.springframework.boot:spring-boot-starter-web'
             implementation 'org.springframework.boot:spring-boot-starter-security'
+            implementation 'org.springframework.boot:spring-boot-starter-data-redis'
             testImplementation 'org.springframework.boot:spring-boot-starter-test'
             testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
             implementation 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.15'
@@ -55,7 +56,6 @@ subprojects {
             implementation 'org.mapstruct:mapstruct:1.5.5.Final'
             annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
             implementation("io.jsonwebtoken:jjwt:0.12.7")
-
 
             // 业务模块通常依赖这些基础模块
             implementation project(':common-config')

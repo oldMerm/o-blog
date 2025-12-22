@@ -1,9 +1,8 @@
 package io.github.oldmerman.web.filter;
 
-import io.github.oldmerman.common.enums.JwtEnum;
+import io.github.oldmerman.common.enums.WebEnum;
 import io.github.oldmerman.web.util.JwtUtil;
 import io.github.oldmerman.web.util.UserContext;
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,9 +33,9 @@ public class JwtFilter implements Filter {
             chain.doFilter(req, res);
             return;
         }
-        String authorization = req.getHeader(JwtEnum.AUTHORIZATION.getValue());
+        String authorization = req.getHeader(WebEnum.AUTHORIZATION.getValue());
         try {
-            String token = authorization.substring(JwtEnum.AUTH_PREFIX.getValue().length());
+            String token = authorization.substring(WebEnum.AUTH_PREFIX.getValue().length());
             String id = jwtUtil.parseToken(token).getSubject();
             UserContext.setUserId(Long.valueOf(id));
             chain.doFilter(req, res);

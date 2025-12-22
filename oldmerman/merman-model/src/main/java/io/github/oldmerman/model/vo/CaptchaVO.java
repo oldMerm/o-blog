@@ -7,5 +7,5 @@ public class CaptchaVO {
 
     private String captcha;
 
-    private Long uuid;
+    private String uuid;
 }

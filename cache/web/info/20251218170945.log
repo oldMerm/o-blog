@@ -1,0 +1,13 @@
+2025-12-18T17:09:45.880+08:00  INFO 20520 --- [web] [main] io.github.oldmerman.web.WebApplication   : Starting WebApplication using Java 17.0.11 with PID 20520 (D:\merman-blog\oldmerman\o-web\build\classes\java\main started by asus in D:\merman-blog\oldmerman)
+2025-12-18T17:09:45.881+08:00  INFO 20520 --- [web] [main] io.github.oldmerman.web.WebApplication   : The following 1 profile is active: "dev"
+2025-12-18T17:09:46.372+08:00  INFO 20520 --- [web] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2025-12-18T17:09:46.379+08:00  INFO 20520 --- [web] [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-12-18T17:09:46.379+08:00  INFO 20520 --- [web] [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.49]
+2025-12-18T17:09:46.408+08:00  INFO 20520 --- [web] [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-12-18T17:09:46.409+08:00  INFO 20520 --- [web] [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 507 ms
+2025-12-18T17:09:46.730+08:00  INFO 20520 --- [web] [main] m.e.s.MybatisPlusApplicationContextAware : Register ApplicationContext instances org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@1133ec6e
+2025-12-18T17:09:46.780+08:00  INFO 20520 --- [web] [main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-12-18T17:09:46.860+08:00  INFO 20520 --- [web] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2025-12-18T17:09:46.866+08:00  INFO 20520 --- [web] [main] io.github.oldmerman.web.WebApplication   : Started WebApplication in 1.271 seconds (process running for 1.577)
+2025-12-18T17:10:00.289+08:00  INFO 20520 --- [web] [SpringApplicationShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-18T17:10:00.384+08:00  INFO 20520 --- [web] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
