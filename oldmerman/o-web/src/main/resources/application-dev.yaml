@@ -12,4 +12,4 @@ oldmerman:
     database: 0
   mail:
     username: oldmerman@qq.com
-    password: hywyqimxqftchhaj
+    password: ${EMAIL_PASSWORD}

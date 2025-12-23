@@ -24,7 +24,7 @@ spring:
       database: ${oldmerman.redis.database}
       timeout: 5s
   mail:
-    username: ${spring.mail.username}
+    username: ${oldmerman.mail.username}
     password: ${oldmerman.mail.password}
     host: smtp.qq.com
     port: 587
