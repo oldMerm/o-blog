@@ -35,3 +35,5 @@ out/
 
 ### VS Code ###
 .vscode/
+
+o-web/src/main/resources/application-dev.yaml
