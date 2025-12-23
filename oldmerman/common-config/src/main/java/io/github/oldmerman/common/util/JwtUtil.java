@@ -1,7 +1,7 @@
-package io.github.oldmerman.web.util;
+package io.github.oldmerman.common.util;
 
+import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
-import io.github.oldmerman.web.constant.WebErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -67,29 +67,10 @@ public class JwtUtil {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (ExpiredJwtException e) {
-            throw new BusinessException(WebErrorCode.TOKEN_EXPIRED);
+            throw new BusinessException(BusErrorCode.TOKEN_EXPIRED);
         } catch (JwtException e) {
-            throw new BusinessException(WebErrorCode.TOKEN_PARSING_FAILED);
+            throw new BusinessException(BusErrorCode.TOKEN_PARSING_FAILED);
         }
-    }
-
-    /**
-     * 验证token是否有效
-     */
-    public boolean validateToken(String token) {
-        try {
-            parseToken(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    /**
-     * 获取用户名
-     */
-    public String getUsernameFromToken(String token) {
-        return parseToken(token).getSubject();
     }
 
     /**

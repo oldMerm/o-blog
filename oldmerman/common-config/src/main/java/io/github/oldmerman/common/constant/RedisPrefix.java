@@ -1,4 +1,4 @@
-package io.github.oldmerman.web.constant;
+package io.github.oldmerman.common.constant;
 
 public class RedisPrefix {
 

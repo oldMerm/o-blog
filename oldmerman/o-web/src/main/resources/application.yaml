@@ -5,6 +5,7 @@ spring:
     name: web
   profiles:
     active: dev
+  # your config
   datasource:
     driver-class-name: ${oldmerman.datasource.driver-class-name}
     url: jdbc:mysql://${oldmerman.datasource.host}:${oldmerman.datasource.port}/${oldmerman.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
@@ -22,3 +23,19 @@ spring:
       port: ${oldmerman.redis.port}
       database: ${oldmerman.redis.database}
       timeout: 5s
+  mail:
+    username: ${spring.mail.username}
+    password: ${oldmerman.mail.password}
+    host: smtp.qq.com
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true # 开启认证
+          starttls:
+            enable: true # 关键点：开启 STARTTLS
+            required: true # 强制要求 STARTTLS
+jwt:
+  secret: oldmerman
+  expiration: 1440
+  refresh-expiration: 86400

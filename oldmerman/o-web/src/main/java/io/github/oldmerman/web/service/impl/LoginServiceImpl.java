@@ -2,6 +2,7 @@ package io.github.oldmerman.web.service.impl;
 
 import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.CircleCaptcha;
+import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.enums.WebEnum;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.util.RegexUtils;
@@ -9,7 +10,6 @@ import io.github.oldmerman.model.dto.LoginDTO;
 import io.github.oldmerman.model.dto.UserCreatedDTO;
 import io.github.oldmerman.model.vo.CaptchaVO;
 import io.github.oldmerman.model.vo.LoginVO;
-import io.github.oldmerman.web.constant.WebErrorCode;
 import io.github.oldmerman.web.service.LoginService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -53,7 +53,7 @@ public class LoginServiceImpl implements LoginService {
      */
     public void sendEmail(String email) {
         if(RegexUtils.isValidEmail(email)){
-            throw new BusinessException(WebErrorCode.WRONG_EMAIL_FORMAT);
+            throw new BusinessException(BusErrorCode.WRONG_EMAIL_FORMAT);
         }
 
 

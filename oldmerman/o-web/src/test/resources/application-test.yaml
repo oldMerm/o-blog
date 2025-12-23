@@ -1,0 +1,27 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: web
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/o_blog?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 1234
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+  mail:
+    username: oldmerman@qq.com
+    password: hywyqimxqftchhaj
+    host: smtp.qq.com
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true # 开启认证
+          starttls:
+            enable: true # 关键点：开启 STARTTLS
+            required: true # 强制要求 STARTTLS

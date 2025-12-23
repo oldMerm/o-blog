@@ -1,7 +1,7 @@
 package io.github.oldmerman.web.filter;
 
 import io.github.oldmerman.common.enums.WebEnum;
-import io.github.oldmerman.web.util.JwtUtil;
+import io.github.oldmerman.common.util.JwtUtil;
 import io.github.oldmerman.web.util.UserContext;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
