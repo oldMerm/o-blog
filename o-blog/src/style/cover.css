@@ -9,3 +9,12 @@ body {
   overflow-x: auto; /* 需要时显示横向滚动条 */
   min-width: 1200px; /* 设置最小宽度，小于这个值就出现滚动条 */
 }
+
+html {
+  font-size: 16px;
+}
+
+/* 只针对较大屏幕（桌面），把根字号设为 20px（你的基线） */
+@media (max-width: 1440px) and (pointer: fine) {
+  html { font-size: 12px; } 
+}

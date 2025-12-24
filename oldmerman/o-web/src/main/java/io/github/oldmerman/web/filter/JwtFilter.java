@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 
 import java.io.IOException;
 import java.util.Set;
@@ -20,17 +21,18 @@ public class JwtFilter implements Filter {
 
     private final JwtUtil jwtUtil;
 
+    private static final AntPathMatcher MATCHER = new AntPathMatcher();
     private static final Set<String> SKIP = Set.of(
-            "/auth/login",
-            "/auth/register");
+            "/auth/**");
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,
                          FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
-        if(SKIP.contains(req.getRequestURL().toString())){
-            chain.doFilter(req, res);
+        String servletPath = req.getServletPath();
+        if (SKIP.stream().anyMatch(p -> MATCHER.match(p, servletPath))) {
+            chain.doFilter(request, response);
             return;
         }
         String authorization = req.getHeader(WebEnum.AUTHORIZATION.getValue());

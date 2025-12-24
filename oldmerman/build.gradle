@@ -51,6 +51,12 @@ subprojects {
         }
     }
 
+    if (name == 'merman-model') {
+        dependencies {
+            implementation 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.15'
+        }
+    }
+
     if (name != 'common-config' && name != 'merman-model') {
         dependencies {
             implementation 'org.springframework.boot:spring-boot-starter-web'

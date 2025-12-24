@@ -7,7 +7,7 @@ oldmerman:
     username: root
     password: 1234
   redis:
-    host: localhost
+    host: 192.168.88.132
     port: 6379
     database: 0
   mail:

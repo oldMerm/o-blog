@@ -45,11 +45,6 @@ public class Result<T> implements Serializable {
     private String path;
 
     /**
-     * 链路追踪ID
-     */
-    private String traceId;
-    
-    /**
      * 构造函数
      */
     public Result() {

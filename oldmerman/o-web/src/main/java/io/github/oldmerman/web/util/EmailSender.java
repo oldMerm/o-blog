@@ -1,9 +1,14 @@
 package io.github.oldmerman.web.util;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
+
+import java.util.Random;
 
 @Component
 @RequiredArgsConstructor
@@ -15,7 +20,7 @@ public class EmailSender {
 
     private final String subject = "老鱼人博客的登录检验操作...";
 
-    private final String Test =
+    private final String text =
             """
             <!DOCTYPE html>
             <html lang="zh-CN">
@@ -42,6 +47,7 @@ public class EmailSender {
                         table-layout: fixed;
                         background-color: #f4f7f9;
                         padding-bottom: 40px;
+                        border-radius: 8px;
                     }
                     .main {
                         background-color: #ffffff;
@@ -77,7 +83,7 @@ public class EmailSender {
                         text-align: center;
                         font-size: 12px;
                         color: #999;
-                        padding: 20px;
+                        padding: 8px;
                     }
                 </style>
             </head>
@@ -104,7 +110,19 @@ public class EmailSender {
             </body>
             </html>""";
 
-    public String sendCheckEmail(String target){
-        return null;
+    public String sendCheckEmail(String target) throws MessagingException {
+        Random random = new Random();
+        StringBuilder code = new StringBuilder("" + random.nextInt(1, 9));
+        for (int i = 0; i < 5; i++) {
+            code.append(random.nextInt(10));
+        }
+        MimeMessage mail = sender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mail);
+        mimeMessageHelper.setSubject(subject);
+        mimeMessageHelper.setText(text.replace("884822",code.toString()), true);
+        mimeMessageHelper.setFrom(from);
+        mimeMessageHelper.setTo(target);
+        sender.send(mail);
+        return code.toString();
     }
 }

@@ -10,4 +10,6 @@ public class UserCreatedDTO {
     private String email;
 
     private String password;
+
+    private String code;
 }
