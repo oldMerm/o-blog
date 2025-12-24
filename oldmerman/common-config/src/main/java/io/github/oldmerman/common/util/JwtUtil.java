@@ -21,7 +21,7 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expiration}") // 默认24小时
+    @Value("${jwt.expiration}") // 默认48小时
     private Long expiration;
 
     @Value("${jwt.refresh-expiration}") // 默认7天

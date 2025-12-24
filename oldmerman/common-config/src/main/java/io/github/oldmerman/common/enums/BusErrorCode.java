@@ -14,9 +14,13 @@ public enum BusErrorCode implements IResultCode {
     EMAIL_WRONG_FORMAT(1003, "邮箱格式错误"),
     EMAIL_SEND_FAILED(1004, "邮件发送失败"),
     ERROR_EMAIL_CODE(1005, "邮件认证码错误"),
+    ERROR_VERIFY_CODE(1006, "验证码错误或已过期"),
 
-    USERNAME_WRONG_FORMAT(1006, "用户名格式错误"),
-    PASSWORD_WRONG_FORMAT(1007, "密码格式错误"),
+    USERNAME_WRONG_FORMAT(1007, "用户名格式错误"),
+    PASSWORD_WRONG_FORMAT(1008, "密码格式错误"),
+
+
+    ENCRYPTION_FAILED(1009, "加密失败"),
             ;
 
     private final Integer code;

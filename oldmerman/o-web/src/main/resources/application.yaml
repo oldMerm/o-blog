@@ -37,5 +37,5 @@ spring:
             required: true # 强制要求 STARTTLS
 jwt:
   secret: oldmerman
-  expiration: 1440
+  expiration: 2880
   refresh-expiration: 86400

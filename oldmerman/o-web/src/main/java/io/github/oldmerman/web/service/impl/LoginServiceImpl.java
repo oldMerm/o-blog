@@ -2,13 +2,15 @@ package io.github.oldmerman.web.service.impl;
 
 import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.CircleCaptcha;
-import cn.hutool.core.util.ObjectUtil;
 import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.enums.BusErrorCode;
+import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.enums.WebEnum;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
+import io.github.oldmerman.common.util.HmacSHA256Util;
 import io.github.oldmerman.common.util.IdGenerator;
+import io.github.oldmerman.common.util.JwtUtil;
 import io.github.oldmerman.common.util.RegexUtils;
 import io.github.oldmerman.model.dto.LoginDTO;
 import io.github.oldmerman.model.dto.UserCreatedDTO;
@@ -24,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -33,16 +34,51 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 public class LoginServiceImpl implements LoginService {
+
     private final LoginMapper loginMapper;
 
     private final StringRedisTemplate redisTemplate;
+
+    private final JwtUtil jwtUtil;
 
     private final EmailSender sender;
 
     private final LoginConverter converter;
 
     public LoginVO login(LoginDTO dto) {
-        return null;
+        // 校验参数
+        if(!RegexUtils.isValidUsername(dto.getUsername())){
+            throw new BusinessException(BusErrorCode.USERNAME_WRONG_FORMAT);
+        }
+        if(!RegexUtils.isValidPassword(dto.getPassword())){
+            throw new BusinessException(BusErrorCode.PASSWORD_WRONG_FORMAT);
+        }
+        if(!dto.getCode().equals(redisTemplate.opsForValue().get(dto.getUuid()))){
+            throw new BusinessException(BusErrorCode.ERROR_VERIFY_CODE);
+        }
+        // 校验密码并获取凭证
+        String password;
+        try {
+            password = HmacSHA256Util.hmacSha256(dto.getPassword());
+        } catch (Exception e) {
+            log.error("{},加密失败",dto.getUsername());
+            throw new BusinessException(BusErrorCode.ENCRYPTION_FAILED);
+        }
+        Long id = loginMapper.verifyUserInfo(dto.getUsername(), password);
+        if(id == null){
+            throw new BusinessException(ResultCode.USERNAME_OR_PASSWORD_ERROR);
+        }
+        // 签发令牌
+        String sign = String.valueOf(id);
+        String accessToken = jwtUtil.generateAccessToken(sign, null);
+        String refreshToken = jwtUtil.generateRefreshToken(sign);
+        redisTemplate.opsForValue().set(RedisPrefix.REFRESH_TOKEN + sign, refreshToken,
+                NumEnum.REFRESH_TOKEN_EXPIRATION.getValue(), TimeUnit.MINUTES);
+        LoginVO vo = new LoginVO();
+        vo.setToken(accessToken);
+        vo.setRefreshToken(refreshToken);
+        vo.setTimeout(NumEnum.ACCESS_TOKEN_EXPIRATION.getValue());
+        return vo;
     }
 
     /**
@@ -57,7 +93,12 @@ public class LoginServiceImpl implements LoginService {
         }
         UserPO po = converter.createToUserPO(dto);
         po.setId(IdGenerator.nextId());
-        po.setPassword(DigestUtils.md5DigestAsHex(dto.getPassword().getBytes()));
+        try {
+            po.setPassword(HmacSHA256Util.hmacSha256(dto.getPassword()));
+        } catch (Exception e) {
+            log.error("{},加密失败",dto.getUsername());
+            throw new BusinessException(BusErrorCode.ENCRYPTION_FAILED);
+        }
         loginMapper.createUser(po);
     }
 

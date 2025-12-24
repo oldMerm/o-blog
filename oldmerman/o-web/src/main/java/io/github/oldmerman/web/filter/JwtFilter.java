@@ -1,8 +1,12 @@
 package io.github.oldmerman.web.filter;
 
+import io.github.oldmerman.common.enums.BusErrorCode;
+import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.enums.WebEnum;
+import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.util.JwtUtil;
 import io.github.oldmerman.web.util.UserContext;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,7 +42,12 @@ public class JwtFilter implements Filter {
         String authorization = req.getHeader(WebEnum.AUTHORIZATION.getValue());
         try {
             String token = authorization.substring(WebEnum.AUTH_PREFIX.getValue().length());
-            String id = jwtUtil.parseToken(token).getSubject();
+            Claims claims = jwtUtil.parseToken(token);
+            String id = claims.getSubject();
+            if(claims.getExpiration().getTime() < System.currentTimeMillis() +
+                    NumEnum.ALLOW_ACCESS_TIME.getValue() * 1800){
+                throw new BusinessException(BusErrorCode.TOKEN_EXPIRED);
+            }
             UserContext.setUserId(Long.valueOf(id));
             chain.doFilter(req, res);
         } finally {
