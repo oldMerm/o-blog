@@ -21,6 +21,8 @@ import io.github.oldmerman.web.converter.LoginConverter;
 import io.github.oldmerman.web.mapper.LoginMapper;
 import io.github.oldmerman.web.service.LoginService;
 import io.github.oldmerman.web.util.EmailSender;
+import io.github.oldmerman.web.util.UserContext;
+import io.jsonwebtoken.Claims;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +47,11 @@ public class LoginServiceImpl implements LoginService {
 
     private final LoginConverter converter;
 
+    /**
+     * 登录接口
+     * @param dto 封装dto
+     * @return 访问令牌，刷新令牌，过期时间
+     */
     public LoginVO login(LoginDTO dto) {
         // 校验参数
         if(!RegexUtils.isValidUsername(dto.getUsername())){
@@ -54,6 +61,7 @@ public class LoginServiceImpl implements LoginService {
             throw new BusinessException(BusErrorCode.PASSWORD_WRONG_FORMAT);
         }
         if(!dto.getCode().equals(redisTemplate.opsForValue().get(dto.getUuid()))){
+            log.info(redisTemplate.opsForValue().get(dto.getUuid()));
             throw new BusinessException(BusErrorCode.ERROR_VERIFY_CODE);
         }
         // 校验密码并获取凭证
@@ -82,6 +90,22 @@ public class LoginServiceImpl implements LoginService {
     }
 
     /**
+     * 登出接口
+     * @param sign 标识
+     */
+    public void logout(String sign) {
+        if(sign == null){
+            throw new BusinessException(ResultCode.DATA_NOT_EXIST);
+        }
+        String token = sign.substring(WebEnum.AUTH_PREFIX.getValue().length());
+        Claims claims = jwtUtil.parseToken(token);
+        String refreshSign = claims.getSubject();
+        redisTemplate.opsForValue().set(RedisPrefix.BLACK_TOKEN + token, "1",
+                claims.getExpiration().getTime() + 1000*60, TimeUnit.MILLISECONDS);
+        redisTemplate.delete(RedisPrefix.REFRESH_TOKEN + refreshSign);
+    }
+
+    /**
      * 用户注册，邮箱验证
      * @param dto 封装dto
      */
@@ -100,6 +124,16 @@ public class LoginServiceImpl implements LoginService {
             throw new BusinessException(BusErrorCode.ENCRYPTION_FAILED);
         }
         loginMapper.createUser(po);
+    }
+
+    /**
+     * 用户注销
+     * @param sign 唯一标识
+     */
+    public void logoff(String sign) {
+        logout(sign);
+        Long userId = UserContext.getUserId();
+        loginMapper.logoffByUserId(userId);
     }
 
     /**

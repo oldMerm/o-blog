@@ -20,14 +20,28 @@ public class LoginController {
 
     @PostMapping("login")
     public Result<LoginVO> login(@RequestBody LoginDTO dto){
-        log.info("用户登录");
+        log.info("用户登录,{}",dto.getUsername());
         return Result.success(loginService.login(dto));
+    }
+
+    @PostMapping("logout")
+    public Result<Void> logout(@RequestHeader("Authorization") String sign){
+        log.info("用户登出,{}",sign);
+        loginService.logout(sign);
+        return Result.success();
     }
 
     @PostMapping("register")
     public Result<Void> register(@RequestBody UserCreatedDTO dto){
         log.info("注册用户：{}", dto.getUsername());
         loginService.register(dto);
+        return Result.success();
+    }
+
+    @DeleteMapping("logoff")
+    public Result<Void> logoff(@RequestHeader("Authorization") String sign){
+        log.info("用户注销:{}",sign);
+        loginService.logoff(sign);
         return Result.success();
     }
 

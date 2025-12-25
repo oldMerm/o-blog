@@ -1,5 +1,5 @@
 package io.github.oldmerman.common.enums;
 
-public interface EnumVal {
-    String getValue();
+public interface EnumVal<T> {
+    T getValue();
 }

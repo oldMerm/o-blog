@@ -32,7 +32,7 @@ public enum ResultCode implements IResultCode {
     USER_NOT_EXIST(1001, "用户不存在"),
     USER_ACCOUNT_LOCKED(1002, "用户账号已锁定"),
     USER_ACCOUNT_INVALID(1003, "用户账号已失效"),
-    USERNAME_OR_PASSWORD_ERROR(1004, "用户名或密码错误"),
+    USERNAME_OR_PASSWORD_ERROR(1004, "用户名或密码错误，或账户被禁用"),
     TOKEN_EXPIRED(1005, "Token已过期"),
     TOKEN_INVALID(1006, "Token无效"),
     TOKEN_PARSING_FAILED(1007,"Token解析失败"),

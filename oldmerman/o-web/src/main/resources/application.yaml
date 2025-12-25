@@ -36,6 +36,6 @@ spring:
             enable: true # 关键点：开启 STARTTLS
             required: true # 强制要求 STARTTLS
 jwt:
-  secret: oldmerman
+  secret: oldmerman20051223secret111111111
   expiration: 2880
   refresh-expiration: 86400

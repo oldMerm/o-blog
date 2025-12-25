@@ -5,13 +5,12 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum NumEnum implements EnumVal{
+public enum NumEnum implements EnumVal<Long>{
 
-    ACCESS_TOKEN_EXPIRATION(2880),
-    REFRESH_TOKEN_EXPIRATION(86400),
-    ALLOW_ACCESS_TIME(30),
+    ACCESS_TOKEN_EXPIRATION(2880L),
+    REFRESH_TOKEN_EXPIRATION(86400L),
+    ALLOW_ACCESS_TIME(30L),
     ;
 
-
-    private final long value;
+    private final Long value;
 }

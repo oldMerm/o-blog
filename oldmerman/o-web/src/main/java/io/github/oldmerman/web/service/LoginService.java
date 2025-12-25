@@ -9,9 +9,14 @@ public interface LoginService {
 
     LoginVO login(LoginDTO dto);
 
+    void logout(String sign);
+
     void register(UserCreatedDTO dto);
+
+    void logoff(String sign);
 
     CaptchaVO generateCaptcha();
 
     void sendEmail(String email);
+
 }

@@ -1,5 +1,6 @@
 package io.github.oldmerman.web.filter;
 
+import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.enums.WebEnum;
@@ -12,8 +13,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.util.Set;
@@ -25,9 +28,11 @@ public class JwtFilter implements Filter {
 
     private final JwtUtil jwtUtil;
 
+    private final StringRedisTemplate redisTemplate;
+
     private static final AntPathMatcher MATCHER = new AntPathMatcher();
     private static final Set<String> SKIP = Set.of(
-            "/auth/**");
+            "/auth/login","/auth/captcha","/auth/sendEmail","/auth/register");
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,
@@ -42,6 +47,9 @@ public class JwtFilter implements Filter {
         String authorization = req.getHeader(WebEnum.AUTHORIZATION.getValue());
         try {
             String token = authorization.substring(WebEnum.AUTH_PREFIX.getValue().length());
+            if("1".equals(redisTemplate.opsForValue().get(RedisPrefix.BLACK_TOKEN + token))){
+                throw new BusinessException(BusErrorCode.TOKEN_EXPIRED);
+            }
             Claims claims = jwtUtil.parseToken(token);
             String id = claims.getSubject();
             if(claims.getExpiration().getTime() < System.currentTimeMillis() +
