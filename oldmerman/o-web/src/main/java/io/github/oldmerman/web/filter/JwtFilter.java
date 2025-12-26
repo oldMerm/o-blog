@@ -16,7 +16,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.util.Set;
@@ -32,7 +31,7 @@ public class JwtFilter implements Filter {
 
     private static final AntPathMatcher MATCHER = new AntPathMatcher();
     private static final Set<String> SKIP = Set.of(
-            "/auth/login","/auth/captcha","/auth/sendEmail","/auth/register");
+            "/auth/login","/auth/captcha","/auth/email","/auth/register","/auth/refresh");
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,

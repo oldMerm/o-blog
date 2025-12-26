@@ -82,11 +82,11 @@ public class LoginServiceImpl implements LoginService {
         String refreshToken = jwtUtil.generateRefreshToken(sign);
         redisTemplate.opsForValue().set(RedisPrefix.REFRESH_TOKEN + sign, refreshToken,
                 NumEnum.REFRESH_TOKEN_EXPIRATION.getValue(), TimeUnit.MINUTES);
-        LoginVO vo = new LoginVO();
-        vo.setToken(accessToken);
-        vo.setRefreshToken(refreshToken);
-        vo.setTimeout(NumEnum.ACCESS_TOKEN_EXPIRATION.getValue());
-        return vo;
+        return LoginVO.builder()
+                .token(accessToken)
+                .refreshToken(refreshToken)
+                .timeout(NumEnum.ACCESS_TOKEN_EXPIRATION.getValue())
+                .build();
     }
 
     /**
@@ -134,6 +134,26 @@ public class LoginServiceImpl implements LoginService {
         logout(sign);
         Long userId = UserContext.getUserId();
         loginMapper.logoffByUserId(userId);
+    }
+
+    /**
+     * 刷新token，传入旧token签发新token
+     * @param sign 过期的accessToken
+     * @return 访问令牌，刷新令牌，过期时间
+     */
+    public LoginVO refreshToken(String sign) {
+        Claims claims = jwtUtil.parseToken(sign);
+        String userId = claims.getSubject();
+        String refreshToken = redisTemplate.opsForValue().get(RedisPrefix.REFRESH_TOKEN + userId);
+        if(jwtUtil.isTokenExpiring(refreshToken)){
+            throw new BusinessException(BusErrorCode.TOKEN_EXPIRED);
+        }
+        String accessToken = jwtUtil.generateAccessToken(userId, null);
+        return LoginVO.builder()
+                .token(accessToken)
+                .refreshToken(refreshToken)
+                .timeout(NumEnum.ACCESS_TOKEN_EXPIRATION.getValue())
+                .build();
     }
 
     /**

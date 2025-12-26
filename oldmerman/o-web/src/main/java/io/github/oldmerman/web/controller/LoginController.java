@@ -45,13 +45,19 @@ public class LoginController {
         return Result.success();
     }
 
+    @GetMapping("refresh")
+    public Result<LoginVO> refreshToken(@RequestHeader("Authorization") String sign){
+        log.info("刷新Token,{}",sign);
+        return Result.success(loginService.refreshToken(sign));
+    }
+
     @GetMapping("captcha")
     public Result<CaptchaVO> generateCaptcha(){
         log.info("获取验证码");
         return Result.success(loginService.generateCaptcha());
     }
 
-    @PostMapping("sendEmail")
+    @PostMapping("email")
     public Result<Void> sendEmail(@RequestParam("email") String email){
         log.info("发送验证码到，email: {}",email);
         loginService.sendEmail(email);

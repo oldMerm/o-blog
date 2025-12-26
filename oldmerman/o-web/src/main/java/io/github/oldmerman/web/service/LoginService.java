@@ -15,8 +15,9 @@ public interface LoginService {
 
     void logoff(String sign);
 
+    LoginVO refreshToken(String sign);
+
     CaptchaVO generateCaptcha();
 
     void sendEmail(String email);
-
 }
