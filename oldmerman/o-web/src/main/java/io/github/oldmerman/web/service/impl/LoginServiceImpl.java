@@ -2,6 +2,7 @@ package io.github.oldmerman.web.service.impl;
 
 import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.CircleCaptcha;
+import cn.hutool.core.util.RandomUtil;
 import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.enums.NumEnum;
@@ -53,13 +54,6 @@ public class LoginServiceImpl implements LoginService {
      * @return 访问令牌，刷新令牌，过期时间
      */
     public LoginVO login(LoginDTO dto) {
-        // 校验参数
-        if(!RegexUtils.isValidUsername(dto.getUsername())){
-            throw new BusinessException(BusErrorCode.USERNAME_WRONG_FORMAT);
-        }
-        if(!RegexUtils.isValidPassword(dto.getPassword())){
-            throw new BusinessException(BusErrorCode.PASSWORD_WRONG_FORMAT);
-        }
         if(!dto.getCode().equals(redisTemplate.opsForValue().get(dto.getUuid()))){
             log.info(redisTemplate.opsForValue().get(dto.getUuid()));
             throw new BusinessException(BusErrorCode.ERROR_VERIFY_CODE);
@@ -72,7 +66,13 @@ public class LoginServiceImpl implements LoginService {
             log.error("{},加密失败",dto.getUsername());
             throw new BusinessException(BusErrorCode.ENCRYPTION_FAILED);
         }
-        Long id = loginMapper.verifyUserInfo(dto.getUsername(), password);
+        Long id;
+        String username = dto.getUsername();
+        if(RegexUtils.isValidEmail(username)){
+            id = loginMapper.verifyUserInfoByEmail(username, password);
+        }else{
+            id = loginMapper.verifyUserInfoById(username, password);
+        }
         if(id == null){
             throw new BusinessException(ResultCode.USERNAME_OR_PASSWORD_ERROR);
         }
@@ -117,6 +117,7 @@ public class LoginServiceImpl implements LoginService {
         }
         UserPO po = converter.createToUserPO(dto);
         po.setId(IdGenerator.nextId());
+        po.setUsername(randomUsername());
         try {
             po.setPassword(HmacSHA256Util.hmacSha256(dto.getPassword()));
         } catch (Exception e) {
@@ -190,7 +191,7 @@ public class LoginServiceImpl implements LoginService {
     }
 
     /**
-     * 检验邮箱，用户名，密码
+     * 检验邮箱，密码
      * @param dto 封装对象
      */
     private void checkCreateDTO(UserCreatedDTO dto){
@@ -198,8 +199,14 @@ public class LoginServiceImpl implements LoginService {
             throw new BusinessException(BusErrorCode.EMAIL_WRONG_FORMAT);
         }else if(!RegexUtils.isValidPassword(dto.getPassword())){
             throw new BusinessException(BusErrorCode.PASSWORD_WRONG_FORMAT);
-        }else if(!RegexUtils.isValidUsername(dto.getUsername())){
-            throw new BusinessException(BusErrorCode.USERNAME_WRONG_FORMAT);
         }
+    }
+
+    /**
+     * 生成一个随机的用户名，格式usr-laoyu1
+     * @return 初始用户名
+     */
+    private String randomUsername(){
+        return WebEnum.USER_PREFIX.getValue() + "-" + RandomUtil.randomString(6);
     }
 }

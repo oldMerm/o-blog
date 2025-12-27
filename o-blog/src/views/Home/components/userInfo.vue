@@ -1,20 +1,62 @@
 <script setup lang="ts">
-// 这里预留给你的 TS 逻辑
-// const username = ref('趣问用户')
-// ...
+import { onMounted, ref } from 'vue';
+import router from '@/router';
+import { httpInstance, type Response } from '@/utils/http';
+
+const time = new Date();
+const day = `${time.getFullYear()}年${time.getMonth() + 1}月${time.getDate()}日`;
+
+const token = localStorage.getItem('token')
+
+const showbox = ref(false)
+
+onMounted(() => {
+    renderUsrInfo()
+});
+interface UserInfo{
+    username: string;
+    article: number;
+    like: number;
+    attr: string;
+}
+const username = ref();
+const article = ref();
+const like = ref()
+const renderUsrInfo = async() => {
+    try {
+        const res = await httpInstance.get<any, Response>('/usr/info');
+        console.log(res);
+        if(res.code !== 200){
+            alert(res.message);
+            return;
+        }
+        const data:UserInfo = res.data;
+        username.value = data.username;
+        article.value = data.article;
+        like.value = data.like;
+        showbox.value = !showbox.value;
+    } catch (error) {
+        
+    }    
+}
+
+
+const loginPage = ref(() => {
+    router.push({name: 'login'})
+})
 </script>
 
 <template>
     <div class="uc">
         <!-- 1. 最上方展示时间 -->
         <div class="header">
-            <span class="time">2025年12月25日</span>
+            <span class="time">{{day}}</span>
         </div>
 
         <!-- 虚线分割在 CSS 中实现 (border-bottom) -->
 
         <!-- 2. 下方主体区域 -->
-        <div class="content-body">
+        <div class="content-body" v-show="showbox">
             
             <!-- 左边区域：占总宽度的 3/4 -->
             <div class="left-section">
@@ -25,9 +67,9 @@
                 
                 <!-- 右边展示数据：用户名、文章数、点赞数 -->
                 <div class="user-info">
-                    <div class="info-item username">用户名：老鱼人</div>
-                    <div class="info-item">文章数：1,024</div>
-                    <div class="info-item">点赞数：8,888</div>
+                    <div class="info-item username">用户名：{{ username }}</div>
+                    <div class="info-item">文章数：{{ article }}</div>
+                    <div class="info-item">点赞数：{{like}}</div>
                 </div>
             </div>
 
@@ -40,6 +82,11 @@
                 <div class="action-btn">内容创作</div>
                 <div class="action-btn">网站反馈</div>
             </div>
+        </div>
+        <div class="content-body not" v-show="!showbox">
+            <button class="login-r" @click="loginPage">
+                请先登录！
+            </button>
         </div>
     </div>
 </template>
@@ -72,6 +119,25 @@
 .content-body {
     flex: 1; /* 占满剩余高度 */
     display: flex; /* 开启 flex 布局 */
+}
+
+.not {
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-r {
+    font-size: larger;
+    border: none;
+    outline: none;
+    background-color: transparent;
+}
+
+.login-r:hover {
+    color: #409eff;
+    cursor: pointer;
 }
 
 /* --- 左边区域 (3/4) --- */

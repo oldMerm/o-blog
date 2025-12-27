@@ -57,7 +57,7 @@ public class LoginController {
         return Result.success(loginService.generateCaptcha());
     }
 
-    @PostMapping("email")
+    @GetMapping("email")
     public Result<Void> sendEmail(@RequestParam("email") String email){
         log.info("发送验证码到，email: {}",email);
         loginService.sendEmail(email);

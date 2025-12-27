@@ -38,6 +38,10 @@ public class JwtFilter implements Filter {
                          FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
+        if(req.getMethod().equals("OPTIONS")){
+            chain.doFilter(request, response);
+            return;
+        }
         String servletPath = req.getServletPath();
         if (SKIP.stream().anyMatch(p -> MATCHER.match(p, servletPath))) {
             chain.doFilter(request, response);

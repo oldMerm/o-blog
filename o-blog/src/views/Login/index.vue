@@ -9,7 +9,7 @@
         <div class="input-group">
           <label>账号</label>
           <input 
-            v-model="loginForm.identifier" 
+            v-model="loginForm.username" 
             type="text" 
             placeholder="请输入邮箱或用户名"
           />
@@ -21,6 +21,23 @@
             type="password" 
             placeholder="请输入密码"
           />
+        </div>
+        <div class="input-group">
+          <label>图形码</label>
+          <div class="captcha-row">
+            <input
+              v-model="loginForm.code"
+              type="text"
+              placeholder="请输入图形验证码"
+            />
+            <img
+              :src="captchaImage"
+              alt="验证码"
+              class="captcha-img"
+              title="点击刷新验证码"
+              @click="fetchCaptcha"
+            />
+          </div>
         </div>
         <button class="btn-primary" @click="handleLogin">立即登录</button>
         <div class="footer-tip">
@@ -82,7 +99,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
+import {httpInstance, type Response} from '@/utils/http';
+import router from '@/router';
 
 // 状态控制
 const isLogin = ref(true);
@@ -90,8 +109,10 @@ const countdown = ref(0);
 
 // 数据模型
 const loginForm = reactive({
-  identifier: '',
-  password: ''
+  username: '',
+  password: '',
+  code: '',
+  uuid: ''
 });
 
 const registerForm = reactive({
@@ -104,18 +125,45 @@ const registerForm = reactive({
 // 🔄 切换模式
 const toggleMode = () => {
   isLogin.value = !isLogin.value;
+  if (isLogin.value) fetchCaptcha();
 };
 
+// 图片验证码状态（模拟）
+const captchaImage = ref('');
+interface CaptchaVO {
+  captcha: string,
+  uuid: string
+}
+
+// 获取图形验证码（示例：生成一个简单的 SVG DataURL）
+const fetchCaptcha = async () => {
+  const capVo = httpInstance.get<CaptchaVO>('/auth/captcha');
+  const {captcha, uuid} = (await capVo).data
+  captchaImage.value = captcha
+  localStorage.setItem("cuid",uuid)
+};
+// 进入到登录页面，自动调用一次渲染验证码
+onMounted(() => {
+  if (isLogin.value) fetchCaptcha();
+});
+
 // 发送验证码逻辑
-const sendVerifyCode = () => {
+const sendVerifyCode = async () => {
   if (!registerForm.email.includes('@')) {
     alert('请输入有效的邮箱地址');
     return;
   }
   
-  console.log('请求路径: /api/v1/send-code', { email: registerForm.email });
-  alert('验证码已发送（模拟）');
-  
+  try {
+    await httpInstance.get('/auth/email',{
+      params: {
+        email: registerForm.email
+      }
+    });
+  } catch (error) {
+    alert(error)
+  }
+
   countdown.value = 60;
   const timer = setInterval(() => {
     countdown.value--;
@@ -125,16 +173,31 @@ const sendVerifyCode = () => {
 
 // 🔑 登录提交
 const handleLogin = async () => {
-  if (!loginForm.identifier || !loginForm.password) {
+  if (!loginForm.username || !loginForm.password || !loginForm.code) {
     alert('请填写完整信息');
     return;
   }
+
+  loginForm.uuid = <string>localStorage.getItem("cuid");
+  try {
+    const data = await httpInstance.post<any, Response>('/auth/login', loginForm);
+    if(data.code !== 200){
+      alert(data.message);
+      return;
+    }
+    const {token, refreshToken, timeout} = <any>data.data;
+    localStorage.setItem('token', token);
+    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('timeout', timeout);
+    alert('登录成功!')
+  } catch (error) {
+    alert(error)
+    return;
+  }
   
-  console.log('请求路径: /api/v1/login', loginForm);
-  // 模拟 API 请求
-  setTimeout(() => {
-    alert(`登录成功！欢迎 ${loginForm.identifier}`);
-  }, 500);
+  setInterval(() => {
+    router.push({name:'home'});
+  }, 500)
 };
 
 // 📝 注册提交
@@ -144,13 +207,19 @@ const handleRegister = async () => {
     alert('两次输入的密码不一致');
     return;
   }
-  
-  // 数学逻辑校验示例: 
-  // 令 $$ P_1 $$ 为密码, $$ P_2 $$ 为确认密码
-  // 校验条件: $$ P_1 = P_2 \land \text{length}(P_1) \ge 6 $$
 
-  console.log('请求路径: /api/v1/register', registerForm);
-  
+  try {
+    const data = await httpInstance.post<any, Response>('/auth/register',registerForm);
+    console.log(data);
+    if(data.code !== 200){
+      alert(data.message)
+      return;
+    }
+  } catch (error) {
+    alert(error)
+    return;
+  }
+
   setTimeout(() => {
     alert('注册成功，正在跳转登录...');
     isLogin.value = true; // 注册成功回到登录
@@ -227,6 +296,25 @@ const handleRegister = async () => {
   flex: 1;
 }
 
+.captcha-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.captcha-row input {
+  flex: 1;
+}
+
+.captcha-img {
+  width: 100px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  object-fit: cover;
+}
+
 .btn-code {
   padding: 0 15px;
   background: white;
@@ -236,6 +324,7 @@ const handleRegister = async () => {
   cursor: pointer;
   white-space: nowrap;
   font-size: 13px;
+  width: 6rem;
 }
 
 .btn-code:disabled {
