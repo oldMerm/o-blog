@@ -1,14 +1,13 @@
 package io.github.oldmerman.web.controller;
 
 import io.github.oldmerman.common.response.Result;
+import io.github.oldmerman.model.dto.UserManageDTO;
 import io.github.oldmerman.model.vo.UserInfoVO;
 import io.github.oldmerman.web.service.UserService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("usr")
@@ -25,4 +24,10 @@ public class UserController {
         return Result.success(userService.getUsrInfo(userId));
     }
 
+    @PostMapping("manage")
+    public Result<Void> updateUsrInfo(@RequestBody UserManageDTO dto){
+        log.info("更新用户数据：{}",dto.getId());
+        userService.updateUsrInfo(dto);
+        return Result.success();
+    }
 }

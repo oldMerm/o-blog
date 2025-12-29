@@ -46,7 +46,7 @@ public class LoginController {
     }
 
     @GetMapping("refresh")
-    public Result<LoginVO> refreshToken(@RequestHeader("Authorization") String sign){
+    public Result<LoginVO> refreshToken(@RequestHeader("X-Refresh-1223") String sign){
         log.info("刷新Token,{}",sign);
         return Result.success(loginService.refreshToken(sign));
     }

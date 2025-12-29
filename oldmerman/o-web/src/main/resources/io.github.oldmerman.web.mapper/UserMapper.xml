@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.github.oldmerman.web.mapper.UserMapper">
+
+    <update id="updateUserInfo" parameterType="io.github.oldmerman.model.dto.UserManageDTO">
+        UPDATE o_blog.o_user
+        <set>
+            <if test="username != null and username != '' ">username = #{username},</if>
+            <if test="password != null and password != '' ">passwrod = #{password},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>
+

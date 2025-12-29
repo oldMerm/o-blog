@@ -1,16 +1,16 @@
 package io.github.oldmerman.web.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.github.oldmerman.model.po.UserPO;
+import io.github.oldmerman.model.po.User;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
-public interface LoginMapper extends BaseMapper<UserPO> {
+public interface LoginMapper extends BaseMapper<User> {
 
     @Insert("INSERT INTO o_blog.o_user (id, username, email, password)" +
             "VALUES(#{id}, #{username},#{email},#{password})")
-    void createUser(UserPO po);
+    void createUser(User po);
 
     @Select("SELECT id FROM o_blog.o_user WHERE email = #{email} AND password = #{password} AND is_delete = 1")
     Long verifyUserInfoByEmail(String username, String email);

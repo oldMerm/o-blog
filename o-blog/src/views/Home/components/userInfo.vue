@@ -26,11 +26,10 @@ const url = ref("https://picsum.photos/200");
 const renderUsrInfo = async() => {
     try {
         const res = await httpInstance.get<any, Response>('/usr/info');
-        console.log(res);
         if(res.code !== 200){
-            alert(res.message);
             return;
         }
+        console.log(res);
         const data:UserInfo = res.data;
         username.value = data.username;
         article.value = data.article;
@@ -40,10 +39,35 @@ const renderUsrInfo = async() => {
         }
         showbox.value = !showbox.value;
     } catch (error) {
-        
+        const data = await httpInstance.get<any, Response>('/auth/refresh');
+        if(data.code !== 200){
+            return;
+        }
+        const {token, refreshToken, timeout} = <any>data.data;
+        localStorage.setItem('token', token);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('timeout', timeout);     
+        location.reload();   
     }    
 }
 
+// 打开图片管理器
+const fileRef:any = ref(null);
+function openFile(){
+    if(fileRef.value != null){
+        fileRef.value.click();
+    }
+}
+
+// 上传图片
+function handleSelect(e:any) {
+    const file = e.target.files[0];
+    if(!file) return;
+    url.value = URL.createObjectURL(file);
+    const formdata = new FormData();
+    formdata.append("img", file);
+    httpInstance.put<any, Response>('/oss/upload', formdata);
+}
 
 const loginPage = ref(() => {
     router.push({name: 'login'})
@@ -65,8 +89,9 @@ const loginPage = ref(() => {
             <!-- 左边区域：占总宽度的 3/4 -->
             <div class="left-section">
                 <!-- 圆形头像 -->
-                <div class="avatar-wrapper">
-                    <img :src="url" alt="Avatar" class="avatar" />
+                <div class="avatar-wrapper" @click="openFile" title="点击修改头像">
+                    <img :src="url" alt="Avatar" class="avatar"/>
+                    <input ref="fileRef" type="file" style="display: none;" @change="handleSelect">
                 </div>
                 
                 <!-- 右边展示数据：用户名、文章数、点赞数 -->
@@ -160,6 +185,7 @@ const loginPage = ref(() => {
     height: 60px;
     margin-right: 15px;
     flex-shrink: 0; /* 防止被挤压 */
+    cursor: pointer;
 }
 
 .avatar {

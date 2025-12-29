@@ -15,7 +15,7 @@ import io.github.oldmerman.common.util.JwtUtil;
 import io.github.oldmerman.common.util.RegexUtils;
 import io.github.oldmerman.model.dto.LoginDTO;
 import io.github.oldmerman.model.dto.UserCreatedDTO;
-import io.github.oldmerman.model.po.UserPO;
+import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.model.vo.CaptchaVO;
 import io.github.oldmerman.model.vo.LoginVO;
 import io.github.oldmerman.web.converter.LoginConverter;
@@ -115,7 +115,7 @@ public class LoginServiceImpl implements LoginService {
         if(!code.equals(dto.getCode())){
             throw new BusinessException(BusErrorCode.ERROR_EMAIL_CODE);
         }
-        UserPO po = converter.createToUserPO(dto);
+        User po = converter.createToUserPO(dto);
         po.setId(IdGenerator.nextId());
         po.setUsername(randomUsername());
         try {

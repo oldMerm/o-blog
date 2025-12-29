@@ -6,14 +6,13 @@ import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.enums.WebEnum;
 import io.github.oldmerman.common.exception.BusinessException;
-import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.OssService;
-import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,11 +39,11 @@ public class OssServiceImpl implements OssService {
 
     /**
      * 后端转存用户头像，限定格式
-     *
      * @param userId 用户id
      * @param file   文件
      * @return 唯一key
      */
+    @Transactional
     public String uploadUsrImage(Long userId, MultipartFile file) {
         // 校验文件扩展名
         String originalFilename = Optional.of(file.getOriginalFilename())

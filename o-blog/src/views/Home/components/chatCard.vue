@@ -14,8 +14,8 @@
     width: 100%;
     margin-top: 10px;
     text-align: center;
-    height: 12rem;
-    line-height: 12rem;
+    height: 20rem;
+    line-height: 20rem;
     border: 1px solid #dadee5;
     border-radius: 12px;
     padding-left: 10px;

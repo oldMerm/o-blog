@@ -7,25 +7,29 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("o_user")
-public class UserPO {
+@TableName("o_article")
+public class Article {
 
     @TableId
     private Long id;
 
-    private String username;
+    private Long writerId;
 
-    private String email;
+    private String key;
 
-    private String password;
+    private String articleName;
 
-    private int article;
+    private String articleWriter;
 
-    private int like;
+    private String articleDecr;
+
+    private Byte articleType;
+
+    private Byte articleStatus;
+
+    private Integer like;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
-
-    private byte isDelete;
 }

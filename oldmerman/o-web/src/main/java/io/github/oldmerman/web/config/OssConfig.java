@@ -2,7 +2,6 @@ package io.github.oldmerman.web.config;
 
 import com.aliyun.oss.ClientBuilderConfiguration;
 import com.aliyun.oss.OSS;
-import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.common.auth.CredentialsProviderFactory;
 import com.aliyun.oss.common.auth.EnvironmentVariableCredentialsProvider;
@@ -14,12 +13,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OssConfig {
-
-    @Value("${alias.oss.access-key}")
-    private String accessKey;
-
-    @Value("${alias.oss.secret-key}")
-    private String secretKey;
 
     @Value("${alias.oss.endpoint}")
     private String endpoint;
