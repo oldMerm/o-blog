@@ -17,11 +17,12 @@ interface UserInfo{
     username: string;
     article: number;
     like: number;
-    attr: string;
+    attrURL: string;
 }
 const username = ref();
 const article = ref();
-const like = ref()
+const like = ref();
+const url = ref("https://picsum.photos/200");
 const renderUsrInfo = async() => {
     try {
         const res = await httpInstance.get<any, Response>('/usr/info');
@@ -34,6 +35,9 @@ const renderUsrInfo = async() => {
         username.value = data.username;
         article.value = data.article;
         like.value = data.like;
+        if(data.attrURL !== null){
+            url.value = data.attrURL;
+        }
         showbox.value = !showbox.value;
     } catch (error) {
         
@@ -62,7 +66,7 @@ const loginPage = ref(() => {
             <div class="left-section">
                 <!-- 圆形头像 -->
                 <div class="avatar-wrapper">
-                    <img src="https://picsum.photos/200" alt="Avatar" class="avatar" />
+                    <img :src="url" alt="Avatar" class="avatar" />
                 </div>
                 
                 <!-- 右边展示数据：用户名、文章数、点赞数 -->

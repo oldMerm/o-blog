@@ -11,6 +11,6 @@ public class UserInfoVO {
 
     private int like;
 
-    private String attr;
+    private String attrURL;
 
 }

@@ -39,3 +39,9 @@ jwt:
   secret: oldmerman20051223secret111111111
   expiration: 2880
   refresh-expiration: 86400
+alias:
+  oss:
+    access-key: ${OSS_ACCESS_KEY_ID}
+    secret-key: ${OSS_ACCESS_KEY_SECRET}
+    endpoint: https://oss-cn-guangzhou.aliyuncs.com
+    region: ch-guangzhou

@@ -23,6 +23,8 @@ public class User {
 
     private Integer like;
 
+    private String attr;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
