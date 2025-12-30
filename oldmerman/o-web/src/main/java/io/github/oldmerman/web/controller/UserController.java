@@ -26,8 +26,17 @@ public class UserController {
 
     @PostMapping("manage")
     public Result<Void> updateUsrInfo(@RequestBody UserManageDTO dto){
+        dto.setId(UserContext.getUserId());
         log.info("更新用户数据：{}",dto.getId());
         userService.updateUsrInfo(dto);
+        return Result.success();
+    }
+
+    @DeleteMapping
+    public Result<Void> deleteUsr(){
+        Long userId = UserContext.getUserId();
+        log.info("用户账户注销:{}",userId);
+        userService.deleteUsr(userId);
         return Result.success();
     }
 }

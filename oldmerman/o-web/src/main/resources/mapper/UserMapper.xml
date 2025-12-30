@@ -7,10 +7,10 @@
     <update id="updateUserInfo" parameterType="io.github.oldmerman.model.dto.UserManageDTO">
         UPDATE o_blog.o_user
         <set>
-            <if test="username != null and username != '' ">username = #{username},</if>
-            <if test="password != null and password != '' ">passwrod = #{password},</if>
+            <if test="dto.username != null and dto.username != ''">username = #{dto.username},</if>
+            <if test="dto.password != null and dto.password != ''">password = #{dto.password},</if>
         </set>
-        WHERE id = #{id}
+        WHERE id = #{dto.id}
     </update>
 </mapper>
 

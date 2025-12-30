@@ -49,7 +49,7 @@ public class OssServiceImpl implements OssService {
         String originalFilename = Optional.of(file.getOriginalFilename())
                 .orElseThrow(() -> new BusinessException(BusErrorCode.FILE_EXT_FAILED));
 
-        // 获取扩展名（更健壮的方式）
+        // 获取扩展名
         String ext = StringUtils.getFilenameExtension(originalFilename);
 
         // 校验格式（忽略大小写）
@@ -88,7 +88,7 @@ public class OssServiceImpl implements OssService {
      */
     public String genPreviewUrl(String key) {
         Date expires = new Date(System.currentTimeMillis() + NumEnum.USER_ATTR_EXPIRE.getValue()*1000);
-        if(key == null){
+        if(!StringUtils.hasText(key)){
             return null;
         }
         URL url = ossClient.generatePresignedUrl(BUCKET, key, expires);

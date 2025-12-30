@@ -63,12 +63,9 @@ public class UserServiceImpl implements UserService {
         userMapper.updateUserInfo(dto);
     }
 
-
-
-
-
-
-
+    public void deleteUsr(Long userId) {
+        userMapper.logicDeleteUser(userId);
+    }
 
 
 }

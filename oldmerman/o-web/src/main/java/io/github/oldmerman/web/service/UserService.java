@@ -8,4 +8,7 @@ public interface UserService {
     UserInfoVO getUsrInfo(Long userId);
 
     void updateUsrInfo(UserManageDTO dto);
+
+    void deleteUsr(Long userId);
+
 }

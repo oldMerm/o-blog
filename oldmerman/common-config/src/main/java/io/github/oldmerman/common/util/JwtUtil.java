@@ -39,7 +39,7 @@ public class JwtUtil {
                 .claims(claims)
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration * 1000))
+                .expiration(new Date(System.currentTimeMillis() + expiration * 1000 * 60))
                 .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }
@@ -51,7 +51,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + refreshExpiration * 1000))
+                .expiration(new Date(System.currentTimeMillis() + refreshExpiration * 1000 * 60))
                 .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }

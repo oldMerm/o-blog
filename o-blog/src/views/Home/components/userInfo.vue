@@ -6,8 +6,6 @@ import { httpInstance, type Response } from '@/utils/http';
 const time = new Date();
 const day = `${time.getFullYear()}年${time.getMonth() + 1}月${time.getDate()}日`;
 
-const token = localStorage.getItem('token')
-
 const showbox = ref(false)
 
 onMounted(() => {
@@ -29,7 +27,6 @@ const renderUsrInfo = async() => {
         if(res.code !== 200){
             return;
         }
-        console.log(res);
         const data:UserInfo = res.data;
         username.value = data.username;
         article.value = data.article;
@@ -72,6 +69,10 @@ function handleSelect(e:any) {
 const loginPage = ref(() => {
     router.push({name: 'login'})
 })
+
+const goToManagePage = () => {
+    router.push({name: 'manage'})
+}
 </script>
 
 <template>
@@ -107,9 +108,9 @@ const loginPage = ref(() => {
             <!-- 右边区域：占总宽度的 1/4 -->
             <div class="right-section">
                 <!-- 三个功能响应块 -->
-                <div class="action-btn">用户设置</div>
-                <div class="action-btn">内容创作</div>
-                <div class="action-btn">网站反馈</div>
+                <div class="action-btn" @click="goToManagePage">用户设置</div>
+                <div class="action-btn" @click="goToManagePage">内容创作</div>
+                <div class="action-btn" @click="goToManagePage">网站反馈</div>
             </div>
         </div>
         <div class="content-body not" v-show="!showbox">
