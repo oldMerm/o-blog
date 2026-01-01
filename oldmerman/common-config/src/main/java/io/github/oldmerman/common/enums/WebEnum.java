@@ -15,7 +15,9 @@ public enum WebEnum implements EnumVal{
     BASE64_IMAGE_PREFIX("data:image/png;base64,"),
     AUTH_PREFIX("Bearer "),
 
-    USER_PREFIX("usr")
+    USER_PREFIX("usr"),
+    OTHER_IMG_PREFIX("img_other"),
+    MD_PREFIX("md"),
     ;
 
     private final String value;

@@ -18,10 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +32,8 @@ public class OssServiceImpl implements OssService {
     private static final String BUCKET = "project-oldmerman";
 
     // 定义允许的格式常量，方便维护
-    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png");
+    private static final List<String> IMG_ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png");
+    private static final List<String> MD_ALLOWED_EXTENSIONS = List.of("md");
 
     /**
      * 后端转存用户头像，限定格式
@@ -46,16 +44,7 @@ public class OssServiceImpl implements OssService {
     @Transactional
     public String uploadUsrImage(Long userId, MultipartFile file) {
         // 校验文件扩展名
-        String originalFilename = Optional.of(file.getOriginalFilename())
-                .orElseThrow(() -> new BusinessException(BusErrorCode.FILE_EXT_FAILED));
-
-        // 获取扩展名
-        String ext = StringUtils.getFilenameExtension(originalFilename);
-
-        // 校验格式（忽略大小写）
-        if (ext == null || !ALLOWED_EXTENSIONS.contains(ext.toLowerCase())) {
-            throw new BusinessException(BusErrorCode.FILE_EXT_FAILED);
-        }
+        String ext = getAllowExt(file, IMG_ALLOWED_EXTENSIONS);
 
         // 准备新文件Key和旧文件Key
         String newFileKey = genFileName(userId, ext, WebEnum.USER_PREFIX.getValue());
@@ -96,6 +85,62 @@ public class OssServiceImpl implements OssService {
     }
 
     /**
+     * 通用方法，批量上传图片
+     * @param files 图片集合
+     * @return 图片key集合
+     */
+    public List<String> uploadBatch(Long id, List<MultipartFile> files) {
+        List<String> batchList = new ArrayList<>();
+        try {
+            for (MultipartFile file : files) {
+                // 校验文件扩展名
+                String ext = getAllowExt(file, IMG_ALLOWED_EXTENSIONS);
+
+                String key = genFileName(id, ext, WebEnum.OTHER_IMG_PREFIX.getValue());
+                batchList.add(key);
+
+                ossClient.putObject(BUCKET, key, file.getInputStream());
+            }
+        } catch (IOException | com.aliyun.oss.OSSException e) {
+            // 上传或流读取失败，记录日志
+            log.error("图片上传失败: {}", e.getMessage(), e);
+            throw new BusinessException(BusErrorCode.UPLOAD_FAILED);
+        }
+        return batchList;
+    }
+
+    /**
+     * 上传md文档
+     * @return 唯一key
+     */
+    public String uploadMd(Long id, MultipartFile file){
+        String ext = getAllowExt(file, MD_ALLOWED_EXTENSIONS);
+        String key = genFileName(id, ext, WebEnum.MD_PREFIX.getValue());
+        try {
+            ossClient.putObject(BUCKET, key, file.getInputStream());
+        } catch (IOException | com.aliyun.oss.OSSException e) {
+            // 上传或流读取失败，记录日志
+            log.error("{},md文件上传失败: {}", id, e.getMessage(), e);
+            throw new BusinessException(BusErrorCode.UPLOAD_FAILED);
+        }
+        return key;
+    }
+
+    private String getAllowExt(MultipartFile file, List<String> flag) {
+        String originalFilename = Optional.of(file.getOriginalFilename())
+                .orElseThrow(() -> new BusinessException(BusErrorCode.FILE_EXT_FAILED));
+
+        // 获取扩展名
+        String ext = StringUtils.getFilenameExtension(originalFilename);
+
+        // 校验格式（忽略大小写）
+        if (ext == null || !flag.contains(ext.toLowerCase())) {
+            throw new BusinessException(BusErrorCode.FILE_EXT_FAILED);
+        }
+        return ext;
+    }
+
+    /**
      * 辅助方法：静默删除旧图片
      * 删除旧图属于清理操作，不应因为网络抖动导致用户修改头像失败
      */
@@ -111,6 +156,6 @@ public class OssServiceImpl implements OssService {
 
     // genFileName 方法保持不变，或者根据需要优化
     private String genFileName(Long userId, String ext, String folder){
-        return folder + "/" + userId + "-" + DateUtil.format(new Date(), "yyyyMM") + "." + ext;
+        return folder + "/" + userId + "_" + DateUtil.format(new Date(), "yyyyMM") + "." + ext;
     }
 }

@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("oss")
 @Slf4j
@@ -21,5 +23,13 @@ public class OssController {
         Long userId = UserContext.getUserId();
         log.info("上传图片，{}",userId);
         return Result.success(ossService.uploadUsrImage(userId, file));
+    }
+
+    @PutMapping("img/uploadBatch")
+    public Result<List<String>> uploadBatch(@RequestParam("id") Long id,
+                                            @RequestParam("img") List<MultipartFile> files){
+        Long userId = UserContext.getUserId();
+        log.info("用户：{}，批量上传图片(其它)",userId);
+        return Result.success(ossService.uploadBatch(id, files));
     }
 }
