@@ -38,7 +38,7 @@ public class OssServiceImpl implements OssService {
     /**
      * 后端转存用户头像，限定格式
      * @param userId 用户id
-     * @param file   文件
+     * @param file 文件
      * @return 唯一key
      */
     @Transactional
@@ -126,13 +126,17 @@ public class OssServiceImpl implements OssService {
         return key;
     }
 
+    /**
+     * 安全获取对应文件拓展名
+     * @param file 文件
+     * @param flag 文件集合
+     * @return ext 文件拓展名
+     */
     private String getAllowExt(MultipartFile file, List<String> flag) {
         String originalFilename = Optional.of(file.getOriginalFilename())
                 .orElseThrow(() -> new BusinessException(BusErrorCode.FILE_EXT_FAILED));
-
         // 获取扩展名
         String ext = StringUtils.getFilenameExtension(originalFilename);
-
         // 校验格式（忽略大小写）
         if (ext == null || !flag.contains(ext.toLowerCase())) {
             throw new BusinessException(BusErrorCode.FILE_EXT_FAILED);

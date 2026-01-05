@@ -5,13 +5,18 @@ import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.common.util.HmacSHA256Util;
+import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.model.dto.UserManageDTO;
+import io.github.oldmerman.model.po.FeedBack;
 import io.github.oldmerman.model.po.User;
+import io.github.oldmerman.model.vo.FeedbackVO;
 import io.github.oldmerman.model.vo.UserInfoVO;
 import io.github.oldmerman.web.converter.UserConverter;
+import io.github.oldmerman.web.mapper.FeedbackMapper;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.OssService;
 import io.github.oldmerman.web.service.UserService;
+import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +29,8 @@ public class UserServiceImpl implements UserService {
     private final OssService ossService;
 
     private final UserMapper userMapper;
+
+    private final FeedbackMapper feedbackMapper;
 
     private final UserConverter converter;
 
@@ -63,8 +70,36 @@ public class UserServiceImpl implements UserService {
         userMapper.updateUserInfo(dto);
     }
 
+    /**
+     * 注销用户接口
+     * @param userId 注销用户的id
+     */
     public void deleteUsr(Long userId) {
         userMapper.logicDeleteUser(userId);
+    }
+
+    /**
+     * 创建反馈信息
+     * @param feedback 反馈信息
+     */
+    public void createFeedback(String feedback, Byte feedbackType, Long userId) {
+        if(feedback.length() > 100){
+            throw new BusinessException(BusErrorCode.LENGTH_EXCEEDS_LIMIT);
+        }
+        feedbackMapper.insert(FeedBack.builder()
+                .feedbackType(feedbackType)
+                .feedback(feedback)
+                .userId(userId)
+                .id(IdGenerator.nextId())
+                .build());
+    }
+
+    /**
+     * 获取反馈信息
+     * @return 封装feedback
+     */
+    public FeedbackVO getFeedback() {
+        return feedbackMapper.selectByUserId(UserContext.getUserId());
     }
 
 

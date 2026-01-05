@@ -2,6 +2,7 @@ package io.github.oldmerman.web.controller;
 
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.UserManageDTO;
+import io.github.oldmerman.model.vo.FeedbackVO;
 import io.github.oldmerman.model.vo.UserInfoVO;
 import io.github.oldmerman.web.service.UserService;
 import io.github.oldmerman.web.util.UserContext;
@@ -38,5 +39,20 @@ public class UserController {
         log.info("用户账户注销:{}",userId);
         userService.deleteUsr(userId);
         return Result.success();
+    }
+
+    @PostMapping("feedback")
+    public Result<Void> createFeedback(@RequestParam String feedback,
+                                       @RequestParam Byte feedbackType){
+        Long userId = UserContext.getUserId();
+        log.info("用户:{},反馈", userId);
+        userService.createFeedback(feedback, feedbackType, userId);
+        return Result.success();
+    }
+
+    @GetMapping("feedback")
+    public Result<FeedbackVO> getFeedback(){
+        log.info("用户获取回馈信息");
+        return Result.success(userService.getFeedback());
     }
 }

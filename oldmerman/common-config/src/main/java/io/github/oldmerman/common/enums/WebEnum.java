@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor
-public enum WebEnum implements EnumVal{
+public enum WebEnum implements EnumVal<String>{
 
     AUTHORIZATION("Authorization"),
     BASE64_IMAGE_PREFIX("data:image/png;base64,"),
