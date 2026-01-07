@@ -138,7 +138,7 @@ input:focus {
 
 .save-btn {
   width: 80%;
-  background-color: #0a9ee7;
+  background-color: #49b4ea;
   color: white;
   border: none;
   padding: 10px;
@@ -150,7 +150,7 @@ input:focus {
 }
 
 .save-btn:hover {
-  background-color: #0277bd;
+  background-color: #2f86b8;
 }
 
 .future-module {

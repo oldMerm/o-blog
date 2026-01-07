@@ -20,6 +20,40 @@ const articleList = ref<Article[]>([
   { id: 9, title: '微前端架构落地实战', date: '2023-11-01' },
   { id: 10, title: 'Serverless 架构在前端的应用', date: '2023-11-05' },
 ]);
+
+interface FeedbackType {
+  id: number;
+  content: string;
+}
+
+const feedbackTypeList = ref<FeedbackType[]>([
+  {id: 1, content: "文章内容劣质"},
+  {id: 2, content: "文章内容有误"},
+  {id: 3, content: "网页体验"},
+  {id: 4, content: "侵权投诉"},
+  {id: 5, content: "和作者吹水"},
+]);
+
+// 核心数组
+const selectedIds = ref<number[]>([])
+
+// 判断是否选中
+const isSelected = (id: number) => selectedIds.value.includes(id);
+
+// 点一次加，再点一次删
+function toggle(id: number) {
+  const idx = selectedIds.value.indexOf(id);
+  if (idx === -1) {
+    selectedIds.value.push(id);
+  } else {
+    selectedIds.value.splice(idx, 1);
+  }
+}
+
+// 为反馈类型项添加点击处理
+const handleFeedbackTypeClick = (id: number) => {
+  toggle(id);
+};
 </script>
 
 <template>
@@ -36,18 +70,6 @@ const articleList = ref<Article[]>([
     </div>
   </div>
 
-  <!-- 区块4：信息反馈 -->
-  <!-- <div class="main-block feedback-container">
-    <div class="add-content">
-      <h3>添加文章</h3>
-      <div class="add">
-        <img src="../../../static/add.svg" alt="">
-      </div>
-    </div>
-    <div class="feedback-content">
-      <h3>信息反馈</h3>
-    </div>
-  </div> -->
   <div class="add-feedback-block">
     <div class="main-block" style="margin-right: 30px;">
       <div class="add-content">
@@ -64,11 +86,27 @@ const articleList = ref<Article[]>([
     </div>
     <div class="main-block">
       <div class="feedback-content">
-        <h3>信息反馈</h3>
+        <h3 style="display: block; width: 100%;">信息反馈</h3>
+        <div class="feedback-type">
+          反馈类型
+          <div class="feedback-type-choice">
+            <div 
+              v-for="item in feedbackTypeList" 
+              :key="item.id" 
+              class="type-block" 
+              :class="{ 'type-active': isSelected(item.id) }"
+              @click="handleFeedbackTypeClick(item.id)"
+            >
+              {{ item.content }}
+            </div>
+          </div>
+        </div>
+        <div class="feedback-main">
+          反馈内容
+        </div>
       </div>
     </div>
   </div>
-
 </template>
 
 <style scoped>
@@ -156,6 +194,8 @@ h3 {
   color: #546e7a;
   line-height: 1.6;
   width: 33rem;
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .add {
@@ -175,5 +215,31 @@ h3 {
 
 .add-feedback-block {
   display: flex;
+}
+
+.feedback-type {
+  width: 40%;
+  height: 100%;
+}
+
+.feedback-type-choice {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.type-block {
+  height: 2rem;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background-color: rgb(237, 237, 237);
+  margin-right: 8px;
+  margin-top: 4px;
+  font-size: smaller;
+  color: #000;
+  cursor: pointer;
+}
+
+.type-active {
+  background-color: #4da5fd;
 }
 </style>
