@@ -78,29 +78,7 @@ public class UserServiceImpl implements UserService {
         userMapper.logicDeleteUser(userId);
     }
 
-    /**
-     * 创建反馈信息
-     * @param feedback 反馈信息
-     */
-    public void createFeedback(String feedback, Byte feedbackType, Long userId) {
-        if(feedback.length() > 100){
-            throw new BusinessException(BusErrorCode.LENGTH_EXCEEDS_LIMIT);
-        }
-        feedbackMapper.insert(FeedBack.builder()
-                .feedbackType(feedbackType)
-                .feedback(feedback)
-                .userId(userId)
-                .id(IdGenerator.nextId())
-                .build());
-    }
 
-    /**
-     * 获取反馈信息
-     * @return 封装feedback
-     */
-    public FeedbackVO getFeedback() {
-        return feedbackMapper.selectByUserId(UserContext.getUserId());
-    }
 
 
 }

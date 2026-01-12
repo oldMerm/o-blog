@@ -12,8 +12,6 @@ public interface UserService {
 
     void deleteUsr(Long userId);
 
-    void createFeedback(String feedback, Byte feedbackType, Long userId);
 
-    FeedbackVO getFeedback();
 
 }

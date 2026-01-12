@@ -41,18 +41,5 @@ public class UserController {
         return Result.success();
     }
 
-    @PostMapping("feedback")
-    public Result<Void> createFeedback(@RequestParam String feedback,
-                                       @RequestParam Byte feedbackType){
-        Long userId = UserContext.getUserId();
-        log.info("用户:{},反馈", userId);
-        userService.createFeedback(feedback, feedbackType, userId);
-        return Result.success();
-    }
 
-    @GetMapping("feedback")
-    public Result<FeedbackVO> getFeedback(){
-        log.info("用户获取回馈信息");
-        return Result.success(userService.getFeedback());
-    }
 }

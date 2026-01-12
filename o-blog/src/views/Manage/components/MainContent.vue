@@ -1,24 +1,26 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { httpInstance, type Response } from '@/utils/http';
 
 interface Article {
   id: number;
   title: string;
+  status: number;
   date: string;
 }
 
 // 假数据：生成多一点以展示滚动条效果
 const articleList = ref<Article[]>([
-  { id: 1, title: 'Vue3 组合式 API 最佳实践指南', date: '2023-10-01' },
-  { id: 2, title: 'TypeScript 在前端项目中的深度应用', date: '2023-10-05' },
-  { id: 3, title: 'CSS Grid 与 Flexbox 布局对比', date: '2023-10-12' },
-  { id: 4, title: '前端性能优化：从入门到精通', date: '2023-10-15' },
-  { id: 5, title: 'Webpack 与 Vite 构建工具解析', date: '2023-10-20' },
-  { id: 6, title: 'React 与 Vue 的哲学差异', date: '2023-10-22' },
-  { id: 7, title: 'Node.js 中间件原理解析', date: '2023-10-25' },
-  { id: 8, title: 'WebAssembly 的未来展望', date: '2023-10-28' },
-  { id: 9, title: '微前端架构落地实战', date: '2023-11-01' },
-  { id: 10, title: 'Serverless 架构在前端的应用', date: '2023-11-05' },
+  { id: 1, title: 'Vue3 组合式 API 最佳实践指南', status: 1,date: '2023-10-01' },
+  { id: 2, title: 'TypeScript 在前端项目中的深度应用', status: 1,date: '2023-10-05' },
+  { id: 3, title: 'CSS Grid 与 Flexbox 布局对比', status: 1,date: '2023-10-12' },
+  { id: 4, title: '前端性能优化：从入门到精通', status: 1,date: '2023-10-15' },
+  { id: 5, title: 'Webpack 与 Vite 构建工具解析', status: 1,date: '2023-10-20' },
+  { id: 6, title: 'React 与 Vue 的哲学差异', status: 1,date: '2023-10-22' },
+  { id: 7, title: 'Node.js 中间件原理解析', status: 1,date: '2023-10-25' },
+  { id: 8, title: 'WebAssembly 的未来展望', status: 1,date: '2023-10-28' },
+  { id: 9, title: '微前端架构落地实战', status: 1,date: '2023-11-01' },
+  { id: 10, title: 'Serverless 架构在前端的应用', status: 1,date: '2023-11-05' },
 ]);
 
 interface FeedbackType {
@@ -54,6 +56,37 @@ function toggle(id: number) {
 const handleFeedbackTypeClick = (id: number) => {
   toggle(id);
 };
+
+const feedbackContent = ref();
+
+interface submitTable {
+  selectIds: string;
+  content: string;
+}
+const submitFeedback = async () => {
+  if(feedbackContent.value.length >= 255){
+    alert("反馈内容信息过长！");
+    return;
+  }
+
+  const req:submitTable = {
+    selectIds: selectedIds.value.join(','),
+    content: feedbackContent.value
+  }
+  try {
+    const res = await httpInstance.post<any, Response>('/feedback',req);
+    if(res.code === 200){
+      alert("感谢您的反馈，会尽快回复！");
+      selectedIds.value = [];
+      feedbackContent.value = '';
+    }else{
+      alert(res.message);
+      return;
+    }
+  } catch (error) {
+    alert(error);
+  }
+}
 </script>
 
 <template>
@@ -64,7 +97,7 @@ const handleFeedbackTypeClick = (id: number) => {
       <ul class="article-list">
         <li v-for="article in articleList" :key="article.id" class="article-item">
           <span class="article-title">{{ article.title }}</span>
-          <span class="article-date">{{ article.date }}</span>
+          <span class="article-date">{{ (article.status==1?'审核中':'已发布')+'-'+article.date }}</span>
         </li>
       </ul>
     </div>
@@ -102,8 +135,13 @@ const handleFeedbackTypeClick = (id: number) => {
           </div>
         </div>
         <div class="feedback-main">
-          反馈内容
+          反馈内容<br>
+          <textarea placeholder="请输入您的反馈内容(限255字)..."
+          v-model="feedbackContent" class="feedback-textarea">
+
+          </textarea>
         </div>
+        <button class="submit" @click="submitFeedback">全部提交</button>
       </div>
     </div>
   </div>
@@ -241,5 +279,32 @@ h3 {
 
 .type-active {
   background-color: #4da5fd;
+}
+
+.feedback-textarea {
+  width: 15rem;
+  height: 7rem;
+  padding: 5px;
+  resize: none;
+  border: 2px solid black;
+  border-radius: 4px;
+}
+
+.submit {
+  padding: 5px 10px;
+  width: 5rem;
+  height: 2rem;
+  position: absolute;
+  bottom: 3.5%;
+  right: 1.5%;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  background-color: rgb(162, 224, 249);
+  border: none;
+  cursor: pointer;
+}
+
+.submit:hover {
+  background-color: #51a7fe;
 }
 </style>
