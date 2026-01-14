@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import renderMd from './components/renderMd.vue';
+import MarkdownViewer from './components/MarkdownViewer.vue';
 </script>
 
 <template>
-<renderMd/>
+<MarkdownViewer/>
 </template>
 
 <style scoped>

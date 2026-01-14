@@ -87,6 +87,19 @@ const submitFeedback = async () => {
     alert(error);
   }
 }
+
+const mdFile:any = ref(null);
+const selectMdAndImg = () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.md';
+  input.onchange = (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if(!file) return;
+    mdFile.value = file;    
+  }
+  input.click();
+}
 </script>
 
 <template>
@@ -107,7 +120,7 @@ const submitFeedback = async () => {
     <div class="main-block" style="margin-right: 30px;">
       <div class="add-content">
         <h3>添加文章</h3>
-        <div class="add">
+        <div class="add" @click="selectMdAndImg">
           <img src="../../../static/add.svg" alt="">
         </div>
       </div>
