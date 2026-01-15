@@ -89,6 +89,7 @@ const submitFeedback = async () => {
 }
 
 const mdFile:any = ref(null);
+const imgMap:any = ref({});
 const selectMdAndImg = () => {
   const input = document.createElement('input');
   input.type = 'file';
@@ -97,8 +98,37 @@ const selectMdAndImg = () => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if(!file) return;
     mdFile.value = file;    
+    const imgConfirm = confirm("文章内是否有图片(需要放到同一文件夹内)？");
+    if(imgConfirm){
+      // 这里存在图片，打开图片选择框
+      selectImgDir();
+    } else {
+      // 不存在图片，直接向后端传md文档
+    }
   }
   input.click();
+}
+
+/* ---------- ② 选图片文件夹 ---------- */
+const selectImgDir = () => {
+  const input = document.createElement('input')
+  input.type       = 'file'
+  input.webkitdirectory = true   // 关键：允许选文件夹
+  input.multiple   = true
+  input.onchange   = (e:Event) => handleDir((e.target as HTMLInputElement).files)
+  input.click()
+}
+
+/* 处理文件夹扫描 */
+const handleDir = (files:any) => {
+  imgMap.value = {};               // 先清空
+  for (const f of files) {
+    const relPath = f.webkitRelativePath; // "dir/sub/a.png"
+    if (/\.(png|jpe?g|gif|svg|webp)$/i.test(f.name)) {
+      imgMap.value[relPath] = f;
+    }
+  }
+  console.log('imgMap 建立完成：', imgMap.value);
 }
 </script>
 
