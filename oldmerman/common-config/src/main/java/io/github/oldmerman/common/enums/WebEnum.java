@@ -18,6 +18,7 @@ public enum WebEnum implements EnumVal<String>{
     USER_PREFIX("usr"),
     OTHER_IMG_PREFIX("img_other"),
     MD_PREFIX("md"),
+    MD_IMG_PREFIX("md_img"),
     ;
 
     private final String value;

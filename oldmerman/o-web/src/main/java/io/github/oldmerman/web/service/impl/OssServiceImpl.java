@@ -47,7 +47,7 @@ public class OssServiceImpl implements OssService {
         String ext = getAllowExt(file, IMG_ALLOWED_EXTENSIONS);
 
         // 准备新文件Key和旧文件Key
-        String newFileKey = genFileName(userId, ext, WebEnum.USER_PREFIX.getValue());
+        String newFileKey = genFileName(userId.toString(), ext, WebEnum.USER_PREFIX.getValue());
         String oldFileKey = Optional.ofNullable(userMapper.selectUserById(userId))
                 .map(User::getAttr)
                 .orElse(null);
@@ -89,17 +89,21 @@ public class OssServiceImpl implements OssService {
      * @param files 图片集合
      * @return 图片key集合
      */
-    public List<String> uploadBatch(Long id, List<MultipartFile> files) {
+    public List<String> uploadBatch(Long id, List<String> path,
+                                    List<MultipartFile> files,String bucket) {
         List<String> batchList = new ArrayList<>();
+        int size, i;
+        if((size = path.size()) != files.size()){
+            throw new BusinessException(BusErrorCode.FILE_LEN_FAILED);
+        }
         try {
-            for (MultipartFile file : files) {
+            for (i = 0; i < size; i++) {
+                MultipartFile file = files.get(i);
                 // 校验文件扩展名
                 String ext = getAllowExt(file, IMG_ALLOWED_EXTENSIONS);
-
-                String key = genFileName(id, ext, WebEnum.OTHER_IMG_PREFIX.getValue());
+                String key = genFileName(path.get(i), ext, WebEnum.MD_IMG_PREFIX.getValue());
                 batchList.add(key);
-
-                ossClient.putObject(BUCKET, key, file.getInputStream());
+                ossClient.putObject(bucket, key, file.getInputStream());
             }
         } catch (IOException | com.aliyun.oss.OSSException e) {
             // 上传或流读取失败，记录日志
@@ -115,7 +119,7 @@ public class OssServiceImpl implements OssService {
      */
     public String uploadMd(Long id, MultipartFile file){
         String ext = getAllowExt(file, MD_ALLOWED_EXTENSIONS);
-        String key = genFileName(id, ext, WebEnum.MD_PREFIX.getValue());
+        String key = genFileName(id.toString(), ext, WebEnum.MD_PREFIX.getValue());
         try {
             ossClient.putObject(BUCKET, key, file.getInputStream());
         } catch (IOException | com.aliyun.oss.OSSException e) {
@@ -159,7 +163,7 @@ public class OssServiceImpl implements OssService {
     }
 
     // genFileName 方法保持不变，或者根据需要优化
-    private String genFileName(Long userId, String ext, String folder){
+    private String genFileName(String userId, String ext, String folder){
         return folder + "/" + userId + "_" + DateUtil.format(new Date(), "yyyyMM") + "." + ext;
     }
 }

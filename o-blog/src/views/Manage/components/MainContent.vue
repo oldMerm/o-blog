@@ -90,6 +90,7 @@ const submitFeedback = async () => {
 
 const mdFile:any = ref(null);
 const imgMap:any = ref({});
+/* 选择文件主入口*/
 const selectMdAndImg = () => {
   const input = document.createElement('input');
   input.type = 'file';
@@ -102,21 +103,22 @@ const selectMdAndImg = () => {
     if(imgConfirm){
       // 这里存在图片，打开图片选择框
       selectImgDir();
-    } else {
-      // 不存在图片，直接向后端传md文档
     }
   }
   input.click();
-}
 
-/* ---------- ② 选图片文件夹 ---------- */
+}
+/* ---------- 选图片文件夹 ---------- */
 const selectImgDir = () => {
   const input = document.createElement('input')
-  input.type       = 'file'
-  input.webkitdirectory = true   // 关键：允许选文件夹
-  input.multiple   = true
-  input.onchange   = (e:Event) => handleDir((e.target as HTMLInputElement).files)
-  input.click()
+  input.type       = 'file';
+  input.webkitdirectory = true;   // 关键：允许选文件夹
+  input.multiple   = true;
+  input.onchange   = (e:Event) => {
+    handleDir((e.target as HTMLInputElement).files);
+    uploadImgsToOSS();
+  }
+  input.click();
 }
 
 /* 处理文件夹扫描 */
@@ -128,7 +130,52 @@ const handleDir = (files:any) => {
       imgMap.value[relPath] = f;
     }
   }
-  console.log('imgMap 建立完成：', imgMap.value);
+}
+
+/* 将文件传到后端 */
+// 批量读取md中的图片路径，到map中寻找
+const extractLocalImgs = async() => {
+  const mdText = await mdFile.value.text()
+  const reg = /!\[.*?\]\((.*?)\)/g;
+  const needUpload = [];
+  let m;
+  while ((m = reg.exec(mdText)) !== null) {
+    const raw:any = m[1];                      // "./pics/a.png" 或 "pics/a.png"
+    const key = Object.keys(imgMap.value).find(k => k.endsWith(raw.replace(/^\.?\//, '')));
+    if (key) needUpload.push({ path: raw, file: imgMap.value[key] });
+  }
+  return needUpload;
+}
+
+const uploadImgsToOSS = async () => {
+  const list = await extractLocalImgs();
+  if(!list.length) return [];
+
+  const fd = new FormData();
+  list.forEach((item, idx) => {
+    fd.append('paths', item.path);
+    fd.append('files', item.file);
+  });
+
+  try {
+    const res = await httpInstance.post<any, Response>('/article/upload',fd);
+    if(res.code === 200){
+      alert("图片上传成功！");
+    }else{
+      alert(res.message);
+      return;
+    }
+    console.log(res);
+  } catch (error) {
+    alert(error);
+  } finally {
+    imgMap.value = {};
+  }
+}
+
+/* 请求后端获取（该用户）md文件并渲染 */
+const getUserMdToRender = () => {
+  
 }
 </script>
 

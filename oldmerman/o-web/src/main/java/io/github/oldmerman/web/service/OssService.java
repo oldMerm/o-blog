@@ -10,6 +10,6 @@ public interface OssService {
 
     String genPreviewUrl(String key);
 
-    List<String> uploadBatch(Long id, List<MultipartFile> files);
+    List<String> uploadBatch(Long id, List<String> path, List<MultipartFile> files, String bucket);
 
 }

@@ -23,6 +23,7 @@ public enum BusErrorCode implements IResultCode {
     ENCRYPTION_FAILED(1089, "加密失败"),
     UPLOAD_FAILED(1090, "文件上传失败"),
     FILE_EXT_FAILED(1091, "文件格式错误"),
+    FILE_LEN_FAILED(1092, "文件上传出现意外错误"),
             ;
 
     private final Integer code;
