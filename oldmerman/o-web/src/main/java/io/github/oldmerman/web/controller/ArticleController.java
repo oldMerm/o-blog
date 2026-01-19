@@ -29,8 +29,16 @@ public class ArticleController {
 
     @PostMapping("upload")
     public Result<Void> upload(@RequestParam("md") MultipartFile file,
-                               @RequestBody ArticleCreateDTO dto){
+                               @RequestParam("articleName") String articleName,
+                               @RequestParam("articleDecr") String articleDecr,
+                               @RequestParam("articleType") Byte articleType,
+                               @RequestParam(value = "attrs", required = false) List<String> attrs){
         Long userId = UserContext.getUserId();
+        ArticleCreateDTO dto = new ArticleCreateDTO();
+        dto.setArticleName(articleName);
+        dto.setArticleType(articleType);
+        dto.setArticleDecr(articleDecr);
+        dto.setAttrs(attrs);
         log.info("用户:{},上传markdown文档",userId);
         articleService.upload(userId, file, dto);
         return Result.success();

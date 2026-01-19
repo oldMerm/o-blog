@@ -1,6 +1,7 @@
 package io.github.oldmerman.web.service.impl;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.RandomUtil;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.model.DeleteObjectsRequest;
 import com.aliyun.oss.model.DeleteObjectsResult;
@@ -117,7 +118,7 @@ public class OssServiceImpl implements OssService {
                 MultipartFile file = files.get(i);
                 // 校验文件扩展名
                 String ext = getAllowExt(file, IMG_ALLOWED_EXTENSIONS);
-                String key = genFileName(path.get(i), ext, WebEnum.MD_IMG_PREFIX.getValue());
+                String key = genFileName(RandomUtil.randomString(16), ext, WebEnum.MD_IMG_PREFIX.getValue());
                 if(key.contains("/./")){
                     key = Paths.get("", key.split("/")).normalize().toString().replace("\\","/");
                 }

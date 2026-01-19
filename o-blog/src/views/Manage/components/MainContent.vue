@@ -88,89 +88,241 @@ const submitFeedback = async () => {
   }
 }
 
-const mdFile:any = ref(null);
-const imgMap:any = ref({});
-/* 选择文件主入口*/
+// --- 状态定义 ---
+let mdFile: any = ref(null);
+let imgMap: any = ref({});
+let newMd: any = null; // 修复：这里存储的是替换后的 Markdown 字符串内容
+let imgList: any = [];
+
+// --- 辅助接口 ---
+interface ArticleCreateDTO {
+  articleName: string;
+  articleDecr: string;
+  articleType: number;
+  attrs: string[];
+}
+
+/**
+ * 1. 【入口】选择 MD 文件
+ */
 const selectMdAndImg = () => {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.md';
   input.onchange = (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0];
-    if(!file) return;
-    mdFile.value = file;    
+    if (!file) return;
+    
+    // 重置状态
+    mdFile.value = file;
+    newMd = null;
+    imgList = [];
+    imgMap.value = {};
+
     const imgConfirm = confirm("文章内是否有图片(需要放到同一文件夹内)？");
-    if(imgConfirm){
-      // 这里存在图片，打开图片选择框
+    if (imgConfirm) {
+      // 1.1 有图片，去选文件夹
       selectImgDir();
+    } else {
+      // 1.2 无图片，直接上传原始 MD
+      uploadMd();
     }
   }
   input.click();
-
 }
-/* ---------- 选图片文件夹 ---------- */
+
+/**
+ * 2. 选择图片文件夹
+ */
 const selectImgDir = () => {
-  const input = document.createElement('input')
-  input.type       = 'file';
-  input.webkitdirectory = true;   // 关键：允许选文件夹
-  input.multiple   = true;
-  input.onchange   = (e:Event) => {
-    handleDir((e.target as HTMLInputElement).files);
-    uploadImgsToOSS();
+  const input = document.createElement('input');
+  input.type = 'file';
+  // @ts-ignore: webkitdirectory 是非标准属性，TS 需要忽略检查
+  input.webkitdirectory = true; 
+  input.multiple = true;
+  
+  input.onchange = async (e: Event) => {
+    const files = (e.target as HTMLInputElement).files;
+    if (!files) return;
+
+    handleDir(files);
+    
+    // 等待图片上传并替换链接完成
+    const replacedText = await uploadImgsToOSS();
+    
+    if (replacedText) {
+      newMd = replacedText; // 将处理好的文本赋值给 newMd
+      // 图片处理完毕，执行最终上传
+      await uploadMd();
+    }
+    
+    // 清理 input
+    input.remove();
   }
   input.click();
 }
 
-/* 处理文件夹扫描 */
-const handleDir = (files:any) => {
-  imgMap.value = {};               // 先清空
-  for (const f of files) {
-    const relPath = f.webkitRelativePath; // "dir/sub/a.png"
-    if (/\.(png|jpe?g|gif|svg|webp)$/i.test(f.name)) {
+/**
+ * 3. 扫描文件夹到 Map 中
+ */
+const handleDir = (files: FileList) => {
+  imgMap.value = {}; 
+  for (let i = 0; i < files.length; i++) {
+    const f:any = files[i];
+    // webkitRelativePath 包含文件夹路径，如 "imgs/demo.png"
+    const relPath = f.webkitRelativePath; 
+    if (/\.(png|jpe?g|gif|webp)$/i.test(f.name)) {
       imgMap.value[relPath] = f;
     }
   }
 }
 
-/* 将文件传到后端 */
+/**
+ * 4. 上传图片到 OSS 并替换 Markdown 内容
+ */
 const uploadImgsToOSS = async () => {
+  // 4.1 提取需要上传的图片
   const list = await extractLocalImgs();
-  if(!list.length) return [];
+  
+  // 如果没有匹配到图片，直接返回 null 或 原始内容
+  if (!list.length) {
+    alert("未在文件夹中匹配到 MD 文档引用的图片，将直接上传。");
+    return await mdFile.value.text();
+  };
 
   const fd = new FormData();
-  list.forEach((item, idx) => {
-    fd.append('paths', item.path);
+  list.forEach((item: any) => {
+    // 注意：这里后端可能需要 path 来区分，或者只需要 file
+    fd.append('paths', item.path); 
     fd.append('files', item.file);
   });
 
   try {
-    const res = await httpInstance.post<any, Response>('/article/upload/img',fd);
-    if(res.code === 200){
-      alert("图片上传成功！");
-    }else{
-      alert(res.message);
-      return;
+    const res = await httpInstance.post<any, any>('/article/upload/img', fd);
+    
+    if (res.code === 200) {
+      // alert("图片上传成功！(后台处理中...)");
+      imgList = res.data; // 假设返回的是新的图片 URL 数组
+      
+      // 4.2 获取 MD 文本内容 (必须 await)
+      const rawText = await mdFile.value.text();
+      
+      // 4.3 替换链接
+      return replaceMdImgUrlsByIndex(rawText, res.data);
+    } else {
+      alert(res.message || "图片上传失败");
+      return null;
     }
-    console.log(res);
   } catch (error) {
-    alert(error);
-  } finally {
-    imgMap.value = {};
+    console.error(error);
+    alert("图片上传异常");
+    return null;
   }
 }
 
-// 批量读取md中的图片路径，到map中寻找
-const extractLocalImgs = async() => {
-  const mdText = await mdFile.value.text()
+/**
+ * 5. 解析 MD 中的图片语法，并从 Map 中找到对应的 File
+ */
+const extractLocalImgs = async () => {
+  const mdText = await mdFile.value.text(); // 修复：必须 await text()
   const reg = /!\[.*?\]\((.*?)\)/g;
   const needUpload = [];
   let m;
+  
   while ((m = reg.exec(mdText)) !== null) {
-    const raw:any = m[1];                      // "./pics/a.png" 或 "pics/a.png"
-    const key = Object.keys(imgMap.value).find(k => k.endsWith(raw.replace(/^\.?\//, '')));
-    if (key) needUpload.push({ path: raw, file: imgMap.value[key] });
+    const rawUrl:string | undefined = m[1]; // 例如 "./pics/a.png"
+    
+    // 核心逻辑：尝试匹配文件名
+    // 去掉路径前的 ./ 或 /，只保留文件名或相对路径片段进行模糊匹配
+    if(!rawUrl) continue;
+    const cleanRawUrl = rawUrl.replace(/^\.?\//, ''); 
+    
+    const key = Object.keys(imgMap.value).find(k => k.endsWith(cleanRawUrl));
+    
+    if (key) {
+      needUpload.push({ path: rawUrl, file: imgMap.value[key] });
+    }
   }
   return needUpload;
+}
+
+/**
+ * 6. 字符串替换：旧链接 -> 新链接
+ */
+const replaceMdImgUrlsByIndex = (
+  mdText: string,
+  newUrls: string[]
+): string => {
+  let idx = 0;
+  return mdText.replace(/!\[.*?\]\((.*?)\)/g, (matched, oldUrl) => {
+    const cleanOldUrl = oldUrl.replace(/^\.?\//, '');
+    // 再次确认这个链接是否是我们上传列表里的
+    const key = Object.keys(imgMap.value).find(k => k.endsWith(cleanOldUrl));
+    
+    // 如果找不到 key，说明这张图没在本地文件夹里，不替换
+    // 如果 idx 越界，也不替换
+    if (!key || idx >= newUrls.length) return matched; 
+    
+    return matched.replace(oldUrl, newUrls[idx++] ?? '');
+  });
+};
+
+/**
+ * 7. 辅助：字符串转 File 对象
+ */
+const stringToFile = (text: string, fileName: string): File => {
+  return new File([text], fileName, { type: 'text/markdown' });
+};
+
+/**
+ * 8. 最终上传 Markdown 文件
+ */
+const uploadMd = async () => {  
+  const formData = new FormData();
+  
+  // 公共 DTO 参数
+  const dto: ArticleCreateDTO = {
+    articleName: mdFile.value.name, // 始终使用原始文件的文件名
+    articleDecr: "",
+    articleType: 3,
+    attrs: imgList || [] // 图片列表
+  };
+
+  // 分支逻辑
+  if (newMd === null) {
+    // A. 没处理过图片（或没图片），直接传原始文件对象
+    formData.append('md', mdFile.value);
+  } else {
+    // B. 处理过图片，newMd 是字符串，需要转回 File 对象
+    // 修复：newMd 是 string，没有 .name 属性，使用 mdFile.value.name
+    const finalFile = stringToFile(newMd, mdFile.value.name);
+    formData.append('md', finalFile);
+  }
+
+  // 追加其他参数
+  formData.append('articleName', dto.articleName);
+  formData.append('articleDecr', dto.articleDecr);
+  formData.append('articleType', dto.articleType.toString());
+  // 如果 attrs 是数组，需要遍历 append
+  if (dto.attrs && dto.attrs.length) {
+     dto.attrs.forEach(t => formData.append('attrs', t));
+  }
+
+  try {
+    const res = await httpInstance.post<any, any>('/article/upload', formData);
+    if (res.code === 200) {
+      alert("文章上传成功，请等待审核！");
+      // 清理
+      mdFile.value = null;
+      newMd = null;
+      imgMap.value = {};
+      imgList = [];
+    } else {
+      alert(res.message);
+    }
+  } catch (error) {
+    alert("文章上传失败: " + error);
+  }
 }
 
 /* 请求后端获取（该用户）md文件并渲染 */
@@ -313,9 +465,6 @@ h3 {
 .article-date {
   color: #90a4ae;
   font-size: 0.85rem;
-}
-
-.add-content {
 }
 
 .feedback-content {

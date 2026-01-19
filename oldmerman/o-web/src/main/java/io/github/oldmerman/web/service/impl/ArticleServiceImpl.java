@@ -63,9 +63,10 @@ public class ArticleServiceImpl implements ArticleService {
         Article po = converter.createToPO(dto);
         Long articleId = IdGenerator.nextId();
         po.setId(articleId);
-        po.setArticleStatus(Article.ArticleStatus.UNDER_REVIEW);
         po.setWriterId(userId);
+        po.setArticleStatus(Article.ArticleStatus.UNDER_REVIEW);
         po.setArticleWriter(userMapper.selectNameById(userId));
+        po.setArticleDecr("给文章一个描述...");
         po.setKey(mdKey);
         // 3.构建图片对象
         List<String> attrs = dto.getAttrs();
@@ -80,7 +81,7 @@ public class ArticleServiceImpl implements ArticleService {
                 })
                 .toList();
         // 4.插入数据库
-        articleMapper.insert(po);
+        articleMapper.insertPO(po);
         articleImageMapper.insert(images);
         // 5.事务回滚
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
