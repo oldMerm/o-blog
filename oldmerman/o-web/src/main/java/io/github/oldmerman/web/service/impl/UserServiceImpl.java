@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResultCode.USERNAME_OR_PASSWORD_ERROR);
         }
         UserInfoVO vo = converter.poToInfoVO(user);
-        vo.setAttrURL(ossService.genPreviewUrl(user.getAttr()));
+        vo.setAttrURL(ossService.genPreviewURL(user.getAttr()));
         return vo;
     }
 

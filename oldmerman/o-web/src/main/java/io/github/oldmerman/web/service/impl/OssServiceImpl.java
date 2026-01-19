@@ -2,6 +2,9 @@ package io.github.oldmerman.web.service.impl;
 
 import cn.hutool.core.date.DateUtil;
 import com.aliyun.oss.OSS;
+import com.aliyun.oss.model.DeleteObjectsRequest;
+import com.aliyun.oss.model.DeleteObjectsResult;
+import com.aliyun.oss.model.VoidResult;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.enums.WebEnum;
@@ -11,6 +14,7 @@ import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.OssService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -18,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.*;
 
 @Service
@@ -75,13 +80,26 @@ public class OssServiceImpl implements OssService {
      * 生成闲时预览的URL
      * @return url
      */
-    public String genPreviewUrl(String key) {
+    public String genPreviewURL(String key) {
         Date expires = new Date(System.currentTimeMillis() + NumEnum.USER_ATTR_EXPIRE.getValue()*1000);
         if(!StringUtils.hasText(key)){
             return null;
         }
         URL url = ossClient.generatePresignedUrl(BUCKET, key, expires);
         return url.toString();
+    }
+
+    /**
+     * 生成公共url，只生产一次
+     * @param keys 文件路径
+     * @param bucket 所属bucket
+     * @return 处理后可直接访问的URL
+     */
+    public List<String> genPublicURL(List<String> keys, String bucket){
+        if(keys.isEmpty()){
+            throw new BusinessException(BusErrorCode.UPLOAD_FAILED);
+        }
+        return keys.stream().map(key -> "https://" + bucket + ".oss-cn-guangzhou.aliyuncs.com/" + key).toList();
     }
 
     /**
@@ -102,6 +120,9 @@ public class OssServiceImpl implements OssService {
                 // 校验文件扩展名
                 String ext = getAllowExt(file, IMG_ALLOWED_EXTENSIONS);
                 String key = genFileName(path.get(i), ext, WebEnum.MD_IMG_PREFIX.getValue());
+                if(key.contains("/./")){
+                    key = Paths.get("", key.split("/")).normalize().toString().replace("\\","/");
+                }
                 batchList.add(key);
                 ossClient.putObject(bucket, key, file.getInputStream());
             }
@@ -128,6 +149,38 @@ public class OssServiceImpl implements OssService {
             throw new BusinessException(BusErrorCode.UPLOAD_FAILED);
         }
         return key;
+    }
+
+    /**
+     * @param key 需删除key
+     * @param bucket 所属bucket
+     */
+    public void deleteOne(String key, String bucket) {
+        bucket = bucket == null ? BUCKET : bucket;
+        try {
+            ossClient.deleteObject(bucket, key);
+        } catch (Exception e) {
+            log.warn("删除Key失败: {}, 原因: {}", key, e.getMessage());
+        }
+    }
+
+    /**
+     * 批量删除key
+     * @param keys key集合
+     * @param bucket 所属bucket
+     */
+    public void deleteBatch(List<String> keys, String bucket){
+        bucket = bucket == null ? BUCKET : bucket;
+        DeleteObjectsRequest request = new DeleteObjectsRequest(bucket);
+        request.setKeys(keys);
+        request.setQuiet(true);
+        DeleteObjectsResult result = ossClient.deleteObjects(request);
+        List<String> deletedObjects = result.getDeletedObjects();
+        if(!deletedObjects.isEmpty()){
+            for (String key : deletedObjects) {
+                log.warn("文件删除失败,key:{}",key);
+            }
+        }
     }
 
     /**
@@ -166,4 +219,6 @@ public class OssServiceImpl implements OssService {
     private String genFileName(String userId, String ext, String folder){
         return folder + "/" + userId + "_" + DateUtil.format(new Date(), "yyyyMM") + "." + ext;
     }
+
+
 }

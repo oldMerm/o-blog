@@ -22,4 +22,7 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Update("UPDATE o_blog.o_user SET is_delete = 2 WHERE id = #{userId}")
     void logicDeleteUser(Long userId);
+
+    @Select("SELECT username FROM o_blog.o_user WHERE id = #{userId}")
+    String selectNameById(Long userId);
 }

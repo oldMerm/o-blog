@@ -133,20 +133,6 @@ const handleDir = (files:any) => {
 }
 
 /* 将文件传到后端 */
-// 批量读取md中的图片路径，到map中寻找
-const extractLocalImgs = async() => {
-  const mdText = await mdFile.value.text()
-  const reg = /!\[.*?\]\((.*?)\)/g;
-  const needUpload = [];
-  let m;
-  while ((m = reg.exec(mdText)) !== null) {
-    const raw:any = m[1];                      // "./pics/a.png" 或 "pics/a.png"
-    const key = Object.keys(imgMap.value).find(k => k.endsWith(raw.replace(/^\.?\//, '')));
-    if (key) needUpload.push({ path: raw, file: imgMap.value[key] });
-  }
-  return needUpload;
-}
-
 const uploadImgsToOSS = async () => {
   const list = await extractLocalImgs();
   if(!list.length) return [];
@@ -158,7 +144,7 @@ const uploadImgsToOSS = async () => {
   });
 
   try {
-    const res = await httpInstance.post<any, Response>('/article/upload',fd);
+    const res = await httpInstance.post<any, Response>('/article/upload/img',fd);
     if(res.code === 200){
       alert("图片上传成功！");
     }else{
@@ -171,6 +157,20 @@ const uploadImgsToOSS = async () => {
   } finally {
     imgMap.value = {};
   }
+}
+
+// 批量读取md中的图片路径，到map中寻找
+const extractLocalImgs = async() => {
+  const mdText = await mdFile.value.text()
+  const reg = /!\[.*?\]\((.*?)\)/g;
+  const needUpload = [];
+  let m;
+  while ((m = reg.exec(mdText)) !== null) {
+    const raw:any = m[1];                      // "./pics/a.png" 或 "pics/a.png"
+    const key = Object.keys(imgMap.value).find(k => k.endsWith(raw.replace(/^\.?\//, '')));
+    if (key) needUpload.push({ path: raw, file: imgMap.value[key] });
+  }
+  return needUpload;
 }
 
 /* 请求后端获取（该用户）md文件并渲染 */
