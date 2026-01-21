@@ -1,33 +1,45 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
+import router from '@/router/index.ts';
 
 interface Article {
   id: number;
-  title: string;
-  status: number;
-  date: string;
+  articleName: string;
+  articleStatus: number;
+  createdAt: string;
 }
 
 // 假数据：生成多一点以展示滚动条效果
-const articleList = ref<Article[]>([
-  { id: 1, title: 'Vue3 组合式 API 最佳实践指南', status: 1,date: '2023-10-01' },
-  { id: 2, title: 'TypeScript 在前端项目中的深度应用', status: 1,date: '2023-10-05' },
-  { id: 3, title: 'CSS Grid 与 Flexbox 布局对比', status: 1,date: '2023-10-12' },
-  { id: 4, title: '前端性能优化：从入门到精通', status: 1,date: '2023-10-15' },
-  { id: 5, title: 'Webpack 与 Vite 构建工具解析', status: 1,date: '2023-10-20' },
-  { id: 6, title: 'React 与 Vue 的哲学差异', status: 1,date: '2023-10-22' },
-  { id: 7, title: 'Node.js 中间件原理解析', status: 1,date: '2023-10-25' },
-  { id: 8, title: 'WebAssembly 的未来展望', status: 1,date: '2023-10-28' },
-  { id: 9, title: '微前端架构落地实战', status: 1,date: '2023-11-01' },
-  { id: 10, title: 'Serverless 架构在前端的应用', status: 1,date: '2023-11-05' },
+const statusMap = new Map([
+  [1, "未审核"],
+  [2, "已过审"],
+  [3, "已发布"],
+  [4, "未过审"]
 ]);
+const articleList = ref<Article[]>([]);
+
+/* 请求后端获取（该用户）md文件并渲染 */
+const getUserMdToRender = async () => {
+  const res = await httpInstance.get<any, Response>('/article/info');
+  articleList.value = res.data;
+}
+getUserMdToRender();
+
+// 访问文章功能，根据文章id渲染并跳转
+const goToArticle = async (articleId:number) => {
+  router.push({
+    name: 'markdown',
+    params: {articleId}
+  })
+}
 
 interface FeedbackType {
   id: number;
   content: string;
 }
 
+// 反馈功能
 const feedbackTypeList = ref<FeedbackType[]>([
   {id: 1, content: "文章内容劣质"},
   {id: 2, content: "文章内容有误"},
@@ -279,10 +291,10 @@ const stringToFile = (text: string, fileName: string): File => {
  */
 const uploadMd = async () => {  
   const formData = new FormData();
-  
+
   // 公共 DTO 参数
   const dto: ArticleCreateDTO = {
-    articleName: mdFile.value.name, // 始终使用原始文件的文件名
+    articleName: mdFile.value.name.replace(/\.[^/.]+$/, ""), // 始终使用原始文件的文件名(去掉拓展名)
     articleDecr: "",
     articleType: 3,
     attrs: imgList || [] // 图片列表
@@ -325,10 +337,7 @@ const uploadMd = async () => {
   }
 }
 
-/* 请求后端获取（该用户）md文件并渲染 */
-const getUserMdToRender = () => {
-  
-}
+
 </script>
 
 <template>
@@ -337,9 +346,9 @@ const getUserMdToRender = () => {
     <h3>我的文章列表</h3>
     <div class="scroll-area">
       <ul class="article-list">
-        <li v-for="article in articleList" :key="article.id" class="article-item">
-          <span class="article-title">{{ article.title }}</span>
-          <span class="article-date">{{ (article.status==1?'审核中':'已发布')+'-'+article.date }}</span>
+        <li v-for="article in articleList" :key="article.id" class="article-item" @click="goToArticle(article.id)">
+          <span class="article-title">{{ article.articleName }}</span>
+          <span class="article-date">{{ statusMap.get(article.articleStatus)+'-'+article.createdAt }}</span>
         </li>
       </ul>
     </div>

@@ -2,6 +2,7 @@ package io.github.oldmerman.web.controller;
 
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
+import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,13 @@ import java.util.List;
 public class ArticleController {
 
     private final ArticleService articleService;
+
+    @GetMapping("info")
+    public Result<List<ArticleRenderVO>> info(){
+        log.info("用户查询个人文章信息");
+        return Result.success(articleService.info());
+    }
+
 
     @PostMapping("upload/img")
     public Result<List<String>> uploadImagesToOSS(@RequestParam("paths") List<String> paths,
@@ -43,4 +51,5 @@ public class ArticleController {
         articleService.upload(userId, file, dto);
         return Result.success();
     }
+
 }

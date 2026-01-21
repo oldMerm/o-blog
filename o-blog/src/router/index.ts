@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home/index.vue'
-import Article from '@/views/Article/index.vue'
+import Article from '@/views/Article/components/MarkdownViewer.vue'
 import Login from '@/views/Login/index.vue'
 import Manage from '@/views/Manage/index.vue'
 
@@ -13,7 +13,8 @@ const router = createRouter({
       component: Home
     },
     {
-      path: '/md',
+      name: 'markdown',
+      path: '/markdown',
       component: Article
     },
     {

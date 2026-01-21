@@ -6,12 +6,14 @@ import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.po.ArticleImage;
+import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.ArticleImageMapper;
 import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.service.OssService;
+import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -41,9 +44,27 @@ public class ArticleServiceImpl implements ArticleService {
     private static final String BUCKET = "project-oldmerman-artimg";
 
     /**
+     * 用户获取个人的文章基本信息
+     *
+     * @return 封装List
+     */
+    public List<ArticleRenderVO> info() {
+        Long userId = UserContext.getUserId();
+        List<Article> poList = articleMapper.selectByUserId(userId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        return poList.stream()
+                .map(item -> {
+                    ArticleRenderVO vo = converter.poToRenderVO(item);
+                    vo.setCreatedAt(item.getCreatedAt().format(formatter));
+                    return vo;
+                }).toList();
+    }
+
+    /**
      * 上传图片并返回替换URL
-     * @param userId 用户id
-     * @param paths 待替换路径
+     *
+     * @param userId  用户id
+     * @param paths   待替换路径
      * @param imgList 上传文件
      * @return 替换路径
      */
@@ -56,7 +77,7 @@ public class ArticleServiceImpl implements ArticleService {
     public void upload(Long userId, MultipartFile file, ArticleCreateDTO dto) {
         // 1.上传文件并获取key
         String mdKey = ossService.uploadMd(userId, file);
-        if(ObjectUtils.isEmpty(dto)){
+        if (ObjectUtils.isEmpty(dto)) {
             throw new BusinessException(BusErrorCode.FILE_DECR_UNEXIST);
         }
         // 2.构建文章对象
@@ -87,7 +108,7 @@ public class ArticleServiceImpl implements ArticleService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCompletion(int status) {
-                if(status == TransactionSynchronization.STATUS_ROLLED_BACK){
+                if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
                     log.warn("事务回滚后，删除所有存在key");
                     // 插入失败，到oss删除所有的key
                     ossService.deleteOne(mdKey, null);
@@ -96,4 +117,6 @@ public class ArticleServiceImpl implements ArticleService {
             }
         });
     }
+
+
 }

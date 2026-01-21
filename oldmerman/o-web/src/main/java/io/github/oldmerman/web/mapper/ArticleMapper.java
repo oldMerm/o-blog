@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.github.oldmerman.model.po.Article;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 public interface ArticleMapper extends BaseMapper<Article> {
 
@@ -12,4 +15,7 @@ public interface ArticleMapper extends BaseMapper<Article> {
             "VALUES (#{po.id}, #{po.writerId}, #{po.key}, #{po.articleName}, #{po.articleWriter}, " +
             "#{po.articleDecr}, #{po.articleType}, #{po.articleStatus})")
     void insertPO(@Param("po") Article po);
+
+    @Select("SELECT * FROM o_blog.o_article WHERE writer_id = #{userId}")
+    List<Article> selectByUserId(Long userId);
 }
