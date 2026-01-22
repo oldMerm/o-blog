@@ -25,6 +25,7 @@ public enum BusErrorCode implements IResultCode {
     FILE_EXT_FAILED(1091, "文件格式错误"),
     FILE_LEN_FAILED(1092, "文件上传出现意外错误"),
     FILE_DECR_UNEXIST(1093, "文件描述不详细"),
+    FILE_UNEXIST(1094, "文件不存在"),
     ;
 
     private final Integer code;

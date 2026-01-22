@@ -60,6 +60,8 @@ import container from 'markdown-it-container';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css'; // 浅色代码主题
 import router from '@/router/index.ts'
+import { useRoute } from 'vue-router'
+import { httpInstance, type Response } from '@/utils/http';
 
 // --- 类型定义 ---
 interface Heading {
@@ -94,8 +96,32 @@ const md = new MarkdownIt({
 .use(container, 'warning')
 .use(container, 'danger');
 
+const route = useRoute();
+
+onMounted(async () => {
+  const id = route.params.id;
+  if(id === null){
+    alert('未传入数据，文章为空，将渲染默认文本');
+    fetchDocument(1);
+  }else{
+    // 这里正常渲染，明天完成
+    try {
+      const res = await httpInstance.get<any, Response>('/article/private',{params: { articleId:id }});
+      if(res.code !== 200){
+        alert(`错误消息: ${res.message}, 将渲染默认文本`);
+      }
+      const text:string = await httpInstance.get(res.data);
+      renderedHtml.value = md.render(text);
+      extractHeadings(text);
+    } catch (error) {
+      alert(error);
+    }
+  }
+  
+})
+
 // --- 逻辑：获取数据并解析 ---
-const fetchDocument = async () => {
+const fetchDocument = async (id:number) => {
   // 模拟后端返回的数据
   const mockMd = `
 # 快速上手 Vue + TS
@@ -154,8 +180,6 @@ const scrollTo = (id: string) => {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: 'smooth' });
 };
-
-onMounted(fetchDocument);
 
 const goToHome = () => {
   router.push({name: 'home'});

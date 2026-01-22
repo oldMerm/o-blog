@@ -26,6 +26,11 @@ public class ArticleController {
         return Result.success(articleService.info());
     }
 
+    @GetMapping("private")
+    public Result<String> getPrivateArticleById(@RequestParam("articleId") String id){
+        log.info("查询文章:{}",id);
+        return Result.success(articleService.getPrivateArticleById(Long.parseLong(id)));
+    }
 
     @PostMapping("upload/img")
     public Result<List<String>> uploadImagesToOSS(@RequestParam("paths") List<String> paths,

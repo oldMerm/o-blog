@@ -79,12 +79,13 @@ public class OssServiceImpl implements OssService {
      * 生成闲时预览的URL
      * @return url
      */
-    public String genPreviewURL(String key) {
+    public String genPreviewURL(String key, String bucket) {
+        String newBucket = bucket == null ? BUCKET : bucket;
         Date expires = new Date(System.currentTimeMillis() + NumEnum.USER_ATTR_EXPIRE.getValue()*1000);
         if(!StringUtils.hasText(key)){
             return null;
         }
-        URL url = ossClient.generatePresignedUrl(BUCKET, key, expires);
+        URL url = ossClient.generatePresignedUrl(newBucket, key, expires);
         return url.toString();
     }
 
@@ -95,10 +96,11 @@ public class OssServiceImpl implements OssService {
      * @return 处理后可直接访问的URL
      */
     public List<String> genPublicURL(List<String> keys, String bucket){
+        String newBucket = bucket == null ? BUCKET : bucket;
         if(keys.isEmpty()){
             throw new BusinessException(BusErrorCode.UPLOAD_FAILED);
         }
-        return keys.stream().map(key -> "https://" + bucket + ".oss-cn-guangzhou.aliyuncs.com/" + key).toList();
+        return keys.stream().map(key -> "https://" + newBucket + ".oss-cn-guangzhou.aliyuncs.com/" + key).toList();
     }
 
     /**

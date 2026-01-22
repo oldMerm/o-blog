@@ -10,8 +10,9 @@ public interface ArticleService {
 
     List<String> uploadImagesToOSS(Long userId, List<String> paths, List<MultipartFile> imgList);
 
+    String getPrivateArticleById(Long id);
+
     void upload(Long userId, MultipartFile file, ArticleCreateDTO dto);
 
     List<ArticleRenderVO> info();
-
 }

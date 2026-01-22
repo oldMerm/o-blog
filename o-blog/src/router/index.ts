@@ -14,7 +14,7 @@ const router = createRouter({
     },
     {
       name: 'markdown',
-      path: '/markdown',
+      path: '/markdown/:id',
       component: Article
     },
     {

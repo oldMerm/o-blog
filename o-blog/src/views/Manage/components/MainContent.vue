@@ -4,7 +4,7 @@ import { httpInstance, type Response } from '@/utils/http';
 import router from '@/router/index.ts';
 
 interface Article {
-  id: number;
+  id: string;
   articleName: string;
   articleStatus: number;
   createdAt: string;
@@ -23,14 +23,16 @@ const articleList = ref<Article[]>([]);
 const getUserMdToRender = async () => {
   const res = await httpInstance.get<any, Response>('/article/info');
   articleList.value = res.data;
+  console.log(res.data);
+  
 }
 getUserMdToRender();
 
 // 访问文章功能，根据文章id渲染并跳转
-const goToArticle = async (articleId:number) => {
+const goToArticle = async (articleId:string) => {
   router.push({
     name: 'markdown',
-    params: {articleId}
+    params: { id:articleId }
   })
 }
 

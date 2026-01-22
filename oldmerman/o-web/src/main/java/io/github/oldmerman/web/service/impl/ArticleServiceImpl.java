@@ -4,6 +4,7 @@ import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
+import io.github.oldmerman.model.dto.ArticlePriDTO;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.po.ArticleImage;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
@@ -25,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -52,12 +54,29 @@ public class ArticleServiceImpl implements ArticleService {
         Long userId = UserContext.getUserId();
         List<Article> poList = articleMapper.selectByUserId(userId);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        log.info("查询文章:{}",poList.get(0));
         return poList.stream()
                 .map(item -> {
                     ArticleRenderVO vo = converter.poToRenderVO(item);
+                    vo.setId(item.getId().toString());
                     vo.setCreatedAt(item.getCreatedAt().format(formatter));
                     return vo;
                 }).toList();
+    }
+
+    /**
+     * 获取一篇文章，系私有，用于用户预览自己的文章
+     *
+     * @param id 文章id
+     * @return 可访问的临时url
+     */
+    public String getPrivateArticleById(Long id) {
+        ArticlePriDTO dto = articleMapper.getPrivateKeyById(id);
+        String key = dto.getKey();
+        if(key == null || !Objects.equals(UserContext.getUserId(), dto.getWriterId())){
+            throw new BusinessException(BusErrorCode.FILE_UNEXIST);
+        }
+        return ossService.genPreviewURL(key, null);
     }
 
     /**

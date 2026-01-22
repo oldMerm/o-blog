@@ -9,7 +9,7 @@ public interface OssService {
     String uploadUsrImage(Long userId, MultipartFile file);
 
     /* 领域服务 */
-    String genPreviewURL(String key);
+    String genPreviewURL(String key, String bucket);
 
     List<String> genPublicURL(List<String> keys, String bucket);
 

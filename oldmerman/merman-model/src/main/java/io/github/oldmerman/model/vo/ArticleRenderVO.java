@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class ArticleRenderVO {
 
-    private Long id;
+    private String id;
 
     private String articleName;
 
