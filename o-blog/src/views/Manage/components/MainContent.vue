@@ -2,13 +2,7 @@
 import { ref } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
 import router from '@/router/index.ts';
-
-interface Article {
-  id: string;
-  articleName: string;
-  articleStatus: number;
-  createdAt: string;
-}
+import type {Article} from '@/views/public/Article';
 
 // 假数据：生成多一点以展示滚动条效果
 const statusMap = new Map([
@@ -23,8 +17,6 @@ const articleList = ref<Article[]>([]);
 const getUserMdToRender = async () => {
   const res = await httpInstance.get<any, Response>('/article/info');
   articleList.value = res.data;
-  console.log(res.data);
-  
 }
 getUserMdToRender();
 

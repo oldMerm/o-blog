@@ -1,5 +1,6 @@
 package io.github.oldmerman.web.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
@@ -24,6 +25,13 @@ public class ArticleController {
     public Result<List<ArticleRenderVO>> info(){
         log.info("用户查询个人文章信息");
         return Result.success(articleService.info());
+    }
+
+    @GetMapping("public/info")
+    public Result<List<ArticleRenderVO>> getRenderArticle(@RequestParam(name = "id", defaultValue = "1") Byte articleType,
+                                                          @RequestParam(name = "size", defaultValue = "10") Long size) throws JsonProcessingException {
+        log.info("查询文章，类型：{}",articleType);
+        return Result.success(articleService.getRenderArticle(articleType, size));
     }
 
     @GetMapping("private")

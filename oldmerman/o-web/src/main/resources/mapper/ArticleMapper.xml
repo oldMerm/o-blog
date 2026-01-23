@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.github.oldmerman.web.mapper.ArticleMapper">
+
+    <select id="selectArticle" resultType="io.github.oldmerman.model.vo.ArticleRenderVO">
+        SELECT id, article_name, article_status, `like`, created_at FROM o_blog.o_article
+        WHERE article_type = #{type} AND article_status = 3
+        ORDER BY RAND()
+        LIMIT #{size}
+    </select>
+</mapper>
+

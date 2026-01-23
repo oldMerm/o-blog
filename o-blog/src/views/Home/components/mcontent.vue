@@ -1,20 +1,28 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import { httpInstance, type Response } from '@/utils/http';
+import { type Article, articleType, goToArticle } from '@/views/public/Article';
 
-const articleList = ref([
-  { title: '2024年度前端技术架构演进趋势报告', likes: 1240, favs: 856 },
-  { title: '深入理解 Vue 3 响应式原理与性能优化', likes: 3502, favs: 1204 },
-  { title: 'TypeScript 高级类型体操实战解析', likes: 890, favs: 430 },
-  { title: '微前端落地：从理论到企业级实战', likes: 1560, favs: 980 },
-  { title: 'WebAssembly 在高性能计算场景下的应用在高性能计算场景下的应用1111111111111111111111', likes: 420, favs: 150 },
-  { title: '构建现代化设计系统：Design Tokens 最佳实践', likes: 2100, favs: 1890 },
-  { title: '构建现代化设计系统：Design Tokens 最佳实践', likes: 2100, favs: 1890 },
-  { title: '构建现代化设计系统：Design Tokens 最佳实践', likes: 2100, favs: 1890 },
-  { title: 'Serverless 架构下的全栈开发新范式', likes: 780, favs: 340 },
-  { title: 'Serverless 架构下的全栈开发新范式', likes: 780, favs: 340 },
-  { title: 'Serverless 架构下的全栈开发新范式', likes: 780, favs: 340 },
-  { title: 'Serverless 架构下的全栈开发新范式', likes: 780, favs: 340 }
-]);
+let articleList = ref<Article[]>([]);
+
+onMounted(() => {
+  renderHomePage();
+})
+
+const renderHomePage = async () => {
+  try {
+    const res = await httpInstance.get<any, Response>('/article/public/info',{
+      params: {
+        id: articleType.TECNO,
+        size: 11
+      }
+    });
+    console.log(res.data);
+    articleList.value = res.data;
+  } catch (error) {
+    alert(`错误:${error}`);
+  }
+}
 </script>
 
 <template>
@@ -27,16 +35,16 @@ const articleList = ref([
 
     <!-- 标题列表区域 -->
     <div class="title-list">
-      <div v-for="(item, index) in articleList" :key="index" class="article-item">
+      <div v-for="(item, index) in articleList" :key="index" class="article-item" @click="goToArticle(item.id)">
         
         <!-- 左侧：标题 (自动截断) -->
-        <span class="title-text">{{ item.title }}</span>
+        <span class="title-text">{{ item.articleName }}</span>
         
         <!-- 右侧：数据 (固定不换行) -->
         <p class="stats-info">
-          <span class="stat-box">点赞 {{ item.likes }}</span>
+          <span class="stat-box">点赞 {{ item.like }}</span>
           <span class="divider">·</span>
-          <span class="stat-box">收藏 {{ item.favs }}</span>
+          <span class="stat-box">发布于 {{ item.createdAt }}</span>
         </p>
 
       </div>

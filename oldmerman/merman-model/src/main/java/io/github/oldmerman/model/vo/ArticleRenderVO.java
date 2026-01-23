@@ -11,5 +11,7 @@ public class ArticleRenderVO {
 
     private Byte articleStatus;
 
+    private Integer like;
+
     private String createdAt;
 }

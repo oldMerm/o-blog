@@ -3,6 +3,7 @@ package io.github.oldmerman.web.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.github.oldmerman.model.dto.ArticlePriDTO;
 import io.github.oldmerman.model.po.Article;
+import io.github.oldmerman.model.vo.ArticleRenderVO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -22,4 +23,9 @@ public interface ArticleMapper extends BaseMapper<Article> {
 
     @Select("SELECT writer_id, `key` FROM o_blog.o_article WHERE id = #{id}")
     ArticlePriDTO getPrivateKeyById(Long id);
+
+    List<ArticleRenderVO> selectArticle(@Param("type") Byte articleType, Long size);
+
+    @Select("SELECT id, article_name, article_status, `like`, created_at FROM o_blog.o_article WHERE article_type = 0")
+    List<ArticleRenderVO> selectNotice();
 }

@@ -1,6 +1,11 @@
 package io.github.oldmerman.web.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.enums.BusErrorCode;
+import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
@@ -17,6 +22,7 @@ import io.github.oldmerman.web.service.OssService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -27,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +49,10 @@ public class ArticleServiceImpl implements ArticleService {
     private final OssService ossService;
 
     private final ArticleConverter converter;
+
+    private final StringRedisTemplate redisTemplate;
+
+    private final ObjectMapper objectMapper;
 
     private static final String BUCKET = "project-oldmerman-artimg";
 
@@ -62,6 +73,29 @@ public class ArticleServiceImpl implements ArticleService {
                     vo.setCreatedAt(item.getCreatedAt().format(formatter));
                     return vo;
                 }).toList();
+    }
+
+    /**
+     * 根据文章类型获取需要渲染的文章
+     * @return 文章类型
+     */
+    public List<ArticleRenderVO> getRenderArticle(Byte articleType, Long size) throws JsonProcessingException {
+        String data = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_RENDER + articleType);
+        if(!ObjectUtils.isEmpty(data)){
+            return objectMapper.readValue(data, new TypeReference<>(){});
+        }
+        List<ArticleRenderVO> vo;
+        if(articleType == 0){
+            vo = articleMapper.selectNotice();
+        }else{
+            vo = articleMapper.selectArticle(articleType, size);
+            if(vo.isEmpty()){
+                throw new BusinessException(BusErrorCode.FILE_UNEXIST);
+            }
+        }
+        redisTemplate.opsForValue().set(RedisPrefix.ARTICLE_RENDER + articleType, objectMapper.writeValueAsString(vo),
+                NumEnum.ARTICLE_EXPIRE_TIME.getValue(), TimeUnit.DAYS);
+        return vo;
     }
 
     /**
@@ -136,6 +170,5 @@ public class ArticleServiceImpl implements ArticleService {
             }
         });
     }
-
 
 }
