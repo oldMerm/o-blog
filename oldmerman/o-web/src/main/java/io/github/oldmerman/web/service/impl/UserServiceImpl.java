@@ -5,6 +5,7 @@ import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.common.util.HmacSHA256Util;
+import io.github.oldmerman.common.util.RegexUtils;
 import io.github.oldmerman.model.dto.UserManageDTO;
 import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.model.vo.UserInfoVO;
@@ -25,8 +26,6 @@ public class UserServiceImpl implements UserService {
     private final OssService ossService;
 
     private final UserMapper userMapper;
-
-    private final FeedbackMapper feedbackMapper;
 
     private final UserConverter converter;
 
@@ -53,6 +52,7 @@ public class UserServiceImpl implements UserService {
         if(ObjectUtil.isEmpty(dto)){
             throw new BusinessException(ResultCode.DATA_NOT_EXIST);
         }
+        isValidUserInfo(dto);
         try {
             String oldPassword = dto.getPassword();
             if(oldPassword != null){
@@ -74,7 +74,16 @@ public class UserServiceImpl implements UserService {
         userMapper.logicDeleteUser(userId);
     }
 
-
+    private void isValidUserInfo(UserManageDTO dto){
+        String password = dto.getPassword();
+        String username = dto.getUsername();
+        if(!password.isEmpty() && !RegexUtils.isValidPassword(password)){
+            throw new BusinessException(BusErrorCode.PASSWORD_WRONG_FORMAT);
+        }
+        if(!username.isEmpty() && RegexUtils.isValidUsername(username)){
+            throw new BusinessException(BusErrorCode.USERNAME_WRONG_FORMAT);
+        }
+    }
 
 
 }

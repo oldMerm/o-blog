@@ -28,4 +28,6 @@ public interface ArticleMapper extends BaseMapper<Article> {
 
     @Select("SELECT id, article_name, article_status, `like`, created_at FROM o_blog.o_article WHERE article_type = 0")
     List<ArticleRenderVO> selectNotice();
+
+    ArticleRenderVO getNewMessage();
 }

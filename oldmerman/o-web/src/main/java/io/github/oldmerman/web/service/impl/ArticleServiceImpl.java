@@ -65,7 +65,6 @@ public class ArticleServiceImpl implements ArticleService {
         Long userId = UserContext.getUserId();
         List<Article> poList = articleMapper.selectByUserId(userId);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        log.info("查询文章:{}",poList.get(0));
         return poList.stream()
                 .map(item -> {
                     ArticleRenderVO vo = converter.poToRenderVO(item);
@@ -77,6 +76,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     /**
      * 根据文章类型获取需要渲染的文章
+     *
      * @return 文章类型
      */
     public List<ArticleRenderVO> getRenderArticle(Byte articleType, Long size) throws JsonProcessingException {
@@ -144,19 +144,21 @@ public class ArticleServiceImpl implements ArticleService {
         po.setKey(mdKey);
         // 3.构建图片对象
         List<String> attrs = dto.getAttrs();
-        List<ArticleImage> images = attrs.stream()
-                .filter(s -> s != null && !s.isEmpty())
-                .map(item -> {
-                    ArticleImage img = new ArticleImage();
-                    img.setId(IdGenerator.nextId());
-                    img.setArticleId(articleId);
-                    img.setUrl(item);
-                    return img;
-                })
-                .toList();
+        if(attrs != null){
+            List<ArticleImage> images = attrs.stream()
+                    .filter(s -> s != null && !s.isEmpty())
+                    .map(item -> {
+                        ArticleImage img = new ArticleImage();
+                        img.setId(IdGenerator.nextId());
+                        img.setArticleId(articleId);
+                        img.setUrl(item);
+                        return img;
+                    })
+                    .toList();
+            articleImageMapper.insert(images);
+        }
         // 4.插入数据库
         articleMapper.insertPO(po);
-        articleImageMapper.insert(images);
         // 5.事务回滚
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override

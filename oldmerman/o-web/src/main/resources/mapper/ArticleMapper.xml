@@ -5,10 +5,19 @@
 <mapper namespace="io.github.oldmerman.web.mapper.ArticleMapper">
 
     <select id="selectArticle" resultType="io.github.oldmerman.model.vo.ArticleRenderVO">
-        SELECT id, article_name, article_status, `like`, created_at FROM o_blog.o_article
-        WHERE article_type = #{type} AND article_status = 3
+        SELECT id, article_name, article_status, `like`, created_at
+        FROM o_blog.o_article
+        WHERE article_type = #{type}
+          AND article_status = 3
         ORDER BY RAND()
         LIMIT #{size}
+    </select>
+
+    <select id="getNewMessage" resultType="io.github.oldmerman.model.vo.ArticleRenderVO">
+        SELECT id, article_name, article_status, `like`, created_at
+        FROM o_blog.o_article WHERE article_status = 3 AND article_name like 'oldmerman'
+        ORDER BY created_at
+        DESC LIMIT 1
     </select>
 </mapper>
 

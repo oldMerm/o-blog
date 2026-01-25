@@ -17,7 +17,6 @@ const renderHomePage = async () => {
         size: 11
       }
     });
-    console.log(res.data);
     articleList.value = res.data;
   } catch (error) {
     alert(`错误:${error}`);
@@ -42,8 +41,8 @@ const renderHomePage = async () => {
         
         <!-- 右侧：数据 (固定不换行) -->
         <p class="stats-info">
-          <span class="stat-box">点赞 {{ item.like }}</span>
-          <span class="divider">·</span>
+          <!-- <span class="stat-box">点赞 {{ item.like }}</span>
+          <span class="divider">·</span> -->
           <span class="stat-box">发布于 {{ item.createdAt }}</span>
         </p>
 

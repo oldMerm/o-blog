@@ -4,14 +4,18 @@ import axios, {
     type AxiosResponse,
     type InternalAxiosRequestConfig,
     AxiosError } from 'axios';
+import rateLimit from 'axios-rate-limit';
 
 // 环境变量配置（推荐）或使用默认值
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 // 创建带类型的 axios 实例
-const httpInstance: AxiosInstance = axios.create({
+const httpInstance: AxiosInstance = rateLimit(axios.create({
   baseURL: API_BASE_URL,
   timeout: 5000,
+}), {
+  maxRequests: 10,
+  perMilliseconds: 60 * 1000
 });
 
 // 请求拦截器

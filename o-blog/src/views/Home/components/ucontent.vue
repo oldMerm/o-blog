@@ -1,14 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import { httpInstance, type Response } from '@/utils/http';
+import { type Article, articleType, goToArticle } from '@/views/public/Article';
 
-const articleList = ref([
-  { title: '早上赖床心里过意不去怎么办？', likes: 1240, favs: 856 },
-  { title: '以为同学在上厕所，敲门出来的是陌生人怎么办？', likes: 3502, favs: 1204 },
-  { title: '以为同学在上厕所，敲门出来的是陌生人怎么办？', likes: 3502, favs: 1204 },
-  { title: '以为同学在上厕所，敲门出来的是陌生人怎么办？', likes: 3502, favs: 1204 },
-  { title: '骑车打学时日常！！！', likes: 890, favs: 430 },
-  { title: '上课迟到不打报告假装上厕所', likes: 1560, favs: 980 }
-]);
+let articleList = ref<Article[]>([]);
+const getNotice = async () => {
+  try {
+    const res = await httpInstance.get<any, Response>('/article/public/info',{
+      params: {
+        id: articleType.LIFE
+      }
+    });
+    articleList.value = res.data;
+  } catch (error) {
+    alert(`错误:${error}`);
+  }
+}
+
+onMounted(() => {
+  getNotice();
+});
 </script>
 
 <template>
@@ -24,13 +35,13 @@ const articleList = ref([
       <div v-for="(item, index) in articleList" :key="index" class="article-item">
         
         <!-- 左侧：标题 (自动截断) -->
-        <span class="title-text">{{ item.title }}</span>
+        <span class="title-text">{{ item.articleName }}</span>
         
         <!-- 右侧：数据 (固定不换行) -->
         <p class="stats-info">
-          <span class="stat-box">点赞 {{ item.likes }}</span>
-          <span class="divider">·</span>
-          <span class="stat-box">收藏 {{ item.favs }}</span>
+          <!-- <span class="stat-box">点赞 {{ item.likes }}</span>
+          <span class="divider">·</span> -->
+          <span class="stat-box">于 {{ item.createdAt }}</span>
         </p>
 
       </div>

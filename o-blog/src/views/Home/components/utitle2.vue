@@ -1,10 +1,29 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 
+const map = new Map([
+    [0, "一"],
+    [1, "七"],
+    [2, "六"],
+    [3, "五"],
+    [4, "四"],
+    [5, "三"],
+    [6, "二"]
+])
+
+let time = ref<string>();
+const getDay = () => {
+    const day = new Date().getDay();
+    return map.get(day);
+}
+time.value = getDay();
+
+setInterval(getDay, 600000);
 </script>
 
 <template>
     <div class="ut">
-        文章刷新倒计时：none
+        文章刷新倒计时：{{ time }}天
     </div>
 </template>
 

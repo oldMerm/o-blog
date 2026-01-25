@@ -218,7 +218,7 @@ public class OssServiceImpl implements OssService {
 
     // genFileName 方法保持不变，或者根据需要优化
     private String genFileName(String userId, String ext, String folder){
-        return folder + "/" + userId + "_" + DateUtil.format(new Date(), "yyyyMM") + "." + ext;
+        return folder + "/" + userId + "_" + DateUtil.format(new Date(), "yyyyMM") + RandomUtil.randomString(4) + "." + ext;
     }
 
 

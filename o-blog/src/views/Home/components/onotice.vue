@@ -1,22 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import { httpInstance, type Response } from '@/utils/http';
+import { type Article, articleType, goToArticle } from '@/views/public/Article';
 
-// 模拟数据
-const noticeItems = ref([
-  { id: 1, text: '禁止在办公区域大声喧哗' },
-  { id: 2, text: '离开时请随手关灯' },
-  { id: 3, text: '下午三点会议室开会' },
-  { id: 4, text: '请保持桌面整洁' },
-  { id: 5, text: '访客请先在前台登记' },
-  { id: 6, text: '下周一开始进行系统维护' },
-  { id: 7, text: '如有疑问请联系管理员' },
-  { id: 8, text: '节约用水，人人有责' },
-  { id: 9, text: '最后离开的人请锁门' },
-]);
+let articleList = ref<Article[]>([]);
+const getNotice = async () => {
+  try {
+    const res = await httpInstance.get<any, Response>('/article/public/info',{
+      params: {
+        id: articleType.Notice
+      }
+    });
+    articleList.value = res.data;
+  } catch (error) {
+    alert(`错误:${error}`);
+  }
+}
 
-const handleClick = (item: { id: number; text: string }) => {
-  console.log('点击了:', item.text);
-};
+onMounted(() => {
+  getNotice();
+});
 </script>
 
 <template>
@@ -29,12 +32,12 @@ const handleClick = (item: { id: number; text: string }) => {
     <!-- 内容滚动区 -->
     <div class="content-scroll">
       <div 
-        v-for="item in noticeItems" 
+        v-for="item in articleList" 
         :key="item.id" 
         class="list-item"
-        @click="handleClick(item)"
+        @click="goToArticle(item.id)"
       >
-        {{ item.text }}
+        {{ item.articleName }}
       </div>
     </div>
   </div>
