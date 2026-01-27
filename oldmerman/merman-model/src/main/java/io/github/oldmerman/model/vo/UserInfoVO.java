@@ -15,4 +15,6 @@ public class UserInfoVO {
 
     private String attrURL;
 
+    private String updatedAt;
+
 }

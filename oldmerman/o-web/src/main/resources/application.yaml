@@ -43,3 +43,7 @@ alias:
   oss:
     endpoint: https://oss-cn-guangzhou.aliyuncs.com
     region: cn-guangzhou
+mybatis-plus:
+  global-config:
+    db-config:
+      column-format: "`%s`"

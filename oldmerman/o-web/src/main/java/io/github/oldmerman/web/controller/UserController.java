@@ -2,13 +2,14 @@ package io.github.oldmerman.web.controller;
 
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.UserManageDTO;
-import io.github.oldmerman.model.vo.FeedbackVO;
 import io.github.oldmerman.model.vo.UserInfoVO;
 import io.github.oldmerman.web.service.UserService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("usr")
@@ -23,6 +24,12 @@ public class UserController {
         Long userId = UserContext.getUserId();
         log.info("获取用户信息：{}",userId);
         return Result.success(userService.getUsrInfo(userId));
+    }
+
+    @GetMapping("page")
+    public Result<List<UserInfoVO>> page(@RequestParam("current") Long current,
+                                         @RequestParam("size") Long size){
+        return Result.success();
     }
 
     @PostMapping("manage")
