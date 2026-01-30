@@ -25,4 +25,6 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Select("SELECT username FROM o_blog.o_user WHERE id = #{userId}")
     String selectNameById(Long userId);
+
+    void updateUserArticle();
 }

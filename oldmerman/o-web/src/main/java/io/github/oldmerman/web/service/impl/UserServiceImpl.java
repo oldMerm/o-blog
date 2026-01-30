@@ -1,22 +1,28 @@
 package io.github.oldmerman.web.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
+import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.common.util.HmacSHA256Util;
 import io.github.oldmerman.common.util.RegexUtils;
 import io.github.oldmerman.model.dto.UserManageDTO;
 import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.model.vo.UserInfoVO;
+import io.github.oldmerman.model.vo.UserManageVO;
 import io.github.oldmerman.web.converter.UserConverter;
-import io.github.oldmerman.web.mapper.FeedbackMapper;
 import io.github.oldmerman.web.mapper.UserMapper;
+import io.github.oldmerman.web.service.LoginService;
 import io.github.oldmerman.web.service.OssService;
 import io.github.oldmerman.web.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +30,8 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
 
     private final OssService ossService;
+
+    private final LoginService loginService;
 
     private final UserMapper userMapper;
 
@@ -42,6 +50,30 @@ public class UserServiceImpl implements UserService {
         UserInfoVO vo = converter.poToInfoVO(user);
         vo.setAttrURL(ossService.genPreviewURL(user.getAttr(),null));
         return vo;
+    }
+
+    /**
+     * 分页查询用户管理信息，用户管理端
+     * @param current 起始页面
+     * @param size 页面大小
+     * @return 分页list
+     */
+    public PageResult<UserManageVO> page(Long current, Long size) {
+        Page<User> page = new Page<>(current, size);
+        IPage<User> IPage = userMapper.selectPage(page, null);
+        List<UserManageVO> voList = IPage.getRecords().stream()
+                .map(item -> {
+                    UserManageVO vo = converter.poToManageVO(item);
+                    vo.setAttr(ossService.genPreviewURL(item.getAttr(),null));
+                    return vo;
+                })
+                .toList();
+        return PageResult.of(
+                IPage.getCurrent(),
+                IPage.getSize(),
+                IPage.getTotal(),
+                voList
+        );
     }
 
     /**
@@ -70,8 +102,10 @@ public class UserServiceImpl implements UserService {
      * 注销用户接口
      * @param userId 注销用户的id
      */
-    public void deleteUsr(Long userId) {
+    public void deleteUsr(Long userId, String token) {
         userMapper.logicDeleteUser(userId);
+        // 成功后删除缓存，几乎等价于用户登出
+        loginService.logout(token);
     }
 
     private void isValidUserInfo(UserManageDTO dto){

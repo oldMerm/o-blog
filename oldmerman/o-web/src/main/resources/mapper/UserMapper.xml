@@ -12,5 +12,23 @@
         </set>
         WHERE id = #{dto.id}
     </update>
+
+    <update id="updateUserArticle">
+        UPDATE o_blog.o_user u
+        LEFT JOIN (
+            SELECT
+                writer_id,
+                COUNT(*) AS article_cnt,
+                COALESCE(SUM(`like`), 0) AS total_likes
+            FROM o_blog.o_article
+            GROUP BY writer_id
+        ) t ON u.id = t.writer_id
+        SET
+            u.article = COALESCE(t.article_cnt, 0),
+            u.`like` = COALESCE(t.total_likes, 0)
+        WHERE
+            u.article != COALESCE(t.article_cnt, 0)
+            OR u.`like` != COALESCE(t.total_likes, 0)
+    </update>
 </mapper>
 

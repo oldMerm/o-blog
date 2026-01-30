@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
 import router from '@/router/index.ts';
-import type {Article} from '@/views/public/Article';
+import type { Article } from '@/views/public/Article';
 
 // 假数据：生成多一点以展示滚动条效果
 const statusMap = new Map([
@@ -21,10 +21,10 @@ const getUserMdToRender = async () => {
 getUserMdToRender();
 
 // 访问文章功能，根据文章id渲染并跳转
-const goToArticle = async (articleId:string) => {
+const goToArticle = async (articleId: string) => {
   router.push({
     name: 'markdown',
-    params: { id:articleId }
+    params: { id: articleId }
   })
 }
 
@@ -35,11 +35,11 @@ interface FeedbackType {
 
 // 反馈功能
 const feedbackTypeList = ref<FeedbackType[]>([
-  {id: 1, content: "文章内容劣质"},
-  {id: 2, content: "文章内容有误"},
-  {id: 3, content: "网页体验"},
-  {id: 4, content: "侵权投诉"},
-  {id: 5, content: "和作者吹水"},
+  { id: 1, content: "文章内容劣质" },
+  { id: 2, content: "文章内容有误" },
+  { id: 3, content: "网页体验" },
+  { id: 4, content: "侵权投诉" },
+  { id: 5, content: "和作者吹水" },
 ]);
 
 // 核心数组
@@ -70,22 +70,22 @@ interface submitTable {
   content: string;
 }
 const submitFeedback = async () => {
-  if(feedbackContent.value.length >= 255){
+  if (feedbackContent.value.length >= 255) {
     alert("反馈内容信息过长！");
     return;
   }
 
-  const req:submitTable = {
+  const req: submitTable = {
     selectIds: selectedIds.value.join(','),
     content: feedbackContent.value
   }
   try {
-    const res = await httpInstance.post<any, Response>('/feedback',req);
-    if(res.code === 200){
+    const res = await httpInstance.post<any, Response>('/feedback', req);
+    if (res.code === 200) {
       alert("感谢您的反馈，会尽快回复！");
       selectedIds.value = [];
       feedbackContent.value = '';
-    }else{
+    } else {
       alert(res.message);
       return;
     }
@@ -118,7 +118,7 @@ const selectMdAndImg = () => {
   input.onchange = (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    
+
     // 重置状态
     mdFile.value = file;
     newMd = null;
@@ -144,24 +144,24 @@ const selectImgDir = () => {
   const input = document.createElement('input');
   input.type = 'file';
   // @ts-ignore: webkitdirectory 是非标准属性，TS 需要忽略检查
-  input.webkitdirectory = true; 
+  input.webkitdirectory = true;
   input.multiple = true;
-  
+
   input.onchange = async (e: Event) => {
     const files = (e.target as HTMLInputElement).files;
     if (!files) return;
 
     handleDir(files);
-    
+
     // 等待图片上传并替换链接完成
     const replacedText = await uploadImgsToOSS();
-    
+
     if (replacedText) {
       newMd = replacedText; // 将处理好的文本赋值给 newMd
       // 图片处理完毕，执行最终上传
       await uploadMd();
     }
-    
+
     // 清理 input
     input.remove();
   }
@@ -172,11 +172,11 @@ const selectImgDir = () => {
  * 3. 扫描文件夹到 Map 中
  */
 const handleDir = (files: FileList) => {
-  imgMap.value = {}; 
+  imgMap.value = {};
   for (let i = 0; i < files.length; i++) {
-    const f:any = files[i];
+    const f: any = files[i];
     // webkitRelativePath 包含文件夹路径，如 "imgs/demo.png"
-    const relPath = f.webkitRelativePath; 
+    const relPath = f.webkitRelativePath;
     if (/\.(png|jpe?g|gif|webp)$/i.test(f.name)) {
       imgMap.value[relPath] = f;
     }
@@ -189,7 +189,7 @@ const handleDir = (files: FileList) => {
 const uploadImgsToOSS = async () => {
   // 4.1 提取需要上传的图片
   const list = await extractLocalImgs();
-  
+
   // 如果没有匹配到图片，直接返回 null 或 原始内容
   if (!list.length) {
     alert("未在文件夹中匹配到 MD 文档引用的图片，将直接上传。");
@@ -199,20 +199,20 @@ const uploadImgsToOSS = async () => {
   const fd = new FormData();
   list.forEach((item: any) => {
     // 注意：这里后端可能需要 path 来区分，或者只需要 file
-    fd.append('paths', item.path); 
+    fd.append('paths', item.path);
     fd.append('files', item.file);
   });
 
   try {
     const res = await httpInstance.post<any, any>('/article/upload/img', fd);
-    
+
     if (res.code === 200) {
       // alert("图片上传成功！(后台处理中...)");
       imgList = res.data; // 假设返回的是新的图片 URL 数组
-      
+
       // 4.2 获取 MD 文本内容 (必须 await)
       const rawText = await mdFile.value.text();
-      
+
       // 4.3 替换链接
       return replaceMdImgUrlsByIndex(rawText, res.data);
     } else {
@@ -234,17 +234,17 @@ const extractLocalImgs = async () => {
   const reg = /!\[.*?\]\((.*?)\)/g;
   const needUpload = [];
   let m;
-  
+
   while ((m = reg.exec(mdText)) !== null) {
-    const rawUrl:string | undefined = m[1]; // 例如 "./pics/a.png"
-    
+    const rawUrl: string | undefined = m[1]; // 例如 "./pics/a.png"
+
     // 核心逻辑：尝试匹配文件名
     // 去掉路径前的 ./ 或 /，只保留文件名或相对路径片段进行模糊匹配
-    if(!rawUrl) continue;
-    const cleanRawUrl = rawUrl.replace(/^\.?\//, ''); 
-    
+    if (!rawUrl) continue;
+    const cleanRawUrl = rawUrl.replace(/^\.?\//, '');
+
     const key = Object.keys(imgMap.value).find(k => k.endsWith(cleanRawUrl));
-    
+
     if (key) {
       needUpload.push({ path: rawUrl, file: imgMap.value[key] });
     }
@@ -264,11 +264,11 @@ const replaceMdImgUrlsByIndex = (
     const cleanOldUrl = oldUrl.replace(/^\.?\//, '');
     // 再次确认这个链接是否是我们上传列表里的
     const key = Object.keys(imgMap.value).find(k => k.endsWith(cleanOldUrl));
-    
+
     // 如果找不到 key，说明这张图没在本地文件夹里，不替换
     // 如果 idx 越界，也不替换
-    if (!key || idx >= newUrls.length) return matched; 
-    
+    if (!key || idx >= newUrls.length) return matched;
+
     return matched.replace(oldUrl, newUrls[idx++] ?? '');
   });
 };
@@ -283,7 +283,7 @@ const stringToFile = (text: string, fileName: string): File => {
 /**
  * 8. 最终上传 Markdown 文件
  */
-const uploadMd = async () => {  
+const uploadMd = async () => {
   const formData = new FormData();
 
   // 公共 DTO 参数
@@ -311,7 +311,7 @@ const uploadMd = async () => {
   formData.append('articleType', dto.articleType.toString());
   // 如果 attrs 是数组，需要遍历 append
   if (dto.attrs && dto.attrs.length) {
-     dto.attrs.forEach(t => formData.append('attrs', t));
+    dto.attrs.forEach(t => formData.append('attrs', t));
   }
 
   try {
@@ -331,7 +331,81 @@ const uploadMd = async () => {
   }
 }
 
+// --- TS 逻辑部分 (你可以根据需要修改) ---
+const replyContent = ref('');
+const showFeedbackList = ref(false);
 
+// 假数据模型
+interface ReplyItem {
+  id: number;
+  replier: string;
+  feedbackContent: string; // 反馈内容
+  replyContent: string;    // 回复内容
+  replyTime: string;
+}
+
+// 假数据
+const mockData = ref<ReplyItem[]>([
+  {
+    id: 1,
+    replier: '管理员01',
+    feedbackContent: '系统有时候加载图片会变得非常慢，希望能优化一下CDN配置。',
+    replyContent: '收到，技术部已经排查完毕，预计今晚更新修复。',
+    replyTime: '2023-10-27 10:00'
+  },
+  {
+    id: 2,
+    replier: '客服小美',
+    feedbackContent: '导出Excel报表的时候格式乱了。',
+    replyContent: '您好，请尝试更新浏览器版本，如果还有问题请联系IT支持。',
+    replyTime: '2023-10-26 15:30'
+  },
+  {
+    id: 3,
+    replier: '系统自动',
+    feedbackContent: '账号无法登陆。',
+    replyContent: '密码错误次数过多，账号已锁定，请24小时后重试。',
+    replyTime: '2023-10-25 09:00'
+  },
+  {
+    id: 3,
+    replier: '系统自动',
+    feedbackContent: '账号无法登陆。',
+    replyContent: '密码错误次数过多，账号已锁定，请24小时后重试。',
+    replyTime: '2023-10-25 09:00'
+  },
+  {
+    id: 3,
+    replier: '系统自动',
+    feedbackContent: '账号无法登陆。',
+    replyContent: '密码错误次数过多，账号已锁定，请24小时后重试。',
+    replyTime: '2023-10-25 09:00'
+  },
+  {
+    id: 3,
+    replier: '系统自动',
+    feedbackContent: '账号无法登陆。',
+    replyContent: '密码错误次数过多，账号已锁定，请24小时后重试。',
+    replyTime: '2023-10-25 09:00'
+  },
+  {
+    id: 3,
+    replier: '系统自动',
+    feedbackContent: '账号无法登陆。',
+    replyContent: '密码错误次数过多，账号已锁定，请24小时后重试。',
+    replyTime: '2023-10-25 09:00'
+  },
+]);
+
+// 计算属性：获取回复数量
+const replyCount = computed(() => mockData.value.length);
+
+// 切换弹框显示
+const toggleFeedbackList = () => {
+  if (replyCount.value > 0) {
+    showFeedbackList.value = !showFeedbackList.value;
+  }
+};
 </script>
 
 <template>
@@ -342,7 +416,7 @@ const uploadMd = async () => {
       <ul class="article-list">
         <li v-for="article in articleList" :key="article.id" class="article-item" @click="goToArticle(article.id)">
           <span class="article-title">{{ article.articleName }}</span>
-          <span class="article-date">{{ statusMap.get(article.articleStatus)+'-'+article.createdAt }}</span>
+          <span class="article-date">{{ statusMap.get(article.articleStatus) + '-' + article.createdAt }}</span>
         </li>
       </ul>
     </div>
@@ -364,26 +438,46 @@ const uploadMd = async () => {
     </div>
     <div class="main-block">
       <div class="feedback-content">
-        <h3 style="display: block; width: 100%;">信息反馈</h3>
+        <h3 style="display: block; width: 100%;">
+          <span @click.stop="toggleFeedbackList" class="feedback">信息反馈</span>
+          <sup v-if="replyCount > 0" class="reply-badge">{{ replyCount }}</sup>
+
+          <div v-if="showFeedbackList" class="feedback-popover" @click.stop>
+            <div class="popover-title">
+              回复列表
+              <span class="popover-close" @click.stop="showFeedbackList = false">&times;</span>
+            </div>
+            <div class="popover-content">
+              <div v-for="item in mockData" :key="item.id" class="reply-item">
+                <!-- 第一行：回复人 + 时间 -->
+                <div class="item-meta">
+                  <span class="replier">👤 {{ item.replier }}</span>
+                  <span class="time">于{{ item.replyTime }}</span>
+                </div>
+                <!-- 第二行：反馈内容 (原问题) -->
+                <div class="item-row" :title="item.feedbackContent">
+                  <span class="label">问:</span> {{ item.feedbackContent }}
+                </div>
+                <!-- 第三行：回复内容 -->
+                <div class="item-row reply-text" :title="item.replyContent">
+                  <span class="label">答:</span> {{ item.replyContent }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </h3>
         <div class="feedback-type">
           反馈类型
           <div class="feedback-type-choice">
-            <div 
-              v-for="item in feedbackTypeList" 
-              :key="item.id" 
-              class="type-block" 
-              :class="{ 'type-active': isSelected(item.id) }"
-              @click="handleFeedbackTypeClick(item.id)"
-            >
+            <div v-for="item in feedbackTypeList" :key="item.id" class="type-block"
+              :class="{ 'type-active': isSelected(item.id) }" @click="handleFeedbackTypeClick(item.id)">
               {{ item.content }}
             </div>
           </div>
         </div>
         <div class="feedback-main">
           反馈内容<br>
-          <textarea placeholder="请输入您的反馈内容(限255字)..."
-          v-model="feedbackContent" class="feedback-textarea">
-
+          <textarea placeholder="请输入您的反馈内容(限255字)..." v-model="feedbackContent" class="feedback-textarea">
           </textarea>
         </div>
         <button class="submit" @click="submitFeedback">全部提交</button>
@@ -548,5 +642,125 @@ h3 {
 
 .submit:hover {
   background-color: #51a7fe;
+}
+
+.feedback {
+  cursor: pointer;
+}
+
+.feedback:hover {
+  color: skyblue;
+}
+
+/* 数字角标样式 */
+.reply-badge {
+  font-size: 12px;
+  color: #409EFF;
+  /* 浅蓝色系字体 */
+  font-weight: bold;
+  vertical-align: super;
+  /* 上标对齐 */
+  margin-left: 2px;
+}
+
+/* --- 弹框样式 --- */
+.feedback-popover {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  /* 初始位置修正，结合动画使用 */
+  transform: translate(-50%, -50%);
+  width: 300px;
+  /* 适中的宽度 */
+  max-height: 400px;
+  background-color: #ffffff;
+  border: 1px solid #d9ecff;
+  /* 浅蓝边框 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  /* 确保内部文字左对齐 */
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.popover-title {
+  padding: 8px 12px;
+  background-color: #ecf5ff;
+  /* 极浅的蓝色背景 */
+  color: #409EFF;
+  font-weight: bold;
+  border-bottom: 1px solid #d9ecff;
+}
+
+.popover-content {
+  overflow-y: auto;
+  /* 内容过多可滚动 */
+  padding: 0;
+}
+
+/* 单条数据样式 */
+.reply-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.reply-item:last-child {
+  border-bottom: none;
+}
+
+.reply-item:hover {
+  background-color: #fafafa;
+}
+
+.item-meta {
+  display: flex;
+  justify-content: space-between;
+  color: #999;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+/* 文本截断样式：关键逻辑 */
+.item-row {
+  white-space: nowrap;
+  /* 不换行 */
+  overflow: hidden;
+  /* 超出隐藏 */
+  text-overflow: ellipsis;
+  /* 显示省略号 */
+  color: #333;
+  margin-bottom: 2px;
+  max-width: 100%;
+}
+
+.item-row .label {
+  color: #888;
+  margin-right: 4px;
+}
+
+.reply-text {
+  color: #409EFF;
+  /* 回复内容用浅蓝色高亮一点 */
+}
+
+.popover-close {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  font-size: 16px; /* 叉叉大一点 */
+  color: #999;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+  z-index: 10;
+}
+
+.popover-close:hover {
+  color: #409eff; /* 悬停变为浅蓝色 */
 }
 </style>
