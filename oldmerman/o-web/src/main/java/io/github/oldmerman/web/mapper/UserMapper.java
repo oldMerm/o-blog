@@ -2,10 +2,14 @@ package io.github.oldmerman.web.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.github.oldmerman.model.dto.UserManageDTO;
+import io.github.oldmerman.model.po.Counter;
 import io.github.oldmerman.model.po.User;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 public interface UserMapper extends BaseMapper<User> {
 
@@ -27,4 +31,6 @@ public interface UserMapper extends BaseMapper<User> {
     String selectNameById(Long userId);
 
     void updateUserArticle();
+
+    List<Counter> countUserMonData(LocalDateTime now, Long count);
 }

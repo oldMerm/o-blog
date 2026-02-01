@@ -10,6 +10,7 @@ import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.common.util.HmacSHA256Util;
 import io.github.oldmerman.common.util.RegexUtils;
 import io.github.oldmerman.model.dto.UserManageDTO;
+import io.github.oldmerman.model.po.Counter;
 import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.model.vo.UserInfoVO;
 import io.github.oldmerman.model.vo.UserManageVO;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -39,23 +41,25 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 获取用户信息接口
+     *
      * @param userId 用户id
      * @return 用户封装vo
      */
     public UserInfoVO getUsrInfo(Long userId) {
         User user = userMapper.selectSimUsrInfo(userId);
-        if(user.getIsDelete() != 1){
+        if (user.getIsDelete() != 1) {
             throw new BusinessException(ResultCode.USERNAME_OR_PASSWORD_ERROR);
         }
         UserInfoVO vo = converter.poToInfoVO(user);
-        vo.setAttrURL(ossService.genPreviewURL(user.getAttr(),null));
+        vo.setAttrURL(ossService.genPreviewURL(user.getAttr(), null));
         return vo;
     }
 
     /**
      * 分页查询用户管理信息，用户管理端
+     *
      * @param current 起始页面
-     * @param size 页面大小
+     * @param size    页面大小
      * @return 分页list
      */
     public PageResult<UserManageVO> page(Long current, Long size) {
@@ -64,7 +68,7 @@ public class UserServiceImpl implements UserService {
         List<UserManageVO> voList = IPage.getRecords().stream()
                 .map(item -> {
                     UserManageVO vo = converter.poToManageVO(item);
-                    vo.setAttr(ossService.genPreviewURL(item.getAttr(),null));
+                    vo.setAttr(ossService.genPreviewURL(item.getAttr(), null));
                     return vo;
                 })
                 .toList();
@@ -77,22 +81,32 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
+     * 获取用户月数据
+     *
+     * @return List<Counter>
+     */
+    public List<Counter> getUserMonCount(Long count) {
+        return userMapper.countUserMonData(LocalDateTime.now(), count);
+    }
+
+    /**
      * 更新用户信息接口
+     *
      * @param dto 封装dto
      */
     public void updateUsrInfo(UserManageDTO dto) {
-        if(ObjectUtil.isEmpty(dto)){
+        if (ObjectUtil.isEmpty(dto)) {
             throw new BusinessException(ResultCode.DATA_NOT_EXIST);
         }
         isValidUserInfo(dto);
         try {
             String oldPassword = dto.getPassword();
-            if(oldPassword != null){
+            if (oldPassword != null) {
                 String newPassword = HmacSHA256Util.hmacSha256(oldPassword);
                 dto.setPassword(newPassword);
             }
         } catch (Exception e) {
-            log.error("加密失败, {}",e.getMessage());
+            log.error("加密失败, {}", e.getMessage());
             throw new BusinessException(BusErrorCode.ENCRYPTION_FAILED);
         }
         userMapper.updateUserInfo(dto);
@@ -100,6 +114,7 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 注销用户接口
+     *
      * @param userId 注销用户的id
      */
     public void deleteUsr(Long userId, String token) {
@@ -108,13 +123,13 @@ public class UserServiceImpl implements UserService {
         loginService.logout(token);
     }
 
-    private void isValidUserInfo(UserManageDTO dto){
+    private void isValidUserInfo(UserManageDTO dto) {
         String password = dto.getPassword();
         String username = dto.getUsername();
-        if(!password.isEmpty() && !RegexUtils.isValidPassword(password)){
+        if (!password.isEmpty() && !RegexUtils.isValidPassword(password)) {
             throw new BusinessException(BusErrorCode.PASSWORD_WRONG_FORMAT);
         }
-        if(!username.isEmpty() && RegexUtils.isValidUsername(username)){
+        if (!username.isEmpty() && RegexUtils.isValidUsername(username)) {
             throw new BusinessException(BusErrorCode.USERNAME_WRONG_FORMAT);
         }
     }

@@ -1,6 +1,31 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import router from '@/router';
+import { httpInstance, type Response } from '@/utils/http';
+
+onMounted(async () => {
+  const token = localStorage.getItem('token');
+  if(token === null){
+    router.push({name:'home'});
+  }else{
+    isVaildToken(token);
+  }
+})
+
+const isVaildToken = async(token:string) => {
+  try {
+    const res = await httpInstance.get<any, Response>('/auth/AuthToken');
+    if(res.code !== 200){
+      alert(`非法访问，将跳转主页`);
+      router.push({name:'home'});  
+    }else{
+      router.push({name:'adminDashboard'});
+    }
+  } catch (error) {
+    alert(`系统错误:${error}`);
+    router.push({name:'home'});
+  }
+}
 
 // --- 类型定义 ---
 interface MenuItem {
@@ -10,8 +35,6 @@ interface MenuItem {
   icon?: string;
 }
 
-// --- 假数据 (Mock Data) ---
-// TODO: 实际开发中，这些数据通常来自后端 API (/api/menus)
 const menuItems = ref<MenuItem[]>([
   { id: 1, name: '控制台', path: '/dashboard' },
   { id: 2, name: '用户管理', path: '/users' },

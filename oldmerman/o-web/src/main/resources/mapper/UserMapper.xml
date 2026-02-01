@@ -30,5 +30,13 @@
             u.article != COALESCE(t.article_cnt, 0)
             OR u.`like` != COALESCE(t.total_likes, 0)
     </update>
+
+    <select id="countUserMonData" resultType="io.github.oldmerman.model.po.Counter">
+        SELECT * FROM o_blog.o_count
+        WHERE
+            createdAt >= DATE_SUB(#{now}, INTERVAL #{count} MONTH)
+        AND
+            createdAt &lt;= #{now}
+    </select>
 </mapper>
 

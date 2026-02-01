@@ -3,6 +3,7 @@ package io.github.oldmerman.web.controller;
 import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.UserManageDTO;
+import io.github.oldmerman.model.po.Counter;
 import io.github.oldmerman.model.vo.UserInfoVO;
 import io.github.oldmerman.model.vo.UserManageVO;
 import io.github.oldmerman.web.service.UserService;
@@ -10,6 +11,8 @@ import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("usr")
@@ -31,6 +34,12 @@ public class UserController {
                                                        @RequestParam(name = "size", defaultValue = "7") Long size){
         log.info("分页查询用户数据: {}",current);
         return Result.success(userService.page(current, size));
+    }
+
+    @GetMapping("monCount")
+    public Result<List<Counter>> getUserMonCount(@RequestParam(name = "count", defaultValue = "5") Long count){
+        log.info("获取用户月数据");
+        return Result.success(userService.getUserMonCount(count));
     }
 
     @PostMapping("manage")
