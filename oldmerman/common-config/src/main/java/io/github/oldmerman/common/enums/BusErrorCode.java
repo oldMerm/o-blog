@@ -8,6 +8,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum BusErrorCode implements IResultCode {
 
+    ILLEGAL_TOKEN(1000,"令牌无效"),
     TOKEN_EXPIRED(1001,"令牌过期，请刷新页面或重新登录"),
     TOKEN_PARSING_FAILED(1002, "令牌解析出错"),
 

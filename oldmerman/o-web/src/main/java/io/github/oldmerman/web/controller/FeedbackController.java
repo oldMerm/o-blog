@@ -19,18 +19,25 @@ public class FeedbackController {
 
     private final FeedbackService feedbackService;
 
+    @GetMapping("info")
+    public Result<FeedbackVO> getFeedback(){
+        log.info("用户获取回馈信息");
+        return Result.success(feedbackService.getFeedback());
+    }
+
+    @GetMapping("batch_info")
+    public Result<List<FeedbackVO>> getBatchFeedback(){
+        Long userId = UserContext.getUserId();
+        log.info("用户:{},获取批量获取反馈信息",userId);
+        return Result.success(feedbackService.getBatchFeedback(userId));
+    }
+
     @PostMapping
     public Result<Void> createFeedback(@RequestBody FeedbackCreateDTO dto){
         Long userId = UserContext.getUserId();
         log.info("用户:{},反馈", userId);
         feedbackService.createFeedback(dto.getContent(), dto.getSelectIds(), userId);
         return Result.success();
-    }
-
-    @GetMapping("info")
-    public Result<FeedbackVO> getFeedback(){
-        log.info("用户获取回馈信息");
-        return Result.success(feedbackService.getFeedback());
     }
 
 }

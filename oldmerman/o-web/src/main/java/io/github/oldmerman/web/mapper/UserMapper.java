@@ -33,4 +33,7 @@ public interface UserMapper extends BaseMapper<User> {
     void updateUserArticle();
 
     List<Counter> countUserMonData(LocalDateTime now, Long count);
+
+    @Select("SELECT type FROM o_blog.o_user WHERE id = #{userId}")
+    Byte isValidAuthToken(Long userId);
 }

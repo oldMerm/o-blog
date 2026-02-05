@@ -6,7 +6,9 @@ import java.util.List;
 
 public interface FeedbackService {
 
+    FeedbackVO getFeedback();
+
     void createFeedback(String feedback, String feedbackType, Long userId);
 
-    FeedbackVO getFeedback();
+    List<FeedbackVO> getBatchFeedback(Long userId);
 }

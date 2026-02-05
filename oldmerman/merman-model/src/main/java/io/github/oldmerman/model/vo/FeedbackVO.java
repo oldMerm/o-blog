@@ -7,10 +7,13 @@ public class FeedbackVO {
 
     private Long id;
 
-    private Byte feedbackType;
+    private String replier;
+
+    private String feedbackType;
 
     private String feedback;
 
     private String reply;
 
+    private String repliedAt;
 }

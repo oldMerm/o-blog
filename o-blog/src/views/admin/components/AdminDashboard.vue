@@ -45,7 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { httpInstance, type Response } from '@/utils/http';
+import { onMounted, ref } from 'vue';
 
 // --- 类型定义 ---
 interface DataPoint {
@@ -60,10 +61,17 @@ interface ChartConfig {
   data: DataPoint[];
 }
 
-// --- 假数据 (Mock Data) ---
+/* 立即执行代码 */
+onMounted(() => {
+  getRunDays();
+})
 
 // 1. 运行天数
-const runDays = ref<number>(365);
+const runDays = ref<number>();
+const getRunDays = async () => {
+  const {data} = await httpInstance.get<any, Response>('/counter/time');
+  runDays.value = data;
+}
 
 // 2. 四个图表的数据
 // 你可以在这里修改 label 和 value 来测试不同的展示效果

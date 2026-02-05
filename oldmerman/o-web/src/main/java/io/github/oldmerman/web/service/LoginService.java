@@ -20,4 +20,6 @@ public interface LoginService {
     CaptchaVO generateCaptcha();
 
     void sendEmail(String email);
+
+    void isValidAuthToken(Long userId);
 }

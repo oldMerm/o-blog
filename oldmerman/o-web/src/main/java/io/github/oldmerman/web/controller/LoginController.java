@@ -6,6 +6,7 @@ import io.github.oldmerman.model.dto.UserCreatedDTO;
 import io.github.oldmerman.model.vo.CaptchaVO;
 import io.github.oldmerman.model.vo.LoginVO;
 import io.github.oldmerman.web.service.LoginService;
+import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -61,6 +62,14 @@ public class LoginController {
     public Result<Void> sendEmail(@RequestParam("email") String email){
         log.info("发送验证码到，email: {}",email);
         loginService.sendEmail(email);
+        return Result.success();
+    }
+
+    @GetMapping("authToken")
+    public Result<Void> isValidAuthToken(){
+        Long userId = UserContext.getUserId();
+        log.info("管理员用户访问:{}",userId);
+        loginService.isValidAuthToken(userId);
         return Result.success();
     }
 

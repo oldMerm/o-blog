@@ -39,6 +39,7 @@ const router = createRouter({
       component: Admin,
       children: [
         {
+          name: 'adminDashboard',
           path: '/admin/dashboard',
           component: AdminDashboard
         },

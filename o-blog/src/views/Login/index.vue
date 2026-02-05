@@ -180,6 +180,7 @@ const handleLogin = async () => {
 
   loginForm.uuid = <string>localStorage.getItem("cuid");
   try {
+    console.log(loginForm.password);
     const data = await httpInstance.post<any, Response>('/auth/login', loginForm);
     if(data.code !== 200){
       alert(data.message);
@@ -189,7 +190,7 @@ const handleLogin = async () => {
     localStorage.setItem('token', token);
     localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('timeout', timeout);
-    alert('登录成功!')
+    alert('登录成功!');
   } catch (error) {
     alert(error)
     return;
@@ -197,7 +198,7 @@ const handleLogin = async () => {
   
   setInterval(() => {
     router.push({name:'home'});
-  }, 500)
+  }, 1000)
 };
 
 // 📝 注册提交

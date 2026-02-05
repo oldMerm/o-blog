@@ -5,7 +5,7 @@
 <template>
     <div class="cc">
         功能开发中
-        尽情期待！
+        敬请期待！
     </div>
 </template>
 

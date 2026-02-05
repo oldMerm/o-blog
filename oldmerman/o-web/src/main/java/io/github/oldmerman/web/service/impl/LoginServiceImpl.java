@@ -20,6 +20,7 @@ import io.github.oldmerman.model.vo.CaptchaVO;
 import io.github.oldmerman.model.vo.LoginVO;
 import io.github.oldmerman.web.converter.LoginConverter;
 import io.github.oldmerman.web.mapper.LoginMapper;
+import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.LoginService;
 import io.github.oldmerman.web.util.EmailSender;
 import io.github.oldmerman.web.util.UserContext;
@@ -39,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 public class LoginServiceImpl implements LoginService {
 
     private final LoginMapper loginMapper;
+
+    private final UserMapper userMapper;
 
     private final StringRedisTemplate redisTemplate;
 
@@ -187,6 +190,17 @@ public class LoginServiceImpl implements LoginService {
         } catch (MessagingException e) {
             log.error("邮件发送失败,{}",e.getMessage());
             throw new BusinessException(BusErrorCode.EMAIL_SEND_FAILED);
+        }
+    }
+
+    /**
+     * 判断是否为合法管理用户
+     *
+     * @param userId 用户id
+     */
+    public void isValidAuthToken(Long userId) {
+        if(userMapper.isValidAuthToken(userId) != 1){
+            throw new BusinessException(BusErrorCode.ILLEGAL_TOKEN);
         }
     }
 

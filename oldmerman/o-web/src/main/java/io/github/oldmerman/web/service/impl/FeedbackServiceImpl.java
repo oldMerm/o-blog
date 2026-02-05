@@ -5,12 +5,14 @@ import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.model.po.FeedBack;
 import io.github.oldmerman.model.vo.FeedbackVO;
+import io.github.oldmerman.web.converter.FeedbackConverter;
 import io.github.oldmerman.web.mapper.FeedbackMapper;
 import io.github.oldmerman.web.service.FeedbackService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -18,6 +20,8 @@ import java.util.List;
 public class FeedbackServiceImpl implements FeedbackService {
 
     private final FeedbackMapper feedbackMapper;
+
+    private final FeedbackConverter converter;
 
     /**
      * 创建反馈信息
@@ -33,6 +37,24 @@ public class FeedbackServiceImpl implements FeedbackService {
                 .userId(userId)
                 .id(IdGenerator.nextId())
                 .build());
+    }
+
+    /**
+     * 用户批量获取反馈信息
+     * @param userId 用户id
+     * @return 反馈信息封装对象
+     */
+    public List<FeedbackVO> getBatchFeedback(Long userId) {
+        List<FeedBack> list = feedbackMapper.selectBatchByUserId(userId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        return list.stream()
+                .map(i -> {
+                    FeedbackVO feedbackVO = converter.poToVo(i);
+                    if (i.getRepliedAt() != null) {
+                        feedbackVO.setRepliedAt(formatter.format(i.getRepliedAt()));
+                    }
+                    return feedbackVO;
+                }).toList();
     }
 
     /**

@@ -9,7 +9,7 @@ const day = `${time.getFullYear()}年${time.getMonth() + 1}月${time.getDate()}�
 const showbox = ref(false)
 
 onMounted(() => {
-    renderUsrInfo()
+    renderUsrInfo();
 });
 interface UserInfo{
     username: string;

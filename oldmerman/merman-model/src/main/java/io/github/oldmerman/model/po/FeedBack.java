@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @TableName("o_feedback")
@@ -18,6 +17,8 @@ public class FeedBack {
 
     private Long userId;
 
+    private String replier;
+
     private String feedbackType;
 
     private String feedback;
@@ -25,4 +26,6 @@ public class FeedBack {
     private String reply;
 
     private LocalDateTime createdAt;
+
+    private LocalDateTime repliedAt;
 }

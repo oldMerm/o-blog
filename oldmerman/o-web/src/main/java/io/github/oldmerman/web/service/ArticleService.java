@@ -19,4 +19,5 @@ public interface ArticleService {
 
     void upload(Long userId, MultipartFile file, ArticleCreateDTO dto);
 
+    void removeArticle(String articleName, Long userId) throws JsonProcessingException;
 }

@@ -14,7 +14,7 @@ const httpInstance: AxiosInstance = rateLimit(axios.create({
   baseURL: API_BASE_URL,
   timeout: 5000,
 }), {
-  maxRequests: 30,
+  maxRequests: 100,
   perMilliseconds: 60 * 1000
 });
 

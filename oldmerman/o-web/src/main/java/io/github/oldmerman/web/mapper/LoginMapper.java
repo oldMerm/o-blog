@@ -13,7 +13,7 @@ public interface LoginMapper extends BaseMapper<User> {
     void createUser(User po);
 
     @Select("SELECT id FROM o_blog.o_user WHERE email = #{email} AND password = #{password} AND is_delete = 1")
-    Long verifyUserInfoByEmail(String username, String email);
+    Long verifyUserInfoByEmail(String email, String password);
 
     @Select("SELECT id FROM o_blog.o_user WHERE username = #{username} AND password = #{password} AND is_delete = 1")
     Long verifyUserInfoById(String username, String password);

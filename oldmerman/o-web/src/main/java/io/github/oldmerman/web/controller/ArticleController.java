@@ -65,4 +65,11 @@ public class ArticleController {
         return Result.success();
     }
 
+    @DeleteMapping("remove/{articleName}")
+    public Result<Void> removeArticle(@PathVariable String articleName) throws JsonProcessingException {
+        Long userId = UserContext.getUserId();
+        log.info("用户删除文章:{}", articleName);
+        articleService.removeArticle(articleName, userId);
+        return Result.success();
+    }
 }

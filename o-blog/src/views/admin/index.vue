@@ -14,7 +14,7 @@ onMounted(async () => {
 
 const isVaildToken = async(token:string) => {
   try {
-    const res = await httpInstance.get<any, Response>('/auth/AuthToken');
+    const res = await httpInstance.get<any, Response>('/auth/authToken');
     if(res.code !== 200){
       alert(`非法访问，将跳转主页`);
       router.push({name:'home'});  

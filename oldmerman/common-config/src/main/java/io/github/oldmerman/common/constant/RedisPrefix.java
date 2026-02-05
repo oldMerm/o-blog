@@ -9,5 +9,5 @@ public class RedisPrefix {
     public static final String REFRESH_TOKEN = OLDMERMAN + "refresh:expire:";
     public static final String BLACK_TOKEN = OLDMERMAN + "black:token:";
     public static final String ARTICLE_RENDER = OLDMERMAN + "article:render:";
-
+    public static final String SYSTEM_RUNTIME = OLDMERMAN + "system:time";
 }

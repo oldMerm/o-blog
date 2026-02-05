@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
 import router from '@/router/index.ts';
 import type { Article } from '@/views/public/Article';
+
+onMounted(() => {
+  getFeedback();
+})
 
 // 假数据：生成多一点以展示滚动条效果
 const statusMap = new Map([
@@ -91,6 +95,23 @@ const submitFeedback = async () => {
     }
   } catch (error) {
     alert(error);
+  }
+}
+
+const deleteArticle = async () => {
+  const articleName = prompt("请输入要删除的文章名:", "");
+  if(articleName === "" || articleName === null){
+    return;
+  }
+  // 这里执行删除文章逻辑(根据文章名)
+  try {
+    const res:Response = await httpInstance.delete(`/article/remove/${articleName}`);
+    if(res.code !== 200){
+      alert(`系统错误:${res.message}`);
+    }
+    getUserMdToRender();
+  } catch (error) {
+    alert(`系统错误:${error}`);
   }
 }
 
@@ -335,67 +356,30 @@ const uploadMd = async () => {
 const replyContent = ref('');
 const showFeedbackList = ref(false);
 
-// 假数据模型
 interface ReplyItem {
   id: number;
   replier: string;
-  feedbackContent: string; // 反馈内容
-  replyContent: string;    // 回复内容
-  replyTime: string;
+  feedback: string; // 反馈内容
+  reply: string;    // 回复内容
+  repliedAt: string;
 }
 
 // 假数据
-const mockData = ref<ReplyItem[]>([
-  {
-    id: 1,
-    replier: '管理员01',
-    feedbackContent: '系统有时候加载图片会变得非常慢，希望能优化一下CDN配置。',
-    replyContent: '收到，技术部已经排查完毕，预计今晚更新修复。',
-    replyTime: '2023-10-27 10:00'
-  },
-  {
-    id: 2,
-    replier: '客服小美',
-    feedbackContent: '导出Excel报表的时候格式乱了。',
-    replyContent: '您好，请尝试更新浏览器版本，如果还有问题请联系IT支持。',
-    replyTime: '2023-10-26 15:30'
-  },
-  {
-    id: 3,
-    replier: '系统自动',
-    feedbackContent: '账号无法登陆。',
-    replyContent: '密码错误次数过多，账号已锁定，请24小时后重试。',
-    replyTime: '2023-10-25 09:00'
-  },
-  {
-    id: 3,
-    replier: '系统自动',
-    feedbackContent: '账号无法登陆。',
-    replyContent: '密码错误次数过多，账号已锁定，请24小时后重试。',
-    replyTime: '2023-10-25 09:00'
-  },
-  {
-    id: 3,
-    replier: '系统自动',
-    feedbackContent: '账号无法登陆。',
-    replyContent: '密码错误次数过多，账号已锁定，请24小时后重试。',
-    replyTime: '2023-10-25 09:00'
-  },
-  {
-    id: 3,
-    replier: '系统自动',
-    feedbackContent: '账号无法登陆。',
-    replyContent: '密码错误次数过多，账号已锁定，请24小时后重试。',
-    replyTime: '2023-10-25 09:00'
-  },
-  {
-    id: 3,
-    replier: '系统自动',
-    feedbackContent: '账号无法登陆。',
-    replyContent: '密码错误次数过多，账号已锁定，请24小时后重试。',
-    replyTime: '2023-10-25 09:00'
-  },
-]);
+const mockData = ref<ReplyItem[]>([]);
+const getFeedback = async () => {
+  try {
+    const res = await httpInstance.get<any, Response>('/feedback/batch_info');
+    console.log(res);
+    
+    if(res.code !== 200){
+      alert(`发生错误：${res}`);
+      return;
+    }
+    mockData.value = res.data;
+  } catch (error) {
+    alert(`系统错误：${error}`);
+  }
+}
 
 // 计算属性：获取回复数量
 const replyCount = computed(() => mockData.value.length);
@@ -424,16 +408,24 @@ const toggleFeedbackList = () => {
 
   <div class="add-feedback-block">
     <div class="main-block" style="margin-right: 30px;">
+      <div class="o-content">
+        <h3>文章管理与说明</h3>
+        <p class="article-delinfo">
+          1.格式使用markdown<br>
+          2.只能创建和删除<br>
+          3.若修改请重新上传<br>
+          4.请勿上传非法内容<br>
+          5.文章通过审核后发布<br>
+          6.<span style="color: red;cursor: pointer;" @click="deleteArticle">点此红字</span>删除文章
+        </p>
+      </div>
+    </div>
+    <div class="main-block" style="margin-right: 30px;">
       <div class="add-content">
         <h3>添加文章</h3>
         <div class="add" @click="selectMdAndImg">
           <img src="../../../static/add.svg" alt="">
         </div>
-      </div>
-    </div>
-    <div class="main-block" style="margin-right: 30px;">
-      <div class="o-content">
-        <h3>功能待开发</h3>
       </div>
     </div>
     <div class="main-block">
@@ -452,15 +444,15 @@ const toggleFeedbackList = () => {
                 <!-- 第一行：回复人 + 时间 -->
                 <div class="item-meta">
                   <span class="replier">👤 {{ item.replier }}</span>
-                  <span class="time">于{{ item.replyTime }}</span>
+                  <span class="time">于{{ item.repliedAt }}</span>
                 </div>
                 <!-- 第二行：反馈内容 (原问题) -->
-                <div class="item-row" :title="item.feedbackContent">
-                  <span class="label">问:</span> {{ item.feedbackContent }}
+                <div class="item-row" :title="item.feedback">
+                  <span class="label">问:</span> {{ item.feedback }}
                 </div>
                 <!-- 第三行：回复内容 -->
-                <div class="item-row reply-text" :title="item.replyContent">
-                  <span class="label">答:</span> {{ item.replyContent }}
+                <div class="item-row reply-text" :title="item.reply">
+                  <span class="label">答:</span> {{ item.reply }}
                 </div>
               </div>
             </div>
@@ -480,7 +472,7 @@ const toggleFeedbackList = () => {
           <textarea placeholder="请输入您的反馈内容(限255字)..." v-model="feedbackContent" class="feedback-textarea">
           </textarea>
         </div>
-        <button class="submit" @click="submitFeedback">全部提交</button>
+        <button class="submit" @click="submitFeedback">提交反馈</button>
       </div>
     </div>
   </div>
@@ -585,6 +577,10 @@ h3 {
 
 .o-content {
   width: 11rem;
+}
+
+.article-delinfo {
+  color: #3c3c3c;
 }
 
 .add-feedback-block {

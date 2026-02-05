@@ -1,5 +1,6 @@
 package io.github.oldmerman.web.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +31,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
@@ -171,6 +174,48 @@ public class ArticleServiceImpl implements ArticleService {
                 }
             }
         });
+    }
+
+    /**
+     * 删除文章
+     * @param articleName 文章名
+     * @param userId 用户唯一id
+     */
+    @Transactional
+    public void removeArticle(String articleName, Long userId) throws JsonProcessingException {
+        LambdaQueryWrapper<Article> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(Article::getWriterId, userId).eq(Article::getArticleName, articleName);
+        Article article = articleMapper.selectOne(lambdaQueryWrapper);
+        if(ObjectUtils.isEmpty(article)){
+            throw new BusinessException(BusErrorCode.FILE_UNEXIST);
+        }
+        Long articleId = article.getId();
+        articleMapper.deleteById(article.getId());
+
+        List<ArticleImage> articleImages = articleImageMapper.selectByArticleId(articleId);
+        articleImageMapper.deleteByIds(articleImages.stream().map(ArticleImage::getId).toList());
+        if(!articleImages.isEmpty()){
+            List<String> keys = articleImages.stream().map(i -> {
+                try {
+                    return new URL(i.getUrl()).getPath().replace("^/", "");
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+            }).toList();
+            // 到oss删除key
+            ossService.deleteBatch(keys, BUCKET);
+            ossService.deleteOne(article.getKey(), null);
+        }
+
+        // 重构缓存
+        Byte articleType = article.getArticleType();
+        String data = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_RENDER + articleType);
+        if(!ObjectUtils.isEmpty(data)){
+            List<ArticleRenderVO> renderList = objectMapper.readValue(data, new TypeReference<>(){});
+            renderList.removeIf(articleRenderVO -> articleRenderVO.getId().equals(articleId.toString()));
+            redisTemplate.opsForValue().set(RedisPrefix.ARTICLE_RENDER + articleType, objectMapper.writeValueAsString(renderList),
+                    NumEnum.ARTICLE_EXPIRE_TIME.getValue(), TimeUnit.DAYS);
+        }
     }
 
 }
