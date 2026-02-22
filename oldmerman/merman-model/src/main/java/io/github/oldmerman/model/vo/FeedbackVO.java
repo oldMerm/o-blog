@@ -2,10 +2,14 @@ package io.github.oldmerman.model.vo;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class FeedbackVO {
 
-    private Long id;
+    private String id;
+
+    private String username;
 
     private String replier;
 
@@ -15,5 +19,5 @@ public class FeedbackVO {
 
     private String reply;
 
-    private String repliedAt;
+    private LocalDateTime repliedAt;
 }

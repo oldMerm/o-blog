@@ -1,3 +1,81 @@
+<script setup lang="ts">
+import { httpInstance, type Response } from '@/utils/http';
+import { onMounted, ref } from 'vue';
+
+// --- 类型定义 ---
+interface ChartConfig {
+  id: number;
+  title: string;
+  maxValue: number; // 用于计算百分比高度
+  data: Counter[];
+}
+
+// 1. 运行天数
+const runDays = ref<number>();
+const getRunDays = async () => {
+  const {data} = await httpInstance.get<any, Response>('/counter/time');
+  runDays.value = data;
+}
+
+const userCounter = ref<Counter[]>([]);
+const articleCounter = ref<Counter[]>([]);
+interface Counter{
+  id: number;
+  countType: number;
+  count: number;
+  createdAt: string;
+}
+const getCount = async (type: number) => {
+  try {
+    const res = await httpInstance.get<any, Response>(`/counter/incr/${type}`);
+    if(res.code !== 200) alert(`出现错误:${res.message}`);
+    return res.data;
+  } catch (error) {
+    alert(error);    
+  }
+}
+
+// 2. 四个图表的数据
+// 你可以在这里修改 label 和 value 来测试不同的展示效果
+const chartsData:any = ref<ChartConfig[]>([
+  {
+    id: 1,
+    title: '近五日访问量 (PV)',
+    maxValue: 1000, // 设定一个最大值作为100%高度参考
+    data: []
+  },
+  {
+    id: 2,
+    title: '新增用户注册数',
+    maxValue: 10,
+    data: userCounter.value
+  },
+  {
+    id: 3,
+    title: '文章发布统计',
+    maxValue: 10,
+    data: articleCounter.value
+  },
+  {
+    id: 4,
+    title: '服务器负载 (%)',
+    maxValue: 100,
+    data: []
+  }
+]);
+
+/* 立即执行代码 */
+onMounted(async () => {
+  getRunDays();
+  userCounter.value = await getCount(1);
+  articleCounter.value = await getCount(2);
+
+  // 手动更新 chartsData 中的数据
+  chartsData.value[1].data = userCounter.value;
+  chartsData.value[2].data = articleCounter.value;
+})
+</script>
+
 <template>
   <div class="dashboard-page">
     
@@ -28,13 +106,13 @@
             <!-- 柱子：高度动态计算 -->
             <div 
               class="bar" 
-              :style="{ height: (item.value / chart.maxValue) * 100 + '%' }"
-              :title="`${item.label}: ${item.value}`"
+              :style="{ height: (item.count / chart.maxValue) * 100 + '%' }"
+              :title="`${item.createdAt}: ${item.count}`"
             >
-              <span class="bar-value">{{ item.value }}</span>
+              <span class="bar-value">{{ item.count }}</span>
             </div>
             <!-- X轴标签 -->
-            <div class="bar-label">{{ item.label }}</div>
+            <div class="bar-label">{{ item.createdAt.replace(':', '_').slice(2, 7)}}</div>
           </div>
         </div>
 
@@ -43,90 +121,6 @@
 
   </div>
 </template>
-
-<script setup lang="ts">
-import { httpInstance, type Response } from '@/utils/http';
-import { onMounted, ref } from 'vue';
-
-// --- 类型定义 ---
-interface DataPoint {
-  label: string;
-  value: number;
-}
-
-interface ChartConfig {
-  id: number;
-  title: string;
-  maxValue: number; // 用于计算百分比高度
-  data: DataPoint[];
-}
-
-/* 立即执行代码 */
-onMounted(() => {
-  getRunDays();
-})
-
-// 1. 运行天数
-const runDays = ref<number>();
-const getRunDays = async () => {
-  const {data} = await httpInstance.get<any, Response>('/counter/time');
-  runDays.value = data;
-}
-
-// 2. 四个图表的数据
-// 你可以在这里修改 label 和 value 来测试不同的展示效果
-const chartsData = ref<ChartConfig[]>([
-  {
-    id: 1,
-    title: '近五日访问量 (PV)',
-    maxValue: 1000, // 设定一个最大值作为100%高度参考
-    data: [
-      { label: '周一', value: 450 },
-      { label: '周二', value: 620 },
-      { label: '周三', value: 800 },
-      { label: '周四', value: 550 },
-      { label: '周五', value: 920 },
-    ]
-  },
-  {
-    id: 2,
-    title: '新增用户注册数',
-    maxValue: 100,
-    data: [
-      { label: '1月', value: 20 },
-      { label: '2月', value: 35 },
-      { label: '3月', value: 60 },
-      { label: '4月', value: 45 },
-      { label: '5月', value: 88 },
-    ]
-  },
-  {
-    id: 3,
-    title: '文章发布统计',
-    maxValue: 20,
-    data: [
-      { label: '技术', value: 12 },
-      { label: '生活', value: 5 },
-      { label: '转载', value: 8 },
-      { label: '公告', value: 15 },
-      { label: '其他', value: 3 },
-    ]
-  },
-  {
-    id: 4,
-    title: '服务器负载 (%)',
-    maxValue: 100,
-    data: [
-      { label: '08:00', value: 15 },
-      { label: '12:00', value: 65 },
-      { label: '16:00', value: 45 },
-      { label: '20:00', value: 80 },
-      { label: '00:00', value: 30 },
-    ]
-  }
-]);
-
-</script>
 
 <style scoped>
 /* 使用与 MainLayout 一致的变量，保持风格统一 */

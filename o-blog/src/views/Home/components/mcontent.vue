@@ -34,7 +34,7 @@ const renderHomePage = async () => {
 
     <!-- 标题列表区域 -->
     <div class="title-list">
-      <div v-for="(item, index) in articleList" :key="index" class="article-item" @click="goToArticle(item.id)">
+      <div v-for="(item, index) in articleList" :key="index" class="article-item" @click="goToArticle(item.id, true)">
         
         <!-- 左侧：标题 (自动截断) -->
         <span class="title-text">{{ item.articleName }}</span>

@@ -35,7 +35,7 @@ onMounted(() => {
         v-for="item in articleList" 
         :key="item.id" 
         class="list-item"
-        @click="goToArticle(item.id)"
+        @click="goToArticle(item.id, true)"
       >
         {{ item.articleName }}
       </div>

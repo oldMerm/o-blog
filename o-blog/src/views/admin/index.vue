@@ -53,7 +53,6 @@ const pageTitle = computed(() => {
 
 // --- 事件处理 ---
 const handleNavigate = (path: string) => {
-  console.log(`正在跳转到: ${path}`);
   currentRoute.value = path;
   router.push(`/admin${path}`);
 };

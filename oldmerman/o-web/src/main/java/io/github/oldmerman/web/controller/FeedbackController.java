@@ -1,7 +1,9 @@
 package io.github.oldmerman.web.controller;
 
+import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.FeedbackCreateDTO;
+import io.github.oldmerman.model.dto.FeedbackSaveDTO;
 import io.github.oldmerman.model.vo.FeedbackVO;
 import io.github.oldmerman.web.service.FeedbackService;
 import io.github.oldmerman.web.util.UserContext;
@@ -32,6 +34,13 @@ public class FeedbackController {
         return Result.success(feedbackService.getBatchFeedback(userId));
     }
 
+    @GetMapping("page")
+    public Result<PageResult<FeedbackVO>> page(@RequestParam(value = "current", defaultValue = "1") Long current,
+                                               @RequestParam(value = "size", defaultValue = "7") Long size){
+        log.info("分页查询反馈信息");
+        return Result.success(feedbackService.page(current, size));
+    }
+
     @PostMapping
     public Result<Void> createFeedback(@RequestBody FeedbackCreateDTO dto){
         Long userId = UserContext.getUserId();
@@ -39,5 +48,13 @@ public class FeedbackController {
         feedbackService.createFeedback(dto.getContent(), dto.getSelectIds(), userId);
         return Result.success();
     }
+
+    @PostMapping("save")
+    public Result<Void> saveFeedback(@RequestBody FeedbackSaveDTO dto){
+        log.info("回复反馈信息:{}",dto.getId());
+        feedbackService.saveFeedback(dto.getId(), dto.getCont());
+        return Result.success();
+    }
+
 
 }

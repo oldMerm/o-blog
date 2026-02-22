@@ -1,11 +1,38 @@
 <script setup lang="ts">
+import { httpInstance, type Response } from '@/utils/http';
+import { goToArticle, type Article } from '@/views/public/Article';
+import { ref } from 'vue';
+
+const newMess = ref<Article>();
+
+const getNewMess = async () => {
+    try {
+        const res = await httpInstance.get<any, Response>('/counter/newArt');
+        if (res.code !== 200) {
+            alert(`系统出现错误:${res.message}`);
+            return;
+        }
+        newMess.value = res.data;
+    } catch (error) {
+        alert(error);
+    }
+}
+
+getNewMess();
+setInterval(
+    getNewMess, 10800 * 1000
+)
+
 
 </script>
 
 <template>
-<div class="ut">
-老鱼人<strong style="color: skyblue;">更新推送：</strong>xxxxxxx in github
-</div>
+    <div class="ut">
+        老鱼人
+        <strong style="color: skyblue;">更新推送：</strong>
+        <span style="color: rgb(135, 206, 235);cursor: pointer;" @click="goToArticle(newMess?.id, true)">{{ newMess?.articleName.slice(0, 8) }}</span>
+        <span class="mes">于{{ newMess?.createdAt.slice(0, 11) }}</span>
+    </div>
 </template>
 
 <style scoped>
@@ -13,11 +40,15 @@
     width: 100%;
     height: 3rem;
     line-height: 3rem;
-    margin-left:10px;
+    margin-left: 10px;
     border: 1px solid #dadee5;
     border-radius: 12px;
     padding-left: 10px;
     font-size: 1rem;
     font-weight: 300;
+}
+
+.mes {
+    margin-left: 2px;
 }
 </style>

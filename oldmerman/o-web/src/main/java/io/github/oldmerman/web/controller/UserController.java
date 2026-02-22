@@ -3,6 +3,7 @@ package io.github.oldmerman.web.controller;
 import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.UserManageDTO;
+import io.github.oldmerman.model.dto.UserToggleDTO;
 import io.github.oldmerman.model.po.Counter;
 import io.github.oldmerman.model.vo.UserInfoVO;
 import io.github.oldmerman.model.vo.UserManageVO;
@@ -47,6 +48,13 @@ public class UserController {
         dto.setId(UserContext.getUserId());
         log.info("更新用户数据：{}",dto.getId());
         userService.updateUsrInfo(dto);
+        return Result.success();
+    }
+
+    @PostMapping("toggle")
+    public Result<Void> toggleUserStatus(@RequestBody UserToggleDTO dto){
+        log.info("修改用户状态,{}",dto.getId());
+        userService.toggleUserStatus(dto);
         return Result.success();
     }
 

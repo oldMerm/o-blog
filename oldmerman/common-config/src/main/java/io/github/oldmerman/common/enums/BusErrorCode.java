@@ -27,6 +27,7 @@ public enum BusErrorCode implements IResultCode {
     FILE_LEN_FAILED(1092, "文件上传出现意外错误"),
     FILE_DECR_UNEXIST(1093, "文件描述不详细"),
     FILE_UNEXIST(1094, "文件不存在"),
+    ARTICLE_WAS_REMOVED(1095, "文章未通过审核或已下架"),
     ;
 
     private final Integer code;

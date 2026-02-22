@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class UserManageVO {
 
-     private Long id;
+     private String id;
 
      private String username;
 
@@ -18,4 +18,6 @@ public class UserManageVO {
      private LocalDateTime updatedAt;
 
      private String attr;
+
+     private byte isDelete;
 }

@@ -5,13 +5,14 @@ import Dialog from '@/text/dia/Dialog.vue';
 
 // --- 1. TS 接口定义 (Interface) ---
 interface User {
-  id: number;
+  id: string;
   username: string;
   articleCount: number;
   status: number; // 限制状态类型
   updatedAt: string;
   attr: string;
   isVisable: boolean;
+  isDelete: number
 }
 
 // --- 2. 假数据 (Mock Data) ---
@@ -30,14 +31,22 @@ const paginatedUsers = computed(() => {
 // --- 4. 业务逻辑 (Action Handlers) ---
 
 // 切换用户状态
-const toggleStatus = (user: User) => {
+const toggleStatus = async (user: User) => {
   // 实际项目中这里会调用 API
-  user.status = -user.status;
-  console.log(`用户 ${user.id} 状态已更新为: ${user.status}`);
+  const body = {
+    id: user.id,
+    status: user.isDelete == 1 ? 2:1
+  }
+  try {
+    const res = await httpInstance.post<any, Response>('/usr/toggle', body);
+    if(res.code === 200) user.isDelete = body.status;
+  } catch (error) {
+    alert(error);
+  }
 };
 
 // 删除用户
-const handleDelete = (id: number) => {
+const handleDelete = (id: string) => {
   if (confirm('确定要彻底删除该账户吗？此操作不可恢复。')) {
     // 过滤掉被删除的ID，更新列表
     userList.value = userList.value.filter(u => u.id !== id);
@@ -47,7 +56,6 @@ const handleDelete = (id: number) => {
       currentPage.value--;
     }
 
-    console.log(`用户 ID: ${id} 已被删除`);
   }
 };
 
@@ -72,7 +80,6 @@ const page = async () => {
 }
 
 watch(currentPage, (newPage, oldPage) => {
-  console.log(`页码从${oldPage}变为${newPage}，将请求数据...`);
   page();
 }, { immediate: true });
 
@@ -108,7 +115,7 @@ watch(currentPage, (newPage, oldPage) => {
         <tbody>
           <!-- 循环渲染分页后的数据 -->
           <tr v-for="user in paginatedUsers" :key="user.id">
-            <td class="text-light">#{{ String(user.id).slice(0, -5) + '***' }}</td>
+            <td class="text-light">{{ user.id }}</td>
 
             <td class="font-medium">
               <div class="user-info">
@@ -124,9 +131,9 @@ watch(currentPage, (newPage, oldPage) => {
 
             <td>
               <!-- 点击切换状态 -->
-              <span class="status-badge" :class="user.status === 1 ? 'status-active' : 'status-frozen'"
+              <span class="status-badge" :class="user.isDelete === 1 ? 'status-active' : 'status-frozen'"
                 @click="user.isVisable = true" title="点击切换状态">
-                {{ user.status === 1 ? '正常' : '冻结' }}
+                {{ user.isDelete === 1 ? '正常' : '冻结' }}
               </span>
               <Dialog 
                 v-model="user.isVisable" 

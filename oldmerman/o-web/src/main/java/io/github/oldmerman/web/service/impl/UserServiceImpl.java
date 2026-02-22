@@ -10,6 +10,7 @@ import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.common.util.HmacSHA256Util;
 import io.github.oldmerman.common.util.RegexUtils;
 import io.github.oldmerman.model.dto.UserManageDTO;
+import io.github.oldmerman.model.dto.UserToggleDTO;
 import io.github.oldmerman.model.po.Counter;
 import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.model.vo.UserInfoVO;
@@ -110,6 +111,15 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(BusErrorCode.ENCRYPTION_FAILED);
         }
         userMapper.updateUserInfo(dto);
+    }
+
+    /**
+     * 更新用户状态
+     *
+     * @param dto 封装dto
+     */
+    public void toggleUserStatus(UserToggleDTO dto) {
+        userMapper.toggleUserStatus(dto);
     }
 
     /**

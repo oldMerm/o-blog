@@ -3,7 +3,7 @@ import { onMounted, ref, reactive } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
 import UserInfo from '@/views/Home/components/userInfo.vue';
 import router from '@/router';
-import Dialog from '@/text/dia/Dialog.vue';
+import Dialog from '@/utils/dia/Dialog.vue';
 
 const usrInfo: UserManageInfo = reactive({
   username: '',

@@ -34,9 +34,9 @@
     <select id="countUserMonData" resultType="io.github.oldmerman.model.po.Counter">
         SELECT * FROM o_blog.o_count
         WHERE
-            createdAt >= DATE_SUB(#{now}, INTERVAL #{count} MONTH)
+            created_at >= DATE_SUB(#{now}, INTERVAL #{count} MONTH)
         AND
-            createdAt &lt;= #{now}
+            created_at &lt;= #{now}
     </select>
 </mapper>
 

@@ -2,6 +2,7 @@ package io.github.oldmerman.web.controller;
 
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.po.Counter;
+import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.service.CounterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,5 +30,11 @@ public class CounterController {
     public Result<List<Counter>> getUserIncr(@PathVariable Long type){
         log.info("获取用户增长量");
         return Result.success(counterService.getIncr(type));
+    }
+
+    @GetMapping("newArt")
+    public Result<ArticleRenderVO> getArticleUpdateInfo(){
+        log.info("获取老鱼人最新文章");
+        return Result.success(counterService.getArticleUpdateInfo());
     }
 }

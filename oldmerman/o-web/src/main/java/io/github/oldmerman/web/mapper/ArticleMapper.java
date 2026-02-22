@@ -30,4 +30,5 @@ public interface ArticleMapper extends BaseMapper<Article> {
     List<ArticleRenderVO> selectNotice();
 
     ArticleRenderVO getNewMessage();
+
 }

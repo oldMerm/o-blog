@@ -1,3 +1,119 @@
+<script setup lang="ts">
+import { httpInstance, type Response } from '@/utils/http';
+import { ref, watch } from 'vue';
+
+// 实际开发中可能从后端字典接口获取
+const REASON_MAP: Record<number, string> = {
+  1: '文章内容劣质',
+  2: '文章内容有误',
+  3: '网页体验',
+  4: '侵权投诉',
+  5: '和作者吹水'
+};
+
+const getReasonText = (id: number) => REASON_MAP[id] || '未知类型';
+
+// 分页逻辑
+interface FeedbackVO {
+  id: string;
+  replier: string;
+  feedbackType: number[];
+  feedback: string;
+  reply: string | null;
+  repliedAt: string | null;
+  username: string;
+  status: 'replied' | 'unreplied' | null; 
+}
+const FeedbackVOS = ref<FeedbackVO[]>([]);
+const currentPage = ref(1);
+const pageSize = ref(7);
+const pageCount = ref();
+watch(
+  currentPage,
+  async (newVal) => {
+    try {
+      const res = await httpInstance.get<any, Response>('/feedback/page', {
+        params: {
+          current: newVal,
+          size: pageSize.value
+        }
+      });
+      if (res.code !== 200) {
+        alert(`出现错误:${res.message}`);
+      } else {
+        FeedbackVOS.value = transformFeedbackList(res.data.records);
+        pageCount.value = res.data.pages;
+        console.log(FeedbackVOS.value);
+        
+      }
+    } catch (error) {
+      alert(error);
+    }
+  },
+  { immediate: true }  // 立即执行
+)
+
+// 转换函数
+const transformFeedbackList = (records: any[]): FeedbackVO[] => {
+  return records.map((item): FeedbackVO => ({
+    ...item,
+    // 处理 status：reply 为 null 时是 'unreplied'，否则 'replied'
+    // 注意：你说反了，reply 为 null 应该是未回复 'unreplied'，有回复才是 'replied'
+    status: item.reply === null || item.reply === undefined || item.reply === '' 
+      ? 'unreplied' 
+      : 'replied',
+    
+    // 处理 feedbackType：字符串 "1,2,3" 转数字数组 [1, 2, 3]
+    feedbackType: item.feedbackType 
+      ? item.feedbackType.split(',').map((num: string) => parseInt(num.trim(), 10))
+      : []
+  }));
+};
+
+// --- 弹窗逻辑 ---
+const showModal = ref(false);
+const currentItem = ref<FeedbackVO | null>(null);
+const replyInput = ref(''); // 绑定输入框内容
+
+const openDetailModal = (item: FeedbackVO) => {
+  currentItem.value = item;
+  // 如果已回复，不需要填充输入框；如果未回复，清空输入框
+  replyInput.value = '';
+  showModal.value = true;
+};
+
+const closeModal = () => {
+  showModal.value = false;
+  currentItem.value = null;
+};
+
+const handleSaveReply = async (id: string) => {
+  if (!replyInput.value.trim()) {
+    alert('请输入回复内容');
+    return;
+  }
+
+  if (currentItem.value) {
+    try {
+      const param = {id: id, cont: replyInput.value}
+      const res = await httpInstance.post<any, Response>('/feedback/save', param);
+
+      if(res.code !== 200){
+        alert(`程序发生错误:${res.message}`);
+        closeModal();
+      }else{
+        currentItem.value.status = 'replied';
+        currentItem.value.reply = replyInput.value;
+        alert('回复成功！');
+        closeModal();
+      }
+    } catch (error) {
+      alert(error);
+    }
+  }
+};
+</script>
+
 <template>
   <div class="page-container">
     <!-- 1. 顶部标题 (无搜索框) -->
@@ -20,18 +136,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in feedbackList" :key="item.id">
-            <td>#{{ item.id }}</td>
+          <tr v-for="item in FeedbackVOS" :key="item.id">
+            <td>{{ item.id }}</td>
             <td class="username">{{ item.username }}</td>
-            
+
             <!-- 核心功能：ID 集合展示 + 悬停提示 -->
             <td>
               <div class="tags-wrapper">
-                <div 
-                  v-for="rId in item.reasonIds" 
-                  :key="rId" 
-                  class="reason-tag"
-                >
+                <div v-for="rId in item.feedbackType" :key="rId" class="reason-tag">
                   {{ rId }}
                   <!-- 纯 CSS 实现的 Tooltip -->
                   <span class="tooltip-text">{{ getReasonText(rId) }}</span>
@@ -45,9 +157,9 @@
                 {{ item.status === 'replied' ? '已回复' : '待处理' }}
               </span>
             </td>
-            
-            <td class="time">{{ item.createTime }}</td>
-            
+
+            <td class="time">{{ item.repliedAt }}</td>
+
             <!-- 操作 -->
             <td>
               <button class="btn-text" @click="openDetailModal(item)">
@@ -61,9 +173,9 @@
 
     <!-- 3. 分页控件 (UI 演示) -->
     <div class="pagination">
-      <button disabled>&lt; 上一页</button>
-      <span class="page-info">第 1 / 5 页</span>
-      <button>下一页 &gt;</button>
+      <button :disabled="currentPage === 1" @click="currentPage--">上一页</button>
+      <span class="page-info">{{ currentPage }}/{{ pageCount }}</span>
+      <button :disabled="currentPage * pageSize >= pageCount" @click="currentPage++">下一页</button>
     </div>
 
     <!-- 4. 详情与回复弹窗 (Modal) -->
@@ -81,29 +193,25 @@
             <div class="info-box">
               <div class="reason-text-list">
                 <span class="label-tip">反馈类型：</span>
-                {{ currentItem.reasonIds.map(id => getReasonText(id)).join('，') }}
+                {{currentItem.feedbackType.map(id => getReasonText(id)).join('，')}}
               </div>
-              <p class="content-text">{{ currentItem.content }}</p>
+              <p class="content-text">{{ currentItem.feedback }}</p>
             </div>
           </div>
 
           <!-- 下部分：管理员回复区域 -->
           <div class="section admin-section">
             <label>管理员回复：</label>
-            
+
             <!-- 场景 A: 已回复 (只读展示) -->
             <div v-if="currentItem.status === 'replied'" class="reply-box readonly">
-              <p>{{ currentItem.replyContent }}</p>
-              <div class="reply-time">回复于：{{ currentItem.replyTime }}</div>
+              <p>{{ currentItem.reply }}</p>
+              <div class="reply-time">回复于：{{ currentItem.repliedAt }}</div>
             </div>
 
             <!-- 场景 B: 未回复 (输入框 + 按钮) -->
             <div v-else class="reply-box editable">
-              <textarea 
-                v-model="replyInput" 
-                placeholder="请输入您的回复内容..."
-                rows="4"
-              ></textarea>
+              <textarea v-model="replyInput" placeholder="请输入您的回复内容..." rows="4"></textarea>
             </div>
           </div>
         </div>
@@ -111,11 +219,7 @@
         <div class="modal-footer">
           <button class="btn-cancel" @click="closeModal">关闭</button>
           <!-- 仅在未回复状态显示保存按钮 -->
-          <button 
-            v-if="currentItem?.status === 'unreplied'" 
-            class="btn-save"
-            @click="handleSaveReply"
-          >
+          <button v-if="currentItem?.status === 'unreplied'" class="btn-save" @click="handleSaveReply(currentItem.id)">
             保存回复
           </button>
         </div>
@@ -125,107 +229,13 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
-
-// --- TS 接口定义 ---
-interface FeedbackItem {
-  id: number;
-  username: string;
-  reasonIds: number[]; // 反馈原因ID集合，如 [1, 3]
-  content: string;     // 用户写的具体描述
-  status: 'replied' | 'unreplied';
-  createTime: string;
-  replyContent?: string; // 如果已回复，这里有值
-  replyTime?: string;
-}
-
-// --- 假数据映射 (Reason Map) ---
-// 实际开发中可能从后端字典接口获取
-const REASON_MAP: Record<number, string> = {
-  1: '内容包含违规信息',
-  2: '图片加载失败',
-  3: '涉嫌侵犯版权',
-  4: 'UI 交互体验差',
-  5: '其他建议'
-};
-
-const getReasonText = (id: number) => REASON_MAP[id] || '未知类型';
-
-// --- 列表假数据 ---
-const feedbackList = ref<FeedbackItem[]>([
-  {
-    id: 1001,
-    username: 'User_CN01',
-    reasonIds: [1],
-    content: '这篇文章里有一些不合适的词汇，建议审核一下。',
-    status: 'unreplied',
-    createTime: '2026-05-20 14:30'
-  },
-  {
-    id: 1002,
-    username: 'Dev_Mike',
-    reasonIds: [2, 4], // 多个标签
-    content: '首页的轮播图在手机上显示不全，而且点击没有反应。',
-    status: 'replied',
-    createTime: '2026-05-19 09:15',
-    replyContent: '感谢反馈，UI 部门已经修复了这个问题，请刷新缓存查看。',
-    replyTime: '2026-05-19 11:00'
-  },
-  {
-    id: 1003,
-    username: 'Alice_W',
-    reasonIds: [5],
-    content: '希望能增加深色模式，晚上看太刺眼了。',
-    status: 'unreplied',
-    createTime: '2026-05-18 22:10'
-  }
-]);
-
-// --- 弹窗逻辑 ---
-const showModal = ref(false);
-const currentItem = ref<FeedbackItem | null>(null);
-const replyInput = ref(''); // 绑定输入框内容
-
-const openDetailModal = (item: FeedbackItem) => {
-  currentItem.value = item;
-  // 如果已回复，不需要填充输入框；如果未回复，清空输入框
-  replyInput.value = ''; 
-  showModal.value = true;
-};
-
-const closeModal = () => {
-  showModal.value = false;
-  currentItem.value = null;
-};
-
-const handleSaveReply = () => {
-  if (!replyInput.value.trim()) {
-    alert('请输入回复内容');
-    return;
-  }
-  
-  // 模拟保存操作
-  if (currentItem.value) {
-    // 1. 更新本地数据状态
-    currentItem.value.status = 'replied';
-    currentItem.value.replyContent = replyInput.value;
-    currentItem.value.replyTime = new Date().toLocaleString();
-    
-    // 2. 实际开发中这里调用 axios.post('/api/feedback/reply', ...)
-    alert('回复成功！');
-    closeModal();
-  }
-};
-</script>
-
 <style scoped>
 /* 延续之前的蓝白风格 */
 .page-container {
   background-color: white;
   border-radius: 8px;
   padding: 24px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -277,7 +287,8 @@ td {
 
 .username {
   font-weight: 500;
-  color: #1e3a8a; /* 深蓝强调 */
+  color: #1e3a8a;
+  /* 深蓝强调 */
 }
 
 .time {
@@ -293,39 +304,46 @@ td {
 }
 
 .reason-tag {
-  background-color: #eff6ff; /* 浅蓝背景 */
-  color: #3b82f6;            /* 亮蓝文字 */
+  background-color: #eff6ff;
+  /* 浅蓝背景 */
+  color: #3b82f6;
+  /* 亮蓝文字 */
   border: 1px solid #bfdbfe;
   border-radius: 4px;
   padding: 2px 8px;
   font-size: 12px;
   font-weight: 600;
-  cursor: help; /* 鼠标样式：问号 */
-  position: relative; /* 为绝对定位的tooltip做参照 */
+  cursor: help;
+  /* 鼠标样式：问号 */
+  position: relative;
+  /* 为绝对定位的tooltip做参照 */
 }
 
 /* Tooltip 文本默认隐藏 */
 .tooltip-text {
   visibility: hidden;
   width: 120px;
-  background-color: #1e3a8a; /* 深蓝背景 */
+  background-color: #1e3a8a;
+  /* 深蓝背景 */
   color: #fff;
   text-align: center;
   border-radius: 6px;
   padding: 5px;
-  
+
   /* 定位 */
   position: absolute;
   z-index: 10;
-  bottom: 125%; /* 位于标签上方 */
+  bottom: 125%;
+  /* 位于标签上方 */
   left: 50%;
-  margin-left: -60px; /* 居中 */
-  
+  margin-left: -60px;
+  /* 居中 */
+
   /* 动画 */
   opacity: 0;
   transition: opacity 0.3s;
   font-weight: normal;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* 小三角箭头 */
@@ -356,12 +374,14 @@ td {
 
 .status-badge.replied {
   background-color: #d1fae5;
-  color: #059669; /* 绿色 */
+  color: #059669;
+  /* 绿色 */
 }
 
 .status-badge.unreplied {
   background-color: #f3f4f6;
-  color: #6b7280; /* 灰色 */
+  color: #6b7280;
+  /* 灰色 */
 }
 
 .btn-text {
@@ -371,13 +391,18 @@ td {
   cursor: pointer;
   font-size: 13px;
 }
-.btn-text:hover { text-decoration: underline; }
+
+.btn-text:hover {
+  text-decoration: underline;
+}
 
 /* --- 弹窗 Modal 样式 --- */
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
@@ -390,7 +415,7 @@ td {
   width: 600px;
   max-width: 90%;
   border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -405,15 +430,29 @@ td {
   background-color: #f9fafb;
 }
 
-.modal-header h4 { margin: 0; color: #1f2937; }
-.close-btn { font-size: 24px; cursor: pointer; color: #9ca3af; }
-.close-btn:hover { color: #4b5563; }
+.modal-header h4 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.close-btn {
+  font-size: 24px;
+  cursor: pointer;
+  color: #9ca3af;
+}
+
+.close-btn:hover {
+  color: #4b5563;
+}
 
 .modal-body {
   padding: 24px;
 }
 
-.section { margin-bottom: 24px; }
+.section {
+  margin-bottom: 24px;
+}
+
 .section label {
   display: block;
   font-weight: 600;
@@ -421,7 +460,8 @@ td {
   margin-bottom: 8px;
 }
 
-.info-box, .reply-box {
+.info-box,
+.reply-box {
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
@@ -436,11 +476,15 @@ td {
   border-bottom: 1px dashed #e5e7eb;
 }
 
-.content-text { color: #1f2937; line-height: 1.6; }
+.content-text {
+  color: #1f2937;
+  line-height: 1.6;
+}
 
 /* 回复区域样式 */
 .reply-box.readonly {
-  background-color: #eff6ff; /* 浅蓝背景表示已回复 */
+  background-color: #eff6ff;
+  /* 浅蓝背景表示已回复 */
   border-color: #bfdbfe;
   color: #1e40af;
 }
@@ -460,6 +504,7 @@ td {
   font-family: inherit;
   resize: vertical;
 }
+
 .reply-box textarea:focus {
   outline: none;
   border-color: #3b82f6;
@@ -491,7 +536,10 @@ td {
   cursor: pointer;
   color: white;
 }
-.btn-save:hover { background: #2563eb; }
+
+.btn-save:hover {
+  background: #2563eb;
+}
 
 /* 分页样式 (简单版) */
 .pagination {
@@ -501,6 +549,7 @@ td {
   align-items: center;
   gap: 10px;
 }
+
 .pagination button {
   padding: 6px 12px;
   border: 1px solid #e5e7eb;
@@ -508,10 +557,15 @@ td {
   cursor: pointer;
   border-radius: 4px;
 }
+
 .pagination button:disabled {
   background: #f3f4f6;
   color: #9ca3af;
   cursor: not-allowed;
 }
-.page-info { font-size: 14px; color: #6b7280; }
+
+.page-info {
+  font-size: 14px;
+  color: #6b7280;
+}
 </style>

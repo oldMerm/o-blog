@@ -9,7 +9,10 @@ const day = `${time.getFullYear()}年${time.getMonth() + 1}月${time.getDate()}�
 const showbox = ref(false)
 
 onMounted(() => {
-    renderUsrInfo();
+    const token = localStorage.getItem('token');
+    if(token){
+        renderUsrInfo();
+    }
 });
 interface UserInfo{
     username: string;
@@ -71,7 +74,8 @@ const loginPage = ref(() => {
 })
 
 const goToManagePage = () => {
-    router.push({name: 'manage'})
+    const routeUrl = router.resolve({ name: 'manage' });
+    window.open(routeUrl.href, '_blank');
 }
 </script>
 

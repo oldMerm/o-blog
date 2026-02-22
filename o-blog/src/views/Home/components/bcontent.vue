@@ -5,7 +5,7 @@
 <template>
 <div class="bc">
 本站不获取任何个人隐私信息，请注意甄别！<br>
-版本号：122.302.00 邮箱：oldmerman@outlook.com 鸣谢：xxx xxx 
+版本号：122.302.00 邮箱：oldmerman@outlook.com<!--  鸣谢：xxx xxx --> 
 </div>
 </template>
 

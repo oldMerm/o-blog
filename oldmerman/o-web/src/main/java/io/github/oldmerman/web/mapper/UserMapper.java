@@ -2,6 +2,7 @@ package io.github.oldmerman.web.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.github.oldmerman.model.dto.UserManageDTO;
+import io.github.oldmerman.model.dto.UserToggleDTO;
 import io.github.oldmerman.model.po.Counter;
 import io.github.oldmerman.model.po.User;
 import org.apache.ibatis.annotations.Param;
@@ -36,4 +37,7 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Select("SELECT type FROM o_blog.o_user WHERE id = #{userId}")
     Byte isValidAuthToken(Long userId);
+
+    @Update("UPDATE o_blog.o_user SET is_delete = #{status} WHERE id = #{id}")
+    void toggleUserStatus(UserToggleDTO dto);
 }

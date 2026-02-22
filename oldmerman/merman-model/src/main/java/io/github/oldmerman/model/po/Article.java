@@ -44,6 +44,6 @@ public class Article {
         public static byte UNDER_REVIEW = 1;
         public static byte REVIEWED = 2;
         public static byte PUBLISHED = 3;
-        public static byte NOT_REVIEWED = 4;
+        public static byte REMOVED = 4;
     }
 }

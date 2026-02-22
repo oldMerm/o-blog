@@ -1,1 +1,9 @@
 dependencies {}
+
+springBoot {
+    mainClass = 'io.github.oldmerman.web.WebApplication'
+}
+
+bootJar {
+    archiveFileName = 'oldmerman.jar'
+}

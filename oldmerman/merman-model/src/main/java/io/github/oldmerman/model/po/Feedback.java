@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Data
 @TableName("o_feedback")
 @Builder
-public class FeedBack {
+public class Feedback {
 
     @TableId
     private Long id;

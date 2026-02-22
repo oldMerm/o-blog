@@ -2,10 +2,11 @@
 import { ref, computed, onMounted } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
 import router from '@/router/index.ts';
-import type { Article } from '@/views/public/Article';
+import { goToArticle, type Article } from '@/views/public/Article';
 
 onMounted(() => {
   getFeedback();
+  getUserMdToRender();
 })
 
 // 假数据：生成多一点以展示滚动条效果
@@ -13,7 +14,7 @@ const statusMap = new Map([
   [1, "未审核"],
   [2, "已过审"],
   [3, "已发布"],
-  [4, "未过审"]
+  [4, "已下架"]
 ]);
 const articleList = ref<Article[]>([]);
 
@@ -21,15 +22,6 @@ const articleList = ref<Article[]>([]);
 const getUserMdToRender = async () => {
   const res = await httpInstance.get<any, Response>('/article/info');
   articleList.value = res.data;
-}
-getUserMdToRender();
-
-// 访问文章功能，根据文章id渲染并跳转
-const goToArticle = async (articleId: string) => {
-  router.push({
-    name: 'markdown',
-    params: { id: articleId }
-  })
 }
 
 interface FeedbackType {
@@ -353,7 +345,6 @@ const uploadMd = async () => {
 }
 
 // --- TS 逻辑部分 (你可以根据需要修改) ---
-const replyContent = ref('');
 const showFeedbackList = ref(false);
 
 interface ReplyItem {
@@ -364,13 +355,11 @@ interface ReplyItem {
   repliedAt: string;
 }
 
-// 假数据
 const mockData = ref<ReplyItem[]>([]);
 const getFeedback = async () => {
   try {
     const res = await httpInstance.get<any, Response>('/feedback/batch_info');
-    console.log(res);
-    
+
     if(res.code !== 200){
       alert(`发生错误：${res}`);
       return;
@@ -398,7 +387,7 @@ const toggleFeedbackList = () => {
     <h3>我的文章列表</h3>
     <div class="scroll-area">
       <ul class="article-list">
-        <li v-for="article in articleList" :key="article.id" class="article-item" @click="goToArticle(article.id)">
+        <li v-for="article in articleList" :key="article.id" class="article-item" @click="goToArticle(article.id, true)">
           <span class="article-title">{{ article.articleName }}</span>
           <span class="article-date">{{ statusMap.get(article.articleStatus) + '-' + article.createdAt }}</span>
         </li>
@@ -620,6 +609,8 @@ h3 {
   resize: none;
   border: 2px solid black;
   border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .submit {
