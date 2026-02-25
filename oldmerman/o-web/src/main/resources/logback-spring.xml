@@ -9,7 +9,7 @@
     <timestamp key="bySecond" datePattern="yyyyMMddHHmmss"/>
 
     <!-- 2. 定义基础路径 -->
-    <property name="BASE_LOG_PATH" value="D:/merman-blog/cache/web"/>
+    <property name="BASE_LOG_PATH" value="D:/cache/web"/>
 
     <!-- INFO Appender: 存放在 info 目录，文件名为 {时间戳}.log -->
     <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">

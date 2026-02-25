@@ -14,6 +14,7 @@ import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.OssService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -33,7 +34,8 @@ public class OssServiceImpl implements OssService {
 
     private final OSS ossClient;
 
-    private static final String BUCKET = "project-oldmerman";
+    @Value("${alias.oss.pri-bucket}")
+    private String BUCKET;
 
     // 定义允许的格式常量，方便维护
     private static final List<String> IMG_ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png");

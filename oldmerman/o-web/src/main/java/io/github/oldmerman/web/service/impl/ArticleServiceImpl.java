@@ -28,6 +28,7 @@ import io.github.oldmerman.web.service.OssService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,7 +63,8 @@ public class ArticleServiceImpl implements ArticleService {
 
     private final ObjectMapper objectMapper;
 
-    private static final String BUCKET = "project-oldmerman-artimg";
+    @Value("${alias.oss.pub-bucket}")
+    private String BUCKET;
 
     /**
      * 用户获取个人的文章基本信息

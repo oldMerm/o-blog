@@ -4,7 +4,7 @@ spring:
   application:
     name: web
   profiles:
-    active: dev
+    active: dev # 改为prod则为生产环境
   # your config
   datasource:
     driver-class-name: ${oldmerman.datasource.driver-class-name}
@@ -43,6 +43,8 @@ alias:
   oss:
     endpoint: https://oss-cn-guangzhou.aliyuncs.com
     region: cn-guangzhou
+    pri-bucket: ${oldmerman.oss.pri-bucket}
+    pub-bucket: ${oldmerman.oss.pub-bucket}
 mybatis-plus:
   global-config:
     db-config:

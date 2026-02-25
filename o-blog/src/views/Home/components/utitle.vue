@@ -27,11 +27,10 @@ setInterval(
 </script>
 
 <template>
-    <div class="ut">
-        老鱼人
-        <strong style="color: skyblue;">更新推送：</strong>
-        <span style="color: rgb(135, 206, 235);cursor: pointer;" @click="goToArticle(newMess?.id, true)">{{ newMess?.articleName.slice(0, 8) }}</span>
-        <span class="mes">于{{ newMess?.createdAt.slice(0, 11) }}</span>
+    <div class="ut" v-if="newMess">
+        oldmerman<strong>更新推送:</strong>
+        <span class="newMess" @click="goToArticle(newMess.id, true)">{{ newMess.articleName.slice(0, 8) }}</span>
+        <span class="time">于{{ newMess.createdAt.slice(0, 11) }}</span>
     </div>
 </template>
 
@@ -46,9 +45,18 @@ setInterval(
     padding-left: 10px;
     font-size: 1rem;
     font-weight: 300;
+    cursor: default;
 }
 
-.mes {
-    margin-left: 2px;
+.newMess {
+    margin: 0 5px;
+    font-style: italic;
+    text-decoration: underline;
+    cursor: pointer;
+    color: skyblue;
+}
+
+.time {
+    font-size: smaller;
 }
 </style>
