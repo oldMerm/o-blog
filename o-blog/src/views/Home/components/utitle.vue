@@ -29,7 +29,7 @@ setInterval(
 <template>
     <div class="ut" v-if="newMess">
         oldmerman<strong>更新推送:</strong>
-        <span class="newMess" @click="goToArticle(newMess.id, true)">{{ newMess.articleName.slice(0, 8) }}</span>
+        <span class="newMess" @click="goToArticle(newMess.id)">{{ newMess.articleName.slice(0, 8) }}</span>
         <span class="time">于{{ newMess.createdAt.slice(0, 11) }}</span>
     </div>
 </template>
