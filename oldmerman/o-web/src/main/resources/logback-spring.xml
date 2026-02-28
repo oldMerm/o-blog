@@ -1,70 +1,93 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-    <!-- 引入Spring Boot的默认配置 -->
-    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+<configuration scan="true" scanPeriod="60 seconds">
 
-    <!-- 1. 定义时间戳变量：key="bySecond" -->
-    <!-- datePattern 定义文件名的格式，这里精确到秒，确保每次启动文件名都不一样 -->
-    <timestamp key="bySecond" datePattern="yyyyMMddHHmmss"/>
+    <!-- 把 Spring Boot 的属性暴露给 logback（可选） -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="app"/>
 
-    <!-- 2. 定义基础路径 -->
-    <property name="BASE_LOG_PATH" value="D:/cache/web"/>
+    <!-- 日志文件目录（生产环境用） 测试环境D://cache-->
+    <property name="LOG_DIR" value="/etc/oldmerman/log/system" />
+    <!-- 日志文件名前缀 -->
+    <property name="LOG_FILE_PREFIX" value="${APP_NAME}" />
 
-    <!-- INFO Appender: 存放在 info 目录，文件名为 {时间戳}.log -->
-    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- 核心修改：路径变为 info/时间戳.log -->
-        <file>${BASE_LOG_PATH}/info/${bySecond}.log</file>
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %green([%thread]) %highlight(%-5level) %cyan(%logger{36}) - %msg%n" />
 
-        <!-- 过滤器：只记录 INFO 级别 (过滤掉 WARN 和 ERROR) -->
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <level>INFO</level>
-            <onMatch>ACCEPT</onMatch>
-            <onMismatch>DENY</onMismatch>
-        </filter>
-
+    <!-- 控制台输出（所有环境都可能用到） -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>${FILE_LOG_PATTERN}</pattern>
-            <charset>${FILE_LOG_CHARSET}</charset>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
         </encoder>
-
-        <!-- 滚动策略：当文件超过10MB或跨天时，归档文件 -->
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- 归档文件名的格式，保留原时间戳前缀，后面加上日期和索引 -->
-            <fileNamePattern>${BASE_LOG_PATH}/info/${bySecond}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>10MB</maxFileSize>
-            <maxHistory>30</maxHistory>
-            <totalSizeCap>1GB</totalSizeCap>
-        </rollingPolicy>
     </appender>
 
-    <!-- ERROR Appender: 存放在 error 目录，文件名为 {时间戳}.log -->
-    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- 核心修改：路径变为 error/时间戳.log -->
-        <file>${BASE_LOG_PATH}/error/${bySecond}.log</file>
+    <!-- ============ 生产环境文件输出 ============ -->
+    <!-- INFO 级别及以上 -->
+    <springProfile name="prod">
+        <!-- INFO 文件（附带滚动策略） -->
+        <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <!-- 只记录 INFO 及以上（但排除 ERROR，让 ERROR 单独文件记录） -->
+            <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                <level>INFO</level>
+                <onMatch>ACCEPT</onMatch>
+                <onMismatch>NEUTRAL</onMismatch>
+            </filter>
+            <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                <level>WARN</level>
+                <onMatch>ACCEPT</onMatch>
+                <onMismatch>NEUTRAL</onMismatch>
+            </filter>
+            <!-- 多个 LevelFilter 不太优雅，通常推荐用 Threshold/Janino，但这里按需求简单示例 -->
 
-        <!-- 过滤器：接收 WARN 及以上级别 -->
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>ERROR</level>
-        </filter>
+            <file>${LOG_DIR}/${LOG_FILE_PREFIX}-info.log</file>
 
-        <encoder>
-            <pattern>${FILE_LOG_PATTERN}</pattern>
-            <charset>${FILE_LOG_CHARSET}</charset>
-        </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <!-- 按天滚动 -->
+                <fileNamePattern>${LOG_DIR}/${LOG_FILE_PREFIX}-info.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+                <!-- 保存 30 天 -->
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
 
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${BASE_LOG_PATH}/error/${bySecond}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>10MB</maxFileSize>
-            <maxHistory>30</maxHistory>
-            <totalSizeCap>1GB</totalSizeCap>
-        </rollingPolicy>
-    </appender>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
 
-    <!-- 根日志配置 -->
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="INFO_FILE"/>
-        <appender-ref ref="ERROR_FILE"/>
-    </root>
+        <!-- ERROR 文件 -->
+        <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <!-- 只记录 ERROR 级别 -->
+            <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                <level>ERROR</level>
+                <onMatch>ACCEPT</onMatch>
+                <onMismatch>DENY</onMismatch>
+            </filter>
+
+            <file>${LOG_DIR}/${LOG_FILE_PREFIX}-error.log</file>
+
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_DIR}/${LOG_FILE_PREFIX}-error.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <!-- 生产环境根日志配置：控制台 + 文件 -->
+        <root level="INFO">
+            <appender-ref ref="INFO_FILE" />
+            <appender-ref ref="ERROR_FILE" />
+        </root>
+    </springProfile>
+
+    <!-- ============ 测试环境配置（只控制台） ============ -->
+    <springProfile name="dev">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+
 </configuration>
