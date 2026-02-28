@@ -45,7 +45,7 @@
 
         <!-- 过滤器：接收 WARN 及以上级别 -->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>WARN</level>
+            <level>ERROR</level>
         </filter>
 
         <encoder>

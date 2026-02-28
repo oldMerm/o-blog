@@ -23,6 +23,7 @@ public class Counter {
     private LocalDateTime createdAt;
 
     public static class Type {
+        public static final Byte RUN_TIME = 0;
         public static final Byte USER = 1;
         public static final Byte ARTICLE = 2;
     }
