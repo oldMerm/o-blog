@@ -5,7 +5,7 @@
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="app"/>
 
     <!-- 日志文件目录（生产环境用） 测试环境D://cache-->
-    <property name="LOG_DIR" value="/etc/oldmerman/log/system" />
+    <property name="LOG_DIR" value="/etc/oldmerman/log" />
     <!-- 日志文件名前缀 -->
     <property name="LOG_FILE_PREFIX" value="${APP_NAME}" />
 
@@ -42,7 +42,7 @@
 
             <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
                 <!-- 按天滚动 -->
-                <fileNamePattern>${LOG_DIR}/${LOG_FILE_PREFIX}-info.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+                <fileNamePattern>${LOG_DIR}/info/${LOG_FILE_PREFIX}-info.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
                 <!-- 保存 30 天 -->
                 <maxHistory>30</maxHistory>
             </rollingPolicy>
@@ -65,7 +65,7 @@
             <file>${LOG_DIR}/${LOG_FILE_PREFIX}-error.log</file>
 
             <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-                <fileNamePattern>${LOG_DIR}/${LOG_FILE_PREFIX}-error.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+                <fileNamePattern>${LOG_DIR}/error/${LOG_FILE_PREFIX}-error.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
                 <maxHistory>30</maxHistory>
             </rollingPolicy>
 
@@ -84,7 +84,7 @@
 
     <!-- ============ 测试环境配置（只控制台） ============ -->
     <springProfile name="dev">
-        <root level="DEBUG">
+        <root level="INFO">
             <appender-ref ref="CONSOLE" />
         </root>
     </springProfile>
