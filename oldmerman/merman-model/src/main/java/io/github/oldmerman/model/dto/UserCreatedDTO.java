@@ -12,4 +12,6 @@ public class UserCreatedDTO {
     private String password;
 
     private String code;
+
+    private String confirmPassword;
 }
