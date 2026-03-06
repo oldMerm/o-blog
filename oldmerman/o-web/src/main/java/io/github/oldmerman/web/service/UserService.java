@@ -17,6 +17,8 @@ public interface UserService {
 
     List<Counter> getUserMonCount(Long count);
 
+    String getUserPermission();
+
     void deleteUsr(Long userId, String token);
 
     PageResult<UserManageVO> page(Long current, Long size);

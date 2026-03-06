@@ -25,12 +25,6 @@ public class UserInfoSync {
 
     private final CounterMapper counterMapper;
 
-    @Scheduled(cron = "0 0/10 * * * ?")
-    public void updateUserArticleInfo(){
-        log.info("定时任务执行，同步用户文章点赞数据");
-        userMapper.updateUserArticle();
-    }
-
     @Scheduled(cron = "0 0 23 L * ?")
     public void updateUserCountInfo(){
         log.info("定时任务执行，统计用户和文章总数");

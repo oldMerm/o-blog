@@ -37,3 +37,4 @@ out/
 .vscode/
 
 o-web/src/main/resources/application-dev.yaml
+o-web/src/main/resources/application-prod.yaml

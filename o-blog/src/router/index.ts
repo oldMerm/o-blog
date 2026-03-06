@@ -9,6 +9,7 @@ import AdminDashboard from '@/views/admin/components/AdminDashboard.vue'
 import AdminUser from '@/views/admin/components/AdminUser.vue'
 import AdminFeedback from '@/views/admin/components/AdminFeedback.vue'
 import AdminArticle from '@/views/admin/components/AdminArticle.vue'
+import ContentDialogDemo from '@/text/dia/ContentDialogDemo.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -56,6 +57,11 @@ const router = createRouter({
           component: AdminArticle
         }
       ]
+    },
+    {
+      name: 'text',
+      path: '/text',
+      component: ContentDialogDemo
     }
   ],
 })

@@ -32,7 +32,7 @@ public class JwtFilter implements Filter {
     private static final AntPathMatcher MATCHER = new AntPathMatcher();
     private static final Set<String> SKIP = Set.of(
             "/auth/login","/auth/captcha","/auth/email","/auth/register","/auth/refresh",
-            "/article/public/**", "/counter/newArt");
+            "/article/public/**", "/counter/newArt", "/counter/health");
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,

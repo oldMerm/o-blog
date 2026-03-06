@@ -14,5 +14,5 @@ oldmerman:
     username: oldmerman@qq.com
     password: ${EMAIL_PASSWORD}
   oss:
-    pri-bucket: project-oldmerman
-    pub-bucket: project-oldmerman-artimg
+    pri-bucket: oldmerman-prod
+    pub-bucket: oldmerman-prod-pub

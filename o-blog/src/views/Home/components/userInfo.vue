@@ -119,7 +119,7 @@ const goToManagePage = () => {
         </div>
         <div class="content-body not" v-show="!showbox">
             <button class="login-r" @click="loginPage">
-                请先登录！
+                请先登录!
             </button>
         </div>
     </div>
@@ -167,6 +167,7 @@ const goToManagePage = () => {
     border: none;
     outline: none;
     background-color: transparent;
+    text-decoration: underline;
 }
 
 .login-r:hover {

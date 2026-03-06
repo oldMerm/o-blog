@@ -37,4 +37,9 @@ public class CounterController {
         log.info("获取老鱼人最新文章");
         return Result.success(counterService.getArticleUpdateInfo());
     }
+
+    @GetMapping("health")
+    public Result<String> health(){
+        return Result.success("I am healthy");
+    }
 }

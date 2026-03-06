@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
-import router from '@/router/index.ts';
 import { goToArticle, type Article } from '@/views/public/Article';
+import UploadModal from '../utils/ContentDialog.vue';
 
 onMounted(() => {
   getFeedback();
@@ -107,244 +107,14 @@ const deleteArticle = async () => {
   }
 }
 
-// --- 状态定义 ---
-let mdFile: any = ref(null);
-let imgMap: any = ref({});
-let newMd: any = null; // 修复：这里存储的是替换后的 Markdown 字符串内容
-let imgList: any = [];
+const uploadModalRef = ref<InstanceType<typeof UploadModal> | null>(null);
 
-// --- 辅助接口 ---
-interface ArticleCreateDTO {
-  articleName: string;
-  articleDecr: string;
-  articleType: number;
-  attrs: string[];
-}
-
-/**
- * 1. 【入口】选择 MD 文件
- */
-const selectMdAndImg = () => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.md';
-  input.onchange = (e: Event) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-
-    // 重置状态
-    mdFile.value = file;
-    newMd = null;
-    imgList = [];
-    imgMap.value = {};
-
-    const imgConfirm = confirm("文章内是否有图片(需要放到同一文件夹内)？");
-    if (imgConfirm) {
-      // 1.1 有图片，去选文件夹
-      selectImgDir();
-    } else {
-      // 1.2 无图片，直接上传原始 MD
-      uploadMd();
-    }
-  }
-  input.click();
-}
-
-/**
- * 2. 选择图片文件夹
- */
-const selectImgDir = () => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  // @ts-ignore: webkitdirectory 是非标准属性，TS 需要忽略检查
-  input.webkitdirectory = true;
-  input.multiple = true;
-
-  input.onchange = async (e: Event) => {
-    const files = (e.target as HTMLInputElement).files;
-    if (!files) return;
-
-    handleDir(files);
-
-    // 等待图片上传并替换链接完成
-    const replacedText = await uploadImgsToOSS();
-
-    if (replacedText) {
-      newMd = replacedText; // 将处理好的文本赋值给 newMd
-      // 图片处理完毕，执行最终上传
-      await uploadMd();
-    }
-
-    // 清理 input
-    input.remove();
-  }
-  input.click();
-}
-
-/**
- * 3. 扫描文件夹到 Map 中
- */
-const handleDir = (files: FileList) => {
-  imgMap.value = {};
-  for (let i = 0; i < files.length; i++) {
-    const f: any = files[i];
-    // webkitRelativePath 包含文件夹路径，如 "imgs/demo.png"
-    const relPath = f.webkitRelativePath;
-    if (/\.(png|jpe?g|gif|webp)$/i.test(f.name)) {
-      imgMap.value[relPath] = f;
-    }
-  }
-}
-
-/**
- * 4. 上传图片到 OSS 并替换 Markdown 内容
- */
-const uploadImgsToOSS = async () => {
-  // 4.1 提取需要上传的图片
-  const list = await extractLocalImgs();
-
-  // 如果没有匹配到图片，直接返回 null 或 原始内容
-  if (!list.length) {
-    alert("未在文件夹中匹配到 MD 文档引用的图片，将直接上传。");
-    return await mdFile.value.text();
-  };
-
-  const fd = new FormData();
-  list.forEach((item: any) => {
-    // 注意：这里后端可能需要 path 来区分，或者只需要 file
-    fd.append('paths', item.path);
-    fd.append('files', item.file);
-  });
-
-  try {
-    const res = await httpInstance.post<any, any>('/article/upload/img', fd);
-
-    if (res.code === 200) {
-      // alert("图片上传成功！(后台处理中...)");
-      imgList = res.data; // 假设返回的是新的图片 URL 数组
-
-      // 4.2 获取 MD 文本内容 (必须 await)
-      const rawText = await mdFile.value.text();
-
-      // 4.3 替换链接
-      return replaceMdImgUrlsByIndex(rawText, res.data);
-    } else {
-      alert(res.message || "图片上传失败");
-      return null;
-    }
-  } catch (error) {
-    console.error(error);
-    alert("图片上传异常");
-    return null;
-  }
-}
-
-/**
- * 5. 解析 MD 中的图片语法，并从 Map 中找到对应的 File
- */
-const extractLocalImgs = async () => {
-  const mdText = await mdFile.value.text(); // 修复：必须 await text()
-  const reg = /!\[.*?\]\((.*?)\)/g;
-  const needUpload = [];
-  let m;
-
-  while ((m = reg.exec(mdText)) !== null) {
-    const rawUrl: string | undefined = m[1]; // 例如 "./pics/a.png"
-
-    // 核心逻辑：尝试匹配文件名
-    // 去掉路径前的 ./ 或 /，只保留文件名或相对路径片段进行模糊匹配
-    if (!rawUrl) continue;
-    const cleanRawUrl = rawUrl.replace(/^\.?\//, '');
-
-    const key = Object.keys(imgMap.value).find(k => k.endsWith(cleanRawUrl));
-
-    if (key) {
-      needUpload.push({ path: rawUrl, file: imgMap.value[key] });
-    }
-  }
-  return needUpload;
-}
-
-/**
- * 6. 字符串替换：旧链接 -> 新链接
- */
-const replaceMdImgUrlsByIndex = (
-  mdText: string,
-  newUrls: string[]
-): string => {
-  let idx = 0;
-  return mdText.replace(/!\[.*?\]\((.*?)\)/g, (matched, oldUrl) => {
-    const cleanOldUrl = oldUrl.replace(/^\.?\//, '');
-    // 再次确认这个链接是否是我们上传列表里的
-    const key = Object.keys(imgMap.value).find(k => k.endsWith(cleanOldUrl));
-
-    // 如果找不到 key，说明这张图没在本地文件夹里，不替换
-    // 如果 idx 越界，也不替换
-    if (!key || idx >= newUrls.length) return matched;
-
-    return matched.replace(oldUrl, newUrls[idx++] ?? '');
-  });
+const openModal = () => {
+  uploadModalRef.value?.openModal();
 };
 
-/**
- * 7. 辅助：字符串转 File 对象
- */
-const stringToFile = (text: string, fileName: string): File => {
-  return new File([text], fileName, { type: 'text/markdown' });
-};
 
-/**
- * 8. 最终上传 Markdown 文件
- */
-const uploadMd = async () => {
-  const formData = new FormData();
-
-  // 公共 DTO 参数
-  const dto: ArticleCreateDTO = {
-    articleName: mdFile.value.name.replace(/\.[^/.]+$/, ""), // 始终使用原始文件的文件名(去掉拓展名)
-    articleDecr: "",
-    articleType: 3,
-    attrs: imgList || [] // 图片列表
-  };
-
-  // 分支逻辑
-  if (newMd === null) {
-    // A. 没处理过图片（或没图片），直接传原始文件对象
-    formData.append('md', mdFile.value);
-  } else {
-    // B. 处理过图片，newMd 是字符串，需要转回 File 对象
-    // 修复：newMd 是 string，没有 .name 属性，使用 mdFile.value.name
-    const finalFile = stringToFile(newMd, mdFile.value.name);
-    formData.append('md', finalFile);
-  }
-
-  // 追加其他参数
-  formData.append('articleName', dto.articleName);
-  formData.append('articleDecr', dto.articleDecr);
-  formData.append('articleType', dto.articleType.toString());
-  // 如果 attrs 是数组，需要遍历 append
-  if (dto.attrs && dto.attrs.length) {
-    dto.attrs.forEach(t => formData.append('attrs', t));
-  }
-
-  try {
-    const res = await httpInstance.post<any, any>('/article/upload', formData);
-    if (res.code === 200) {
-      alert("文章上传成功，请等待审核！");
-      // 清理
-      mdFile.value = null;
-      newMd = null;
-      imgMap.value = {};
-      imgList = [];
-    } else {
-      alert(res.message);
-    }
-  } catch (error) {
-    alert("文章上传失败: " + error);
-  }
-}
-
-// --- TS 逻辑部分 (你可以根据需要修改) ---
+// 反馈功能
 const showFeedbackList = ref(false);
 
 interface ReplyItem {
@@ -412,11 +182,12 @@ const toggleFeedbackList = () => {
     <div class="main-block" style="margin-right: 30px;">
       <div class="add-content">
         <h3>添加文章</h3>
-        <div class="add" @click="selectMdAndImg">
+        <div class="add" @click="openModal">
           <img src="../../../static/add.svg" alt="">
         </div>
       </div>
     </div>
+    <UploadModal ref="uploadModalRef" />
     <div class="main-block">
       <div class="feedback-content">
         <h3 style="display: block; width: 100%;">

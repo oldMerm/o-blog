@@ -197,7 +197,6 @@ public class ArticleServiceImpl implements ArticleService {
         po.setWriterId(userId);
         po.setArticleStatus(Article.ArticleStatus.UNDER_REVIEW);
         po.setArticleWriter(userMapper.selectNameById(userId));
-        po.setArticleDecr("给文章一个描述...");
         po.setKey(mdKey);
         // 3.构建图片对象
         List<String> attrs = dto.getAttrs();
@@ -216,7 +215,10 @@ public class ArticleServiceImpl implements ArticleService {
         }
         // 4.插入数据库
         articleMapper.insertPO(po);
-        // 5.事务回滚
+        // 5.用户加入缓存
+        redisTemplate.opsForValue().set(RedisPrefix.ARTICLE_SUBMIT + userId, articleId.toString(), 1440, TimeUnit.MINUTES);
+
+        // 事务回滚
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCompletion(int status) {

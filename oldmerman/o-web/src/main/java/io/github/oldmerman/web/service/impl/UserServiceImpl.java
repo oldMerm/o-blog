@@ -3,6 +3,7 @@ package io.github.oldmerman.web.service.impl;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.oldmerman.common.constant.BusinessMap;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.PageResult;
@@ -20,6 +21,7 @@ import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.LoginService;
 import io.github.oldmerman.web.service.OssService;
 import io.github.oldmerman.web.service.UserService;
+import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -88,6 +90,11 @@ public class UserServiceImpl implements UserService {
      */
     public List<Counter> getUserMonCount(Long count) {
         return userMapper.countUserMonData(LocalDateTime.now(), count);
+    }
+
+    public String getUserPermission() {
+        User user = userMapper.selectUserById(UserContext.getUserId());
+        return BusinessMap.USER_TYPE_MAP.get(user.getType());
     }
 
     /**

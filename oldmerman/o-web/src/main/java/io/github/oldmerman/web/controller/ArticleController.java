@@ -1,6 +1,9 @@
 package io.github.oldmerman.web.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.oldmerman.common.constant.RedisPrefix;
+import io.github.oldmerman.common.enums.BusErrorCode;
+import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
@@ -10,10 +13,12 @@ import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("article")
@@ -23,35 +28,32 @@ public class ArticleController {
 
     private final ArticleService articleService;
 
+    private final StringRedisTemplate redisTemplate;
+
     @GetMapping("info")
     public Result<List<ArticleRenderVO>> info(){
-        log.info("用户查询个人文章信息");
         return Result.success(articleService.info());
     }
 
     @GetMapping("public/info")
     public Result<List<ArticleRenderVO>> getRenderArticle(@RequestParam(name = "id", defaultValue = "1") Byte articleType,
                                                           @RequestParam(name = "size", defaultValue = "10") Long size) throws JsonProcessingException {
-        log.info("查询文章，类型：{}",articleType);
         return Result.success(articleService.getRenderArticle(articleType, size));
     }
 
     @GetMapping("/private/{articleId}")
     public Result<String> getPrivateArticleById(@PathVariable String articleId){
-        log.info("查询文章:{}",articleId);
         return Result.success(articleService.getPrivateArticleById(Long.parseLong(articleId)));
     }
 
     @GetMapping("/public/{articleId}")
     public Result<String> getPublicArticleById(@PathVariable Long articleId){
-        log.info("查询公共文章:{}",articleId);
         return Result.success(articleService.getPublicArticleById(articleId));
     }
 
     @GetMapping("page")
     public Result<PageResult<ArticlePageVO>> page(@RequestParam(name = "current", defaultValue = "1") Long current,
                                                   @RequestParam(name = "size", defaultValue = "10") Long size){
-        log.info("分页查询文章信息");
         return Result.success(articleService.page(current, size));
     }
 
@@ -60,6 +62,10 @@ public class ArticleController {
     public Result<List<String>> uploadImagesToOSS(@RequestParam("paths") List<String> paths,
                                                   @RequestParam("files") List<MultipartFile> files){
         Long userId = UserContext.getUserId();
+        Long expire = redisTemplate.getExpire(RedisPrefix.ARTICLE_SUBMIT + userId, TimeUnit.MINUTES);
+        if(expire > 0){
+            throw new BusinessException(BusErrorCode.ARTICLE_SUBMIT_FREQUENT.getCode(), "上传过于频繁，请"+expire+"分钟后尝试");
+        }
         log.info("用户{},上传图片",userId);
         return Result.success(articleService.uploadImagesToOSS(userId, paths, files));
     }

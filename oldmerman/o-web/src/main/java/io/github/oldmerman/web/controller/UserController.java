@@ -26,21 +26,23 @@ public class UserController {
     @GetMapping("info")
     public Result<UserInfoVO> getUsrInfo(){
         Long userId = UserContext.getUserId();
-        log.info("获取用户信息：{}",userId);
         return Result.success(userService.getUsrInfo(userId));
     }
 
     @GetMapping("page")
     public Result<PageResult<UserManageVO>> page(@RequestParam(name = "current", defaultValue = "1") Long current,
                                                        @RequestParam(name = "size", defaultValue = "7") Long size){
-        log.info("分页查询用户数据: {}",current);
         return Result.success(userService.page(current, size));
     }
 
     @GetMapping("monCount")
     public Result<List<Counter>> getUserMonCount(@RequestParam(name = "count", defaultValue = "5") Long count){
-        log.info("获取用户月数据");
         return Result.success(userService.getUserMonCount(count));
+    }
+
+    @GetMapping("isAdmin")
+    public Result<String> getUserPermission(){
+        return Result.success(userService.getUserPermission());
     }
 
     @PostMapping("manage")

@@ -32,4 +32,5 @@ public class User {
     private LocalDateTime updatedAt;
 
     private byte isDelete;
+
 }
