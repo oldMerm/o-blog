@@ -4,10 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
-import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
-import io.github.oldmerman.model.vo.ArticlePageVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.util.UserContext;
@@ -51,11 +49,7 @@ public class ArticleController {
         return Result.success(articleService.getPublicArticleById(articleId));
     }
 
-    @GetMapping("page")
-    public Result<PageResult<ArticlePageVO>> page(@RequestParam(name = "current", defaultValue = "1") Long current,
-                                                  @RequestParam(name = "size", defaultValue = "10") Long size){
-        return Result.success(articleService.page(current, size));
-    }
+
 
 
     @PostMapping("upload/img")
@@ -84,13 +78,6 @@ public class ArticleController {
         dto.setAttrs(attrs);
         log.info("用户:{},上传markdown文档",userId);
         articleService.upload(userId, file, dto);
-        return Result.success();
-    }
-
-    @PostMapping("status/{id}")
-    public Result<Void> updateArticleStatus(@PathVariable Long id) throws JsonProcessingException {
-        log.info("修改文章:{},状态",id);
-        articleService.updateArticleStatus(id);
         return Result.success();
     }
 

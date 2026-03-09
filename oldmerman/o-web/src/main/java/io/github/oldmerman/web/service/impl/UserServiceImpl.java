@@ -1,27 +1,20 @@
 package io.github.oldmerman.web.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import io.github.oldmerman.common.constant.BusinessMap;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
-import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.common.util.HmacSHA256Util;
 import io.github.oldmerman.common.util.RegexUtils;
 import io.github.oldmerman.model.dto.UserManageDTO;
-import io.github.oldmerman.model.dto.UserToggleDTO;
 import io.github.oldmerman.model.po.Counter;
 import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.model.vo.UserInfoVO;
-import io.github.oldmerman.model.vo.UserManageVO;
 import io.github.oldmerman.web.converter.UserConverter;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.LoginService;
 import io.github.oldmerman.web.service.OssService;
 import io.github.oldmerman.web.service.UserService;
-import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -59,42 +52,12 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 分页查询用户管理信息，用户管理端
-     *
-     * @param current 起始页面
-     * @param size    页面大小
-     * @return 分页list
-     */
-    public PageResult<UserManageVO> page(Long current, Long size) {
-        Page<User> page = new Page<>(current, size);
-        IPage<User> IPage = userMapper.selectPage(page, null);
-        List<UserManageVO> voList = IPage.getRecords().stream()
-                .map(item -> {
-                    UserManageVO vo = converter.poToManageVO(item);
-                    vo.setAttr(ossService.genPreviewURL(item.getAttr(), null));
-                    return vo;
-                })
-                .toList();
-        return PageResult.of(
-                IPage.getCurrent(),
-                IPage.getSize(),
-                IPage.getTotal(),
-                voList
-        );
-    }
-
-    /**
      * 获取用户月数据
      *
      * @return List<Counter>
      */
     public List<Counter> getUserMonCount(Long count) {
         return userMapper.countUserMonData(LocalDateTime.now(), count);
-    }
-
-    public String getUserPermission() {
-        User user = userMapper.selectUserById(UserContext.getUserId());
-        return BusinessMap.USER_TYPE_MAP.get(user.getType());
     }
 
     /**
@@ -118,15 +81,6 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(BusErrorCode.ENCRYPTION_FAILED);
         }
         userMapper.updateUserInfo(dto);
-    }
-
-    /**
-     * 更新用户状态
-     *
-     * @param dto 封装dto
-     */
-    public void toggleUserStatus(UserToggleDTO dto) {
-        userMapper.toggleUserStatus(dto);
     }
 
     /**

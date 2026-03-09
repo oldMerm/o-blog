@@ -7,13 +7,11 @@ const isAdmin = ref(false);
 
 onMounted(async() => {
   try {
-    const res = await httpInstance.get<any, Response>('/usr/isAdmin');
+    const res = await httpInstance.get<any, Response>('/admin/usr/isAdmin');
     if(res.code === 200){
       isAdmin.value = res.data === 'admin' ? !isAdmin.value : isAdmin.value; 
-      console.log(res);
-      
     }else{
-      alert(`服务出现错误${res.data}`)
+      alert(`无访问权限${res.data}`)
     }
   } catch (error) {
     alert(`系统出现错误${error}`)

@@ -53,7 +53,7 @@ public class CounterServiceImpl implements CounterService {
     /**
      * 获取相关信息五个月的增量
      *
-     * @return 用户增量的集合
+     * @return 增量的集合
      */
     public List<Counter> getIncr(Long type) {
         LocalDateTime now = LocalDateTime.now();

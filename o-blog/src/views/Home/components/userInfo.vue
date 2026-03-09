@@ -38,6 +38,7 @@ const renderUsrInfo = async() => {
             url.value = data.attrURL;
         }
         showbox.value = !showbox.value;
+        
     } catch (error) {
         const data = await httpInstance.get<any, Response>('/auth/refresh');
         if(data.code !== 200){
@@ -74,8 +75,9 @@ const loginPage = ref(() => {
 })
 
 const goToManagePage = () => {
-    const routeUrl = router.resolve({ name: 'manage' });
-    window.open(routeUrl.href, '_blank');
+    router.push({name: 'manage'});
+    // const routeUrl = router.resolve({ name: 'manage' });
+    // window.open(routeUrl.href, '_blank');
 }
 </script>
 

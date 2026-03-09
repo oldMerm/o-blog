@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { httpInstance, type Response } from '@/utils/http';
 import { ref, watch } from 'vue';
-import Dialog from '@/utils/dia/Dialog.vue';
+import ArticleCheckDialog from '../utils/ArticleCheckDialog.vue';
+import UploadModal from '@/views/Manage/utils/ContentDialog.vue';
 import { goToArticle } from '@/views/public/Article';
 
 // --- 状态映射 (用于显示中文) ---
 const statusIdMap: Record<number, string> = {
     1: 'checked',
-    3: 'published',
-    4: 'offline'
+    3: 'publish',
+    4: 'unpublish'
 };
 const statusMap: Record<string, string> = {
     checked: '待审核',
-    published: '已发布',
-    offline: '已下架'
+    publish: '已发布',
+    unpublish: '已下架'
 };
 const typeMap: Record<number, string> = {
     0: '公告',
@@ -22,26 +23,13 @@ const typeMap: Record<number, string> = {
     3: '其它'
 }
 
-// --- 事件处理 (占位) ---
-const handleEdit = async (id: string) => {
-    try {
-        const res = await httpInstance.post<any, Response>(`/article/status/${id}`);
-        if(res.code !== 200){
-            alert(`系统错误:${res.message}`);
-        }else{
-            location.reload();
-        }
-    } catch (error) {
-        alert(error);
-    }
-};
 
 // 分页逻辑
 const currentPage = ref(1);
 const pageSize = ref(10);
 const pages = ref(1);
 const total = ref(0);
-interface ArticlePageVO{
+interface ArticlePageVO {
     id: string;
     articleName: string;
     articleWriter: string;
@@ -52,16 +40,16 @@ interface ArticlePageVO{
 }
 const articleList = ref<ArticlePageVO[]>([]);
 watch(
-    currentPage, 
+    currentPage,
     async (newVal) => {
         try {
-            const res = await httpInstance.get<any, Response>('/article/page', {
+            const res = await httpInstance.get<any, Response>('/admin/article/page', {
                 params: {
                     current: newVal,
                     size: pageSize.value
                 }
             });
-            if(res.code !== 200){
+            if (res.code !== 200) {
                 alert(`系统错误${res.message}`);
                 return;
             }
@@ -75,8 +63,29 @@ watch(
         } catch (error) {
             alert(`出现错误${error}`);
         }
-        
-    }, {immediate: true});
+    }, { immediate: true });
+
+const uploadModalRef = ref<InstanceType<typeof UploadModal> | null>(null);
+
+const openModal = () => {
+  uploadModalRef.value?.openModal();
+};
+
+const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePageVO) => {
+    try {
+        const req = {
+            id: item.id,
+            status: type === 'publish' ? 3 : 4
+        }
+        const res = await httpInstance.post<any, Response>("/admin/article/status", req);
+        if(res.code === 200){
+            alert("文章状态修改成功！");
+            item.articleStatus = type;
+        }
+    } catch (error) {
+        alert(`系统错误:${error}`);
+    }
+}
 </script>
 
 <template>
@@ -90,9 +99,10 @@ watch(
             </div>
             <div class="actions">
                 <!-- 预留搜索框位置，保持布局平衡，暂不实现功能 -->
-                <button class="btn-primary">
+                <button class="btn-primary" @click="openModal">
                     <span>+ 发布新文章</span>
                 </button>
+                <UploadModal ref="uploadModalRef" />
             </div>
         </div>
 
@@ -133,12 +143,13 @@ watch(
                         </td>
                         <td class="col-date">{{ item.createdAt }}</td>
                         <td class="col-actions">
-                            <button class="btn-text" @click="item.visable = true" :disabled="item.articleStatus === 'offline'">
+
+                            <button class="btn-text" @click="item.visable = true">
                                 {{ statusMap[item.articleStatus] }}
                             </button>
-                            <Dialog v-model="item.visable " title="确认修改" 
-                            content="状态（未发布或已发布）修改后将不能撤回，确定执行吗？" 
-                            @confirm="handleEdit(item.id)" />
+
+                            <ArticleCheckDialog v-model:visible="item.visable" :onConfirm="handleCheckAction" :extraParam="item" />
+
                             <span class="divider">|</span>
                             <button class="btn-text" @click="goToArticle(item.id, true)">
                                 查看详细
@@ -149,7 +160,7 @@ watch(
             </table>
         </div>
 
-        <!-- 3. 分页栏 (UI展示，逻辑由你实现) -->
+        <!-- 3. 分页栏 -->
         <div class="pagination-bar">
             <button class="page-btn" :disabled="currentPage === 1">上一页</button>
             <div class="page-numbers">

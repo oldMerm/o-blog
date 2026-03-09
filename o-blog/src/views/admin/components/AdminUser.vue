@@ -38,30 +38,16 @@ const toggleStatus = async (user: User) => {
     status: user.isDelete == 1 ? 2:1
   }
   try {
-    const res = await httpInstance.post<any, Response>('/usr/toggle', body);
+    const res = await httpInstance.post<any, Response>('/admin/usr/toggle', body);
     if(res.code === 200) user.isDelete = body.status;
   } catch (error) {
     alert(error);
   }
 };
 
-// 删除用户
-const handleDelete = (id: string) => {
-  if (confirm('确定要彻底删除该账户吗？此操作不可恢复。')) {
-    // 过滤掉被删除的ID，更新列表
-    userList.value = userList.value.filter(u => u.id !== id);
-
-    // 如果当前页删空了，且不是第一页，自动回到上一页
-    if (paginatedUsers.value.length === 0 && currentPage.value > 1) {
-      currentPage.value--;
-    }
-
-  }
-};
-
 const page = async () => {
   try {
-    const res = await httpInstance.get<any, Response>('/usr/page', {
+    const res = await httpInstance.get<any, Response>('/admin/usr/page', {
       params: {
         current: currentPage.value,
         size: pageSize.value
@@ -109,7 +95,7 @@ watch(currentPage, (newPage, oldPage) => {
             <th>文章数量</th>
             <th>账号状态</th>
             <th>更新时间</th>
-            <th style="text-align: right;">操作</th>
+            <!-- <th style="text-align: right;">操作</th> -->
           </tr>
         </thead>
         <tbody>
@@ -144,11 +130,11 @@ watch(currentPage, (newPage, oldPage) => {
 
             <td class="text-light">{{ user.updatedAt }}</td>
 
-            <td style="text-align: right;">
-              <button class="btn-text btn-delete" @click="handleDelete(user.id)">
+            <!-- <td style="text-align: right;">
+              <button class="btn-text btn-delete">
                 彻底删除
               </button>
-            </td>
+            </td> -->
           </tr>
         </tbody>
       </table>

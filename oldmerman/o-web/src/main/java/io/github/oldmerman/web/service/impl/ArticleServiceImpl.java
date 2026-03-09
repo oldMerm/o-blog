@@ -1,9 +1,6 @@
 package io.github.oldmerman.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,13 +8,11 @@ import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.exception.BusinessException;
-import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
 import io.github.oldmerman.model.dto.ArticlePriDTO;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.po.ArticleImage;
-import io.github.oldmerman.model.vo.ArticlePageVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.ArticleImageMapper;
@@ -25,6 +20,7 @@ import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.service.OssService;
+import io.github.oldmerman.web.util.RedisUtils;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -91,13 +87,14 @@ public class ArticleServiceImpl implements ArticleService {
      */
     public List<ArticleRenderVO> getRenderArticle(Byte articleType, Long size) throws JsonProcessingException {
         String data = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_RENDER + articleType);
-        if(!ObjectUtils.isEmpty(data)){
-            return objectMapper.readValue(data, new TypeReference<>(){});
+        if (!ObjectUtils.isEmpty(data)) {
+            return objectMapper.readValue(data, new TypeReference<>() {
+            });
         }
         List<ArticleRenderVO> vo;
-        if(articleType == 0){
+        if (articleType == 0) {
             vo = articleMapper.selectNotice();
-        }else{
+        } else {
             vo = articleMapper.selectArticle(articleType, size);
         }
         redisTemplate.opsForValue().set(RedisPrefix.ARTICLE_RENDER + articleType, objectMapper.writeValueAsString(vo),
@@ -114,7 +111,7 @@ public class ArticleServiceImpl implements ArticleService {
     public String getPrivateArticleById(Long id) {
         ArticlePriDTO dto = articleMapper.getPrivateKeyById(id);
         String key = dto.getKey();
-        if(key == null || !Objects.equals(UserContext.getUserId(), dto.getWriterId())){
+        if (key == null || !Objects.equals(UserContext.getUserId(), dto.getWriterId())) {
             throw new BusinessException(BusErrorCode.FILE_UNEXIST);
         }
         return ossService.genPreviewURL(key, null);
@@ -130,37 +127,14 @@ public class ArticleServiceImpl implements ArticleService {
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Article::getArticleStatus, Article.ArticleStatus.PUBLISHED).eq(Article::getId, id);
         Article article = articleMapper.selectOne(queryWrapper);
-        if(ObjectUtils.isEmpty(article)){
+        if (ObjectUtils.isEmpty(article)) {
             throw new BusinessException(BusErrorCode.ARTICLE_WAS_REMOVED);
         }
         String key = article.getKey();
-        if(key == null){
+        if (key == null) {
             throw new BusinessException(BusErrorCode.FILE_UNEXIST);
         }
         return ossService.genPreviewURL(key, null);
-    }
-
-    /**
-     * 分页查询文章信息
-     *
-     * @param current 起始页
-     * @param size 每页大小
-     * @return 统一封装对象
-     */
-    public PageResult<ArticlePageVO> page(Long current, Long size) {
-        Page<Article> page = new Page<>(current, size);
-        LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.orderByDesc(Article::getCreatedAt);
-        IPage<Article> iPage = articleMapper.selectPage(page, queryWrapper);
-        List<ArticlePageVO> list = iPage.getRecords().stream()
-                .map(converter::poToPageVO)
-                .toList();
-        return PageResult.of(
-                iPage.getCurrent(),
-                iPage.getSize(),
-                iPage.getTotal(),
-                list
-        );
     }
 
     /**
@@ -180,8 +154,8 @@ public class ArticleServiceImpl implements ArticleService {
      * 上传文章
      *
      * @param userId 用户id
-     * @param file 上传的markdown文件
-     * @param dto 封装的文章和用户信息
+     * @param file   上传的markdown文件
+     * @param dto    封装的文章和用户信息
      */
     @Transactional
     public void upload(Long userId, MultipartFile file, ArticleCreateDTO dto) {
@@ -200,7 +174,7 @@ public class ArticleServiceImpl implements ArticleService {
         po.setKey(mdKey);
         // 3.构建图片对象
         List<String> attrs = dto.getAttrs();
-        if(attrs != null){
+        if (attrs != null) {
             List<ArticleImage> images = attrs.stream()
                     .filter(s -> s != null && !s.isEmpty())
                     .map(item -> {
@@ -233,36 +207,17 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     /**
-     * 修改文章状态
-     *
-     * @param id 文章唯一id
-     */
-    public void updateArticleStatus(Long id) throws JsonProcessingException {
-        Article article = articleMapper.selectById(id);
-        Byte status = article.getArticleStatus();
-        if(Article.ArticleStatus.UNDER_REVIEW == status){
-            status = Article.ArticleStatus.PUBLISHED;
-        }else{
-            status = Article.ArticleStatus.REMOVED;
-        }
-        LambdaUpdateWrapper<Article> wrapper = new LambdaUpdateWrapper<>();
-        wrapper.eq(Article::getId, id).set(Article::getArticleStatus, status);
-        articleMapper.update(wrapper);
-        rebuildArticleRenderCache(article.getArticleType(), id);
-    }
-
-    /**
      * 删除文章
      *
      * @param articleName 文章名
-     * @param userId 用户唯一id
+     * @param userId      用户唯一id
      */
     @Transactional
     public void removeArticle(String articleName, Long userId) throws JsonProcessingException {
         LambdaQueryWrapper<Article> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(Article::getWriterId, userId).eq(Article::getArticleName, articleName);
         Article article = articleMapper.selectOne(lambdaQueryWrapper);
-        if(ObjectUtils.isEmpty(article)){
+        if (ObjectUtils.isEmpty(article)) {
             throw new BusinessException(BusErrorCode.FILE_UNEXIST);
         }
         Long articleId = article.getId();
@@ -270,7 +225,7 @@ public class ArticleServiceImpl implements ArticleService {
 
         List<ArticleImage> articleImages = articleImageMapper.selectByArticleId(articleId);
         articleImageMapper.deleteByIds(articleImages.stream().map(ArticleImage::getId).toList());
-        if(!articleImages.isEmpty()){
+        if (!articleImages.isEmpty()) {
             List<String> keys = articleImages.stream().map(i -> {
                 try {
                     return new URL(i.getUrl()).getPath().replace("^/", "");
@@ -284,24 +239,7 @@ public class ArticleServiceImpl implements ArticleService {
         }
 
         // 重构缓存
-        rebuildArticleRenderCache(article.getArticleType(), articleId);
-    }
-
-    /**
-     * 文章缓存重构
-     *
-     * @param articleType 文章缓存类型
-     * @param articleId 文章id
-     * @throws JsonProcessingException 序列化失败
-     */
-    private void rebuildArticleRenderCache(Byte articleType, Long articleId) throws JsonProcessingException {
-        String data = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_RENDER + articleType);
-        if(!ObjectUtils.isEmpty(data)){
-            List<ArticleRenderVO> renderList = objectMapper.readValue(data, new TypeReference<>(){});
-            renderList.removeIf(articleRenderVO -> articleRenderVO.getId().equals(articleId.toString()));
-            redisTemplate.opsForValue().set(RedisPrefix.ARTICLE_RENDER + articleType, objectMapper.writeValueAsString(renderList),
-                    NumEnum.ARTICLE_EXPIRE_TIME.getValue(), TimeUnit.DAYS);
-        }
+        RedisUtils.rebuildArticleRenderCache(article.getArticleType(), articleId, redisTemplate, objectMapper);
     }
 
 }

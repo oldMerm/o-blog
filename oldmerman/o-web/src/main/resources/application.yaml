@@ -49,3 +49,5 @@ mybatis-plus:
   global-config:
     db-config:
       column-format: "`%s`"
+app:
+  host: ${oldmerman.host}
