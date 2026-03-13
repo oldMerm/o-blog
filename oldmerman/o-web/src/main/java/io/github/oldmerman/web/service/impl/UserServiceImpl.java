@@ -35,12 +35,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserConverter converter;
 
-    /**
-     * 获取用户信息接口
-     *
-     * @param userId 用户id
-     * @return 用户封装vo
-     */
+    @Override
     public UserInfoVO getUsrInfo(Long userId) {
         User user = userMapper.selectSimUsrInfo(userId);
         if (user.getIsDelete() != 1) {
@@ -51,20 +46,12 @@ public class UserServiceImpl implements UserService {
         return vo;
     }
 
-    /**
-     * 获取用户月数据
-     *
-     * @return List<Counter>
-     */
+    @Override
     public List<Counter> getUserMonCount(Long count) {
         return userMapper.countUserMonData(LocalDateTime.now(), count);
     }
 
-    /**
-     * 更新用户信息接口
-     *
-     * @param dto 封装dto
-     */
+    @Override
     public void updateUsrInfo(UserManageDTO dto) {
         if (ObjectUtil.isEmpty(dto)) {
             throw new BusinessException(ResultCode.DATA_NOT_EXIST);
@@ -83,11 +70,7 @@ public class UserServiceImpl implements UserService {
         userMapper.updateUserInfo(dto);
     }
 
-    /**
-     * 注销用户接口
-     *
-     * @param userId 注销用户的id
-     */
+    @Override
     public void deleteUsr(Long userId, String token) {
         userMapper.logicDeleteUser(userId);
         // 成功后删除缓存，几乎等价于用户登出

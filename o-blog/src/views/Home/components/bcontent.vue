@@ -4,8 +4,8 @@
 
 <template>
 <div class="bc">
-本站不获取任何个人隐私信息，请注意甄别！<br>
-版本号：122.302.00 邮箱：oldmerman@outlook.com<!--  鸣谢：xxx xxx --> 
+<a href="http://beian.miit.gov.cn" class="beian">粤ICP备2026023638号</a> ©版本号:122.302.00<br>
+ 邮箱:oldmerman@outlook.com<!--  鸣谢：xxx xxx --> 
 </div>
 </template>
 
@@ -16,5 +16,14 @@
     background: linear-gradient(0deg, #e9e9e9, #ffffff);
     background-color: rgb(245, 245, 245);
     text-align: center;
+}
+
+.beian {
+    color: black;
+    transition: all 0.5s;
+}
+
+.beian:hover{
+    color: red;
 }
 </style>

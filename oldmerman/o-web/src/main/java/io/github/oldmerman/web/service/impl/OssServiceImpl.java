@@ -10,6 +10,7 @@ import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.enums.WebEnum;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.model.po.User;
+import io.github.oldmerman.web.config.OssConfig;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.OssService;
 import lombok.RequiredArgsConstructor;
@@ -34,19 +35,13 @@ public class OssServiceImpl implements OssService {
 
     private final OSS ossClient;
 
-    @Value("${alias.oss.pri-bucket}")
-    private String BUCKET;
+    private final String BUCKET = OssConfig.BUCKET;
 
     // 定义允许的格式常量，方便维护
     private static final List<String> IMG_ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png");
     private static final List<String> MD_ALLOWED_EXTENSIONS = List.of("md");
 
-    /**
-     * 后端转存用户头像，限定格式
-     * @param userId 用户id
-     * @param file 文件
-     * @return 唯一key
-     */
+    @Override
     @Transactional
     public String uploadUsrImage(Long userId, MultipartFile file) {
         // 校验文件扩展名
@@ -77,10 +72,7 @@ public class OssServiceImpl implements OssService {
         }
     }
 
-    /**
-     * 生成闲时预览的URL
-     * @return url
-     */
+    @Override
     public String genPreviewURL(String key, String bucket) {
         String newBucket = bucket == null ? BUCKET : bucket;
         Date expires = new Date(System.currentTimeMillis() + NumEnum.USER_ATTR_EXPIRE.getValue()*1000);
@@ -91,12 +83,7 @@ public class OssServiceImpl implements OssService {
         return url.toString();
     }
 
-    /**
-     * 生成公共url，只生产一次
-     * @param keys 文件路径
-     * @param bucket 所属bucket
-     * @return 处理后可直接访问的URL
-     */
+    @Override
     public List<String> genPublicURL(List<String> keys, String bucket){
         String newBucket = bucket == null ? BUCKET : bucket;
         if(keys.isEmpty()){
@@ -105,11 +92,7 @@ public class OssServiceImpl implements OssService {
         return keys.stream().map(key -> "https://" + newBucket + ".oss-cn-guangzhou.aliyuncs.com/" + key).toList();
     }
 
-    /**
-     * 通用方法，批量上传图片
-     * @param files 图片集合
-     * @return 图片key集合
-     */
+    @Override
     public List<String> uploadBatch(Long id, List<String> path,
                                     List<MultipartFile> files,String bucket) {
         List<String> batchList = new ArrayList<>();
@@ -137,10 +120,7 @@ public class OssServiceImpl implements OssService {
         return batchList;
     }
 
-    /**
-     * 上传md文档
-     * @return 唯一key
-     */
+    @Override
     public String uploadMd(Long id, MultipartFile file){
         String ext = getAllowExt(file, MD_ALLOWED_EXTENSIONS);
         String key = genFileName(id.toString(), ext, WebEnum.MD_PREFIX.getValue());
@@ -154,10 +134,7 @@ public class OssServiceImpl implements OssService {
         return key;
     }
 
-    /**
-     * @param key 需删除key
-     * @param bucket 所属bucket
-     */
+    @Override
     public void deleteOne(String key, String bucket) {
         bucket = bucket == null ? BUCKET : bucket;
         try {
@@ -167,11 +144,7 @@ public class OssServiceImpl implements OssService {
         }
     }
 
-    /**
-     * 批量删除key
-     * @param keys key集合
-     * @param bucket 所属bucket
-     */
+    @Override
     public void deleteBatch(List<String> keys, String bucket){
         bucket = bucket == null ? BUCKET : bucket;
         DeleteObjectsRequest request = new DeleteObjectsRequest(bucket);

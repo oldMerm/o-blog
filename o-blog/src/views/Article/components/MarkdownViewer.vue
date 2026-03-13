@@ -78,6 +78,7 @@ const allHeadings = ref<Heading[]>([]);
 const md = new MarkdownIt({
   html: true,
   linkify: true,
+  breaks: true,
   highlight: (str, lang) => {
     if (lang && hljs.getLanguage(lang)) {
       try {
@@ -85,7 +86,8 @@ const md = new MarkdownIt({
       } catch (__) { }
     }
     return ''; // 使用默认转义
-  }
+  },
+  typographer: true,
 })
   .use(anchor, {
     permalink: anchor.permalink.ariaHidden({ placement: 'before' }),
@@ -112,7 +114,8 @@ onMounted(async () => {
         return;
       }
       const text: string = await httpInstance.get(res.data);
-      renderedHtml.value = md.render(text);
+      renderedHtml.value = md.render(text.replace("hh", "<br>"));
+
       extractHeadings(text);
     } catch (error) {
       alert(error);
@@ -412,4 +415,6 @@ const goToHome = () => {
   overflow-x: auto;
   border: 1px solid #e2e8f0;
 }
+
+:deep(p) { margin-top: 2px; }
 </style>

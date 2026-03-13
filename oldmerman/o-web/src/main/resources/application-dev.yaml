@@ -6,11 +6,11 @@ oldmerman:
     port: 3306
     database: o_blog
     username: root
-    password: 1234
+    password: 123456
   redis:
     host: 192.168.88.132
     port: 6379
-    database: 0
+    database: 1
   mail:
     username: oldmerman@qq.com
     password: ${EMAIL_PASSWORD}

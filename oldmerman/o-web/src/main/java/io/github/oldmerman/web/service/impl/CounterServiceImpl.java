@@ -41,20 +41,12 @@ public class CounterServiceImpl implements CounterService {
       }
     }
 
-    /**
-     * 获取网页运行时间
-     *
-     * @return 网页运行天数
-     */
+    @Override
     public Integer getSystemTime() {
         return Integer.valueOf(redisTemplate.opsForValue().get(RedisPrefix.SYSTEM_RUNTIME));
     }
 
-    /**
-     * 获取相关信息五个月的增量
-     *
-     * @return 增量的集合
-     */
+    @Override
     public List<Counter> getIncr(Long type) {
         LocalDateTime now = LocalDateTime.now();
         LambdaQueryWrapper<Counter> queryWrapper = new LambdaQueryWrapper<>();
@@ -65,11 +57,7 @@ public class CounterServiceImpl implements CounterService {
         return counterMapper.selectList(queryWrapper);
     }
 
-    /**
-     * 获取更新信息
-     *
-     * @return 文章渲染对象
-     */
+    @Override
     public ArticleRenderVO getArticleUpdateInfo() {
         return articleMapper.getNewMessage();
     }

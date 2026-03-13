@@ -31,21 +31,12 @@ public class FeedbackServiceImpl implements FeedbackService {
 
     private final FeedbackConverter converter;
 
-    /**
-     * 获取反馈信息
-     *
-     * @return 封装feedback
-     */
+    @Override
     public FeedbackVO getFeedback() {
         return feedbackMapper.selectByUserId(UserContext.getUserId());
     }
 
-    /**
-     * 用户批量获取反馈信息
-     *
-     * @param userId 用户id
-     * @return 反馈信息封装对象
-     */
+    @Override
     public List<FeedbackVO> getBatchFeedback(Long userId) {
         List<Feedback> list = feedbackMapper.selectBatchByUserId(userId);
         return list.stream()
@@ -58,13 +49,7 @@ public class FeedbackServiceImpl implements FeedbackService {
                 }).toList();
     }
 
-    /**
-     * 分页查询反馈信息
-     *
-     * @param current 起始页
-     * @param size 每页条数
-     * @return 封装page对象
-     */
+    @Override
     public PageResult<FeedbackVO> page(Long current, Long size) {
         Page<Feedback> page = new Page<>(current, size);
         LambdaQueryWrapper<Feedback> wrapper = new LambdaQueryWrapper<>();
@@ -85,11 +70,7 @@ public class FeedbackServiceImpl implements FeedbackService {
         );
     }
 
-    /**
-     * 创建反馈信息
-     *
-     * @param feedback 反馈信息
-     */
+    @Override
     public void createFeedback(String feedback, String feedbackType, Long userId) {
         if(feedback.length() > 100){
             throw new BusinessException(BusErrorCode.LENGTH_EXCEEDS_LIMIT);
@@ -102,11 +83,7 @@ public class FeedbackServiceImpl implements FeedbackService {
                 .build());
     }
 
-    /**
-     * 回复反馈信息
-     *
-     * @param id 用户id
-     */
+    @Override
     public void saveFeedback(Long id, String cont) {
         LambdaUpdateWrapper<Feedback> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(Feedback::getId, id)

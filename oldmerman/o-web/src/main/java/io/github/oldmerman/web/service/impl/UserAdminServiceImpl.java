@@ -27,13 +27,7 @@ public class UserAdminServiceImpl implements UserAdminService {
 
     private final UserConverter converter;
 
-    /**
-     * 分页查询用户管理信息，用户管理端
-     *
-     * @param current 起始页面
-     * @param size    页面大小
-     * @return 分页list
-     */
+    @Override
     public PageResult<UserManageVO> page(Long current, Long size) {
         Page<User> page = new Page<>(current, size);
         IPage<User> IPage = userMapper.selectPage(page, null);
@@ -52,18 +46,13 @@ public class UserAdminServiceImpl implements UserAdminService {
         );
     }
 
-
-
+    @Override
     public String getUserPermission() {
         User user = userMapper.selectUserById(UserContext.getUserId());
         return BusinessMap.USER_TYPE_MAP.get(user.getType());
     }
 
-    /**
-     * 更新用户状态
-     *
-     * @param dto 封装dto
-     */
+    @Override
     public void toggleUserStatus(UserToggleDTO dto) {
         userMapper.toggleUserStatus(dto);
     }

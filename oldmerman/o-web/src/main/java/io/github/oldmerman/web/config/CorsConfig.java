@@ -13,8 +13,9 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        String[] allowedOrigins = origins.split(",");
         registry.addMapping("/**")          // 所有接口
-                .allowedOrigins(origins) // 前端域名
+                .allowedOrigins(allowedOrigins) // 前端域名
                 .allowedMethods("GET","POST","PUT","DELETE","OPTIONS")        // GET/POST/PUT/DELETE...
                 .allowedHeaders("*")
                 .allowCredentials(true)     // 带 Cookie/Session 必须 true

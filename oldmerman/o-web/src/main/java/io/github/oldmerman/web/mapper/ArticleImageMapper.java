@@ -14,4 +14,7 @@ public interface ArticleImageMapper extends BaseMapper<ArticleImage> {
 
     @Select("SELECT * FROM o_blog.o_article_img WHERE article_id = #{articleId}")
     List<ArticleImage> selectByArticleId(Long articleId);
+
+    List<String> selectDanglingRecord();
+
 }

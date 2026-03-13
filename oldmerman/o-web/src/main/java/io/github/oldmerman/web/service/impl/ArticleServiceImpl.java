@@ -14,12 +14,14 @@ import io.github.oldmerman.model.dto.ArticlePriDTO;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.po.ArticleImage;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
+import io.github.oldmerman.web.config.OssConfig;
 import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.ArticleImageMapper;
 import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.service.OssService;
+import io.github.oldmerman.web.util.PathUtils;
 import io.github.oldmerman.web.util.RedisUtils;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
@@ -28,13 +30,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
@@ -59,14 +57,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     private final ObjectMapper objectMapper;
 
-    @Value("${alias.oss.pub-bucket}")
-    private String BUCKET;
-
-    /**
-     * 用户获取个人的文章基本信息
-     *
-     * @return 封装List
-     */
+    @Override
     public List<ArticleRenderVO> info() {
         Long userId = UserContext.getUserId();
         List<Article> poList = articleMapper.selectByUserId(userId);
@@ -80,11 +71,7 @@ public class ArticleServiceImpl implements ArticleService {
                 }).toList();
     }
 
-    /**
-     * 根据文章类型获取需要渲染的文章
-     *
-     * @return 文章类型
-     */
+    @Override
     public List<ArticleRenderVO> getRenderArticle(Byte articleType, Long size) throws JsonProcessingException {
         String data = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_RENDER + articleType);
         if (!ObjectUtils.isEmpty(data)) {
@@ -102,12 +89,7 @@ public class ArticleServiceImpl implements ArticleService {
         return vo;
     }
 
-    /**
-     * 获取一篇文章，系私有，用于用户预览自己的文章
-     *
-     * @param id 文章id
-     * @return 可访问的临时url
-     */
+    @Override
     public String getPrivateArticleById(Long id) {
         ArticlePriDTO dto = articleMapper.getPrivateKeyById(id);
         String key = dto.getKey();
@@ -117,12 +99,7 @@ public class ArticleServiceImpl implements ArticleService {
         return ossService.genPreviewURL(key, null);
     }
 
-    /**
-     * 查看文章公共接口
-     *
-     * @param id 文章id
-     * @return url
-     */
+    @Override
     public String getPublicArticleById(Long id) {
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Article::getArticleStatus, Article.ArticleStatus.PUBLISHED).eq(Article::getId, id);
@@ -137,26 +114,13 @@ public class ArticleServiceImpl implements ArticleService {
         return ossService.genPreviewURL(key, null);
     }
 
-    /**
-     * 上传图片并返回替换URL
-     *
-     * @param userId  用户id
-     * @param paths   待替换路径
-     * @param imgList 上传文件
-     * @return 替换路径
-     */
+    @Override
     public List<String> uploadImagesToOSS(Long userId, List<String> paths, List<MultipartFile> imgList) {
-        List<String> keys = ossService.uploadBatch(userId, paths, imgList, BUCKET);
-        return ossService.genPublicURL(keys, BUCKET);
+        List<String> keys = ossService.uploadBatch(userId, paths, imgList, OssConfig.PUB_BUCKET);
+        return ossService.genPublicURL(keys, OssConfig.PUB_BUCKET);
     }
 
-    /**
-     * 上传文章
-     *
-     * @param userId 用户id
-     * @param file   上传的markdown文件
-     * @param dto    封装的文章和用户信息
-     */
+    @Override
     @Transactional
     public void upload(Long userId, MultipartFile file, ArticleCreateDTO dto) {
         // 1.上传文件并获取key
@@ -192,26 +156,9 @@ public class ArticleServiceImpl implements ArticleService {
         // 5.用户加入缓存
         redisTemplate.opsForValue().set(RedisPrefix.ARTICLE_SUBMIT + userId, articleId.toString(), 1440, TimeUnit.MINUTES);
 
-        // 事务回滚
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
-                    log.warn("事务回滚后，删除所有存在key");
-                    // 插入失败，到oss删除所有的key
-                    ossService.deleteOne(mdKey, null);
-                    ossService.deleteBatch(attrs, BUCKET);
-                }
-            }
-        });
     }
 
-    /**
-     * 删除文章
-     *
-     * @param articleName 文章名
-     * @param userId      用户唯一id
-     */
+    @Override
     @Transactional
     public void removeArticle(String articleName, Long userId) throws JsonProcessingException {
         LambdaQueryWrapper<Article> lambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -226,15 +173,11 @@ public class ArticleServiceImpl implements ArticleService {
         List<ArticleImage> articleImages = articleImageMapper.selectByArticleId(articleId);
         articleImageMapper.deleteByIds(articleImages.stream().map(ArticleImage::getId).toList());
         if (!articleImages.isEmpty()) {
-            List<String> keys = articleImages.stream().map(i -> {
-                try {
-                    return new URL(i.getUrl()).getPath().replace("^/", "");
-                } catch (MalformedURLException e) {
-                    throw new RuntimeException(e);
-                }
-            }).toList();
+            List<String> keys = PathUtils.getOssPubKeys(articleImages.stream()
+                    .map(ArticleImage::getUrl)
+                    .toList());
             // 到oss删除key
-            ossService.deleteBatch(keys, BUCKET);
+            ossService.deleteBatch(keys, OssConfig.PUB_BUCKET);
             ossService.deleteOne(article.getKey(), null);
         }
 

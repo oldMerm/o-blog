@@ -32,13 +32,7 @@ public class ArticleAdminServiceImpl implements ArticleAdminService {
 
     private final ObjectMapper objectMapper;
 
-    /**
-     * 分页查询文章信息
-     *
-     * @param current 起始页
-     * @param size    每页大小
-     * @return 统一封装对象
-     */
+    @Override
     public PageResult<ArticlePageVO> page(Long current, Long size) {
         Page<Article> page = new Page<>(current, size);
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
@@ -55,11 +49,7 @@ public class ArticleAdminServiceImpl implements ArticleAdminService {
         );
     }
 
-    /**
-     * 修改文章状态
-     *
-     * @param dto 封装对象
-     */
+    @Override
     public void updateArticleStatus(ArticleAdminUpdateDTO dto) throws JsonProcessingException {
         Long id = dto.getId();
         Article article = articleMapper.selectById(id);
