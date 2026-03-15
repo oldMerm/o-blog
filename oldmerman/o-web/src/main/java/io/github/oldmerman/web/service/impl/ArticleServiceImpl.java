@@ -14,7 +14,6 @@ import io.github.oldmerman.model.dto.ArticlePriDTO;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.po.ArticleImage;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
-import io.github.oldmerman.web.config.OssConfig;
 import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.ArticleImageMapper;
 import io.github.oldmerman.web.mapper.ArticleMapper;
@@ -56,6 +55,9 @@ public class ArticleServiceImpl implements ArticleService {
     private final StringRedisTemplate redisTemplate;
 
     private final ObjectMapper objectMapper;
+
+    @Value("${alias.oss.pub-bucket}")
+    public String BUCKET;
 
     @Override
     public List<ArticleRenderVO> info() {
@@ -116,13 +118,17 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     public List<String> uploadImagesToOSS(Long userId, List<String> paths, List<MultipartFile> imgList) {
-        List<String> keys = ossService.uploadBatch(userId, paths, imgList, OssConfig.PUB_BUCKET);
-        return ossService.genPublicURL(keys, OssConfig.PUB_BUCKET);
+        List<String> keys = ossService.uploadBatch(userId, paths, imgList, BUCKET);
+        return ossService.genPublicURL(keys, BUCKET);
     }
 
     @Override
     @Transactional
     public void upload(Long userId, MultipartFile file, ArticleCreateDTO dto) {
+        if(articleMapper.exist(dto.getArticleName()) == 1){
+            // 存在文章（文章同名）
+            throw new BusinessException(BusErrorCode.ARTICLE_NAME_EXIST);
+        }
         // 1.上传文件并获取key
         String mdKey = ossService.uploadMd(userId, file);
         if (ObjectUtils.isEmpty(dto)) {
@@ -177,7 +183,7 @@ public class ArticleServiceImpl implements ArticleService {
                     .map(ArticleImage::getUrl)
                     .toList());
             // 到oss删除key
-            ossService.deleteBatch(keys, OssConfig.PUB_BUCKET);
+            ossService.deleteBatch(keys, BUCKET);
             ossService.deleteOne(article.getKey(), null);
         }
 

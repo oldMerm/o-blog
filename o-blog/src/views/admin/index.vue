@@ -40,6 +40,7 @@ const menuItems = ref<MenuItem[]>([
   { id: 2, name: '用户管理', path: '/users' },
   { id: 3, name: '信息反馈', path: '/feedback' },
   { id: 4, name: '文章管理', path: '/article' },
+  { id: 5, name: '版本管理', path: '/version' },
 ]);
 
 // --- 状态管理 ---

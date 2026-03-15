@@ -8,26 +8,27 @@ import utitle from './components/utitle.vue';
 import utitle2 from './components/utitle2.vue';
 import bcontent from './components/bcontent.vue';
 import chatCard from './components/chatCard.vue';
+
 </script>
 
 <template>
     <div class="main">
-        <topbar/>
+        <topbar />
         <div class="c">
-            <ontice/>
-            <utitle2/>
-            <chat-card/>
+            <ontice />
+            <utitle2 />
+            <chat-card />
         </div>
-        <mcontent/>
+        <mcontent />
         <div class="a">
-            <user-info/>
-            <utitle/>
-            <ucontent/>
+            <user-info />
+            <utitle />
+            <ucontent />
         </div>
         <div class="b">
-            <bcontent/>
+            <bcontent />
         </div>
-</div>
+    </div>
 </template>
 
 <style scoped>

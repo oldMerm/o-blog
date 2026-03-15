@@ -1,49 +1,33 @@
 <script setup lang="ts">
-import { httpInstance, type Response } from '@/utils/http';
 import { ref, watch } from 'vue';
-import ArticleCheckDialog from '../utils/ArticleCheckDialog.vue';
-import UploadModal from '@/views/Manage/utils/ContentDialog.vue';
-import { goToArticle } from '@/views/public/Article';
-
-// --- 状态映射 (用于显示中文) ---
-const statusIdMap: Record<number, string> = {
-    1: 'checked',
-    3: 'publish',
-    4: 'unpublish'
-};
-const statusMap: Record<string, string> = {
-    checked: '待审核',
-    publish: '已发布',
-    unpublish: '已下架'
-};
-const typeMap: Record<number, string> = {
-    0: '公告',
-    1: '技术相关',
-    2: '日常吐槽',
-    3: '其它'
-}
-
+import { httpInstance, type Response } from '@/utils/http';
+import AddVersionModel from '../utils/AddVersionModel.vue';
+import UpdateModel from '@/views/Home/utils/UpdateModel.vue';
+import Dialog from '@/utils/dia/Dialog.vue';
 
 // 分页逻辑
 const currentPage = ref(1);
 const pageSize = ref(10);
 const pages = ref(1);
 const total = ref(0);
-interface ArticlePageVO {
-    id: string;
-    articleName: string;
-    articleWriter: string;
-    articleType: number;
-    articleStatus: any;
+
+interface Version {
+    id: number;
+    objectName: string;
+    versionContent: string;
+    versionId: string;
     createdAt: string;
     visable: boolean;
+    dvisable: boolean;
 }
-const articleList = ref<ArticlePageVO[]>([]);
+
+const versionList = ref<Version[]>([]);
+
 watch(
     currentPage,
     async (newVal) => {
         try {
-            const res = await httpInstance.get<any, Response>('/admin/article/page', {
+            const res = await httpInstance.get<any, Response>('/version/page', {
                 params: {
                     current: newVal,
                     size: pageSize.value
@@ -53,11 +37,7 @@ watch(
                 alert(`系统错误${res.message}`);
                 return;
             }
-            articleList.value = res.data.records;
-            articleList.value.map((item): ArticlePageVO => {
-                item.articleStatus = statusIdMap[item.articleStatus];
-                return item;
-            });
+            versionList.value = res.data.records;
             pages.value = res.data.pages;
             total.value = res.data.total;
         } catch (error) {
@@ -65,25 +45,60 @@ watch(
         }
     }, { immediate: true });
 
-const uploadModalRef = ref<InstanceType<typeof UploadModal> | null>(null);
+const fetchVersionList = async () => {
+    try {
+        const res = await httpInstance.get<any, Response>('/version/page', {
+            params: {
+                current: currentPage.value,
+                size: pageSize.value
+            }
+        });
 
-const openModal = () => {
-  uploadModalRef.value?.openModal();
+        if (res.code !== 200) {
+            alert(`系统错误${res.message}`);
+            return;
+        }
+        versionList.value = res.data.records;
+        pages.value = res.data.pages;
+        total.value = res.data.total;
+    } catch (error) {
+        alert(`出现错误${error}`);
+    }
+}
+
+const showAddModal = ref(false);
+
+// 接收弹窗传出的管理员填写数据
+const handlePublish = async (payload: { versionId: string; versionContent: string }) => {
+    try {
+        // 1. 组装请求数据（这里 id, createdAt 等通常由后端生成，前端只传核心数据即可）
+        const requestData = {
+            versionId: payload.versionId,
+            versionContent: payload.versionContent,
+        };
+        // 2. 发送API请求
+        const res = await httpInstance.post<any, Response>("/version/admin/save", requestData);
+        if (res.code !== 200) {
+            alert(`服务器错误:${res.message}`);
+        }
+        // 3. 成功后的交互
+        alert(`版本 ${payload.versionId} 发布成功！`);
+        // 4. 关闭弹窗
+        showAddModal.value = false;
+
+        // 5. 刷新列表
+        fetchVersionList();
+    } catch (error) {
+        console.error('发布失败', error);
+    }
 };
 
-const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePageVO) => {
+const handleDelete = async (id: number) => {
     try {
-        const req = {
-            id: item.id,
-            status: type === 'publish' ? 3 : 4
-        }
-        const res = await httpInstance.post<any, Response>("/admin/article/status", req);
-        if(res.code === 200){
-            alert("文章状态修改成功！");
-            item.articleStatus = type;
-        }
+        await httpInstance.delete(`/version/admin/delete/${id}`);
+        fetchVersionList();
     } catch (error) {
-        alert(`系统错误:${error}`);
+        alert(`系统错误:${error}`)
     }
 }
 </script>
@@ -94,14 +109,15 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
         <!-- 1. 顶部操作栏 -->
         <div class="toolbar">
             <div class="title-section">
-                <h3>文章管理</h3>
+                <h3>版本管理</h3>
                 <span class="subtitle">共 {{ total }} 篇</span>
             </div>
             <div class="actions">
-                <button class="btn-primary" @click="openModal">
-                    <span>+ 发布新文章</span>
+                <!-- 预留搜索框位置，保持布局平衡，暂不实现功能 -->
+                <button class="btn-primary" @click="showAddModal = true">
+                    <span>+ 发布版本公告</span>
                 </button>
-                <UploadModal ref="uploadModalRef" />
+                <AddVersionModel v-model="showAddModal" @submit="handlePublish" />
             </div>
         </div>
 
@@ -110,49 +126,43 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="width: 80px;">ID</th>
-                        <th style="width: 30%;">文章标题</th>
-                        <th>作者</th>
-                        <th>文章状态</th>
-                        <th>文章类型</th>
+                        <th style="width: 100px;">ID</th>
+                        <th>版本ID</th>
+                        <th>发布者</th>
+                        <th>更新内容</th>
                         <th>发布时间</th>
-                        <th style="text-align: right;">操作</th>
+                        <th style="text-align: left;">操作</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="item in articleList">
-                        <td class="col-id">{{ item.id.slice(0, 12) }}...</td>
+                    <tr v-for="item in versionList">
+                        <td class="col-id">{{ item.id }}...</td>
                         <td class="col-title">
-                            <span class="title-text">{{ item.articleName }}</span>
+                            <span class="title-text">{{ item.versionId }}</span>
                         </td>
                         <td>
                             <div class="author-info">
-                                <span class="avatar-placeholder">{{ item.articleWriter[0] }}</span>
-                                {{ item.articleWriter }}
+                                {{ item.objectName }}
                             </div>
                         </td>
                         <td>
-                            <!-- 状态标签：根据状态动态改变颜色 -->
-                            <span class="status-badge" :class="item.articleStatus">
-                                {{ statusMap[item.articleStatus] }}
-                            </span>
-                        </td>
-                        <td>
-                            <span>{{ typeMap[item.articleType] }}</span>
+                            <span>{{ item.versionContent.slice(0, 12) }}</span>
                         </td>
                         <td class="col-date">{{ item.createdAt }}</td>
                         <td class="col-actions">
-
                             <button class="btn-text" @click="item.visable = true">
-                                {{ statusMap[item.articleStatus] }}
-                            </button>
-
-                            <ArticleCheckDialog v-model:visible="item.visable" :onConfirm="handleCheckAction" :extraParam="item" />
-
-                            <span class="divider">|</span>
-                            <button class="btn-text" @click="goToArticle(item.id, true)">
                                 查看详细
                             </button>
+                            <UpdateModel v-model="item.visable" :title="item.versionId"
+                                :content="item.versionContent" />
+                            <span class="divider">|</span>
+                            <button class="btn-text" @click="item.dvisable = true">
+                                删除公告
+                            </button>
+                            <Dialog v-model="item.dvisable" 
+                            title="确认删除"
+                            content="公告删除后无法恢复，是否继续？" 
+                            @confirm="handleDelete(item.id)" />
                         </td>
                     </tr>
                 </tbody>
@@ -322,7 +332,7 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
 
 /* 操作按钮 */
 .col-actions {
-    text-align: right;
+    text-align: left;
 }
 
 .btn-text {
@@ -331,7 +341,6 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
     color: #3b82f6;
     cursor: pointer;
     font-size: 13px;
-    padding: 4px 8px;
 }
 
 .btn-text:hover {
@@ -341,6 +350,7 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
 .divider {
     color: #e5e7eb;
     font-size: 12px;
+    margin: 0 5px;
 }
 
 /* --- 分页栏样式 --- */

@@ -68,7 +68,6 @@ public class LoginController {
     @GetMapping("authToken")
     public Result<Void> isValidAuthToken(){
         Long userId = UserContext.getUserId();
-        log.info("管理员用户访问:{}",userId);
         loginService.isValidAuthToken(userId);
         return Result.success();
     }

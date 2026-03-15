@@ -4,13 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.model.po.Article;
-import io.github.oldmerman.web.config.OssConfig;
 import io.github.oldmerman.web.mapper.ArticleImageMapper;
 import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.service.OssService;
 import io.github.oldmerman.web.util.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -40,6 +40,9 @@ public class ArticleRefresher {
 
     private final ObjectMapper objectMapper;
 
+    @Value("${alias.oss.pub-bucket}")
+    public String BUCKET;
+
     @Scheduled(cron = "0 0 1 ? * MON")
     public void refreshArticle() throws JsonProcessingException {
         log.info("执行定时任务 - 刷新文章内容 - {}", new Date());
@@ -52,7 +55,7 @@ public class ArticleRefresher {
         log.info("执行定时任务 - 删除文章未关联图片 - {}", new Date());
         List<String> keys = articleImageMapper.selectDanglingRecord();
         if(!keys.isEmpty()){
-            ossService.deleteBatch(PathUtils.getOssPubKeys(keys), OssConfig.PUB_BUCKET);
+            ossService.deleteBatch(PathUtils.getOssPubKeys(keys), BUCKET);
         }
     }
 

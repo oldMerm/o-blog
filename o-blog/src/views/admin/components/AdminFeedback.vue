@@ -43,8 +43,6 @@ watch(
       } else {
         FeedbackVOS.value = transformFeedbackList(res.data.records);
         pageCount.value = res.data.pages;
-        console.log(FeedbackVOS.value);
-        
       }
     } catch (error) {
       alert(error);

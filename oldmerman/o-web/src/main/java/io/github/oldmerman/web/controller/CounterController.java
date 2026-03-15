@@ -21,24 +21,24 @@ public class CounterController {
 
     private final CounterService counterService;
 
-    @GetMapping("time")
+    @GetMapping("/time")
     public Result<Integer> getSystemTime(){
         return Result.success(counterService.getSystemTime());
     }
 
-    @GetMapping("incr/{type}")
+    @GetMapping("/incr/{type}")
     public Result<List<Counter>> getUserIncr(@PathVariable Long type){
         log.info("获取用户增长量");
         return Result.success(counterService.getIncr(type));
     }
 
-    @GetMapping("newArt")
+    @GetMapping("/newArt")
     public Result<ArticleRenderVO> getArticleUpdateInfo(){
         log.info("获取老鱼人最新文章");
         return Result.success(counterService.getArticleUpdateInfo());
     }
 
-    @GetMapping("health")
+    @GetMapping("/health")
     public Result<String> health(){
         return Result.success("I am healthy");
     }

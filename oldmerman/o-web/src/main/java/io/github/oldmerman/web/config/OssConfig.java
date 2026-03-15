@@ -20,12 +20,6 @@ public class OssConfig {
     @Value("${alias.oss.region}")
     private String region;
 
-    @Value("${alias.oss.pri-bucket}")
-    public static String BUCKET;
-
-    @Value("${alias.oss.pub-bucket}")
-    public static String PUB_BUCKET;
-
     @Bean(destroyMethod = "shutdown")
     public OSS ossClient() throws ClientException {
         EnvironmentVariableCredentialsProvider credentialsProvider = CredentialsProviderFactory.newEnvironmentVariableCredentialsProvider();

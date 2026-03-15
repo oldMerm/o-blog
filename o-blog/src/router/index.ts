@@ -9,7 +9,8 @@ import AdminDashboard from '@/views/admin/components/AdminDashboard.vue'
 import AdminUser from '@/views/admin/components/AdminUser.vue'
 import AdminFeedback from '@/views/admin/components/AdminFeedback.vue'
 import AdminArticle from '@/views/admin/components/AdminArticle.vue'
-import ContentDialogDemo from '@/text/dia/ContentDialogDemo.vue'
+import avmDemo from '@/views/admin/utils/avmDemo.vue'
+import AdminVersion from '@/views/admin/components/AdminVersion.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -55,13 +56,17 @@ const router = createRouter({
         {
           path: '/admin/article',
           component: AdminArticle
+        },
+        {
+          path: '/admin/version',
+          component: AdminVersion
         }
       ]
     },
     {
       name: 'text',
       path: '/text',
-      component: ContentDialogDemo
+      component: avmDemo
     }
   ],
 })

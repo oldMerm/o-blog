@@ -10,7 +10,6 @@ import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.enums.WebEnum;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.model.po.User;
-import io.github.oldmerman.web.config.OssConfig;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.OssService;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +34,8 @@ public class OssServiceImpl implements OssService {
 
     private final OSS ossClient;
 
-    private final String BUCKET = OssConfig.BUCKET;
+    @Value("${alias.oss.pri-bucket}")
+    private String BUCKET;
 
     // 定义允许的格式常量，方便维护
     private static final List<String> IMG_ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png");

@@ -31,4 +31,6 @@ public interface ArticleMapper extends BaseMapper<Article> {
 
     ArticleRenderVO getNewMessage();
 
+    @Select("SELECT EXISTS(SELECT 1 FROM o_blog.o_article WHERE article_name = #{articleName})")
+    int exist(String articleName);
 }
