@@ -67,7 +67,6 @@ onMounted(async () => {
     font-size: 0.8rem;
     background: linear-gradient(0deg, #e9e9e9, #ffffff);
     text-align: center;
-    padding: 10px 0; 
 }
 
 .beian {

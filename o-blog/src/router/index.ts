@@ -9,8 +9,8 @@ import AdminDashboard from '@/views/admin/components/AdminDashboard.vue'
 import AdminUser from '@/views/admin/components/AdminUser.vue'
 import AdminFeedback from '@/views/admin/components/AdminFeedback.vue'
 import AdminArticle from '@/views/admin/components/AdminArticle.vue'
-import avmDemo from '@/views/admin/utils/avmDemo.vue'
 import AdminVersion from '@/views/admin/components/AdminVersion.vue'
+import JumpingTextDemo from '@/utils/JumpingTextDemo.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -66,7 +66,7 @@ const router = createRouter({
     {
       name: 'text',
       path: '/text',
-      component: avmDemo
+      component: JumpingTextDemo
     }
   ],
 })

@@ -47,7 +47,7 @@ onMounted(() => {
 .notice-container {
   /* --- 核心尺寸约束 (保持不变) --- */
   width: 100%;
-  height: 12rem;
+  height: 16rem;
 
   /* --- 整体色调：高亮灰白 --- */
   background-color: #ffffff;      /* 纯白背景 */
