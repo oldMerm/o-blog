@@ -58,7 +58,7 @@ import MarkdownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
 import container from 'markdown-it-container';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github.css'; // 浅色代码主题
+import 'highlight.js/styles/vs.css'
 import router from '@/router/index.ts'
 import { useRoute } from 'vue-router'
 import { httpInstance, type Response } from '@/utils/http';

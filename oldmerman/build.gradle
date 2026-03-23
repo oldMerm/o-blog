@@ -84,6 +84,7 @@ subprojects {
             testImplementation 'org.springframework.boot:spring-boot-starter-test'
             testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
             implementation 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.15'
+            implementation 'org.springframework.boot:spring-boot-starter-webflux'
             implementation 'com.baomidou:mybatis-plus-jsqlparser:3.5.15'
             runtimeOnly 'com.mysql:mysql-connector-j:9.0.0'
             // mapstruct相关依赖

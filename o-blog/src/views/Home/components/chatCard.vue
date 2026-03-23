@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue';
 import JumpingText from '@/utils/JumpingText.vue'; // 假设你的工具组件路径
+import { httpInstance } from '@/utils/http';
 
 // --- 弹窗状态管理 ---
 const isChatOpen = ref(false);
@@ -14,16 +15,24 @@ const chatHistory = ref([
 ]);
 
 // 2. 右侧对话内容假数据
+interface Session {
+    id: number;
+    user_id: bigint;
+    session_id: string;
+    session_decr: string;
+    created_at: string;
+}
 interface Message {
     id: number;
-    role: 'user' | 'ai';
+    session_id: string;
+    role: 'human' | 'ai';
     content: string;
 }
 
 const messages = ref<Message[]>([
-    { id: 1, role: 'ai', content: '你好！我是老鱼人智能体，有什么我可以帮你的吗？' },
-    { id: 2, role: 'user', content: '我想了解一下这篇博客的核心内容。' },
-    { id: 3, role: 'ai', content: '好的，这篇博客主要介绍了如何使用 Vue3 和 TypeScript 构建一个内嵌的 AI 聊天界面，包括布局设计、状态管理和样式美化等内容。' }
+    { id: 1, session_id:'111',role: 'ai', content: '你好！我是老鱼人智能体，有什么我可以帮你的吗？' },
+    { id: 2, session_id:'111',role: 'human', content: '我想了解一下这篇博客的核心内容。' },
+    { id: 3, session_id:'111',role: 'ai', content: '好的，这篇博客主要介绍了如何使用 Vue3 和 TypeScript 构建一个内嵌的 AI 聊天界面，包括布局设计、状态管理和样式美化等内容。' }
 ]);
 
 const inputText = ref('');
@@ -36,6 +45,16 @@ const openChat = () => {
     scrollToBottom();
 };
 
+// 渲染历史会话
+const gethistroySession = async() => {
+    
+}
+
+// 新建会话
+const createSession = async () => {
+
+}
+
 // 发送消息
 const sendMessage = () => {
     if (!inputText.value.trim()) return;
@@ -43,7 +62,8 @@ const sendMessage = () => {
     // 添加用户消息
     messages.value.push({
         id: Date.now(),
-        role: 'user',
+        role: 'human',
+        session_id:'111',
         content: inputText.value
     });
 
@@ -55,6 +75,7 @@ const sendMessage = () => {
     setTimeout(() => {
         messages.value.push({
             id: Date.now() + 1,
+            session_id:'111',
             role: 'ai',
             content: `你刚才说：“${userText}”。这是一个很好的问题，但我目前只是一个模拟的前端界面哦！`
         });
@@ -103,7 +124,7 @@ const scrollToBottom = async () => {
                     <!-- 左侧：对话历史 -->
                     <div class="chat-history">
                         <div class="chat-history-topbar">
-                            <img class="topbar-item" src="../../../static/添加.svg" title="新建会话">
+                            <img class="topbar-item" src="../../../static/添加.svg" title="新建会话" @click="createSession">
                             <img class="topbar-item" src="../../../static/删除.svg" title="删除所有会话">
                             <img class="topbar-item" src="../../../static/公告.svg" title="须知">
                         </div>
@@ -351,7 +372,7 @@ const scrollToBottom = async () => {
 }
 
 /* 用户消息靠右 */
-.message-wrapper.user {
+.message-wrapper.human {
     justify-content: flex-end;
 }
 
