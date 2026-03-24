@@ -58,7 +58,7 @@ import MarkdownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
 import container from 'markdown-it-container';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/vs.css'
+import 'highlight.js/styles/atom-one-dark.min.css'
 import router from '@/router/index.ts'
 import { useRoute } from 'vue-router'
 import { httpInstance, type Response } from '@/utils/http';
@@ -409,7 +409,7 @@ const goToHome = () => {
 
 /* 代码块样式 */
 :deep(pre) {
-  background-color: #f8fafc;
+  background-color: #282c34;
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;

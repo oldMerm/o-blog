@@ -1,13 +1,13 @@
 package io.github.oldmerman.web.controller;
 
 import io.github.oldmerman.common.response.Result;
-import io.github.oldmerman.model.po.AiConversation;
+import io.github.oldmerman.model.dto.AiMessagesDTO;
+import io.github.oldmerman.model.vo.AiConversationVO;
+import io.github.oldmerman.model.vo.AiMessagesVO;
 import io.github.oldmerman.web.service.AiService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public class AiController {
     private final AiService service;
 
     @GetMapping
-    public Result<List<AiConversation>> getSessions(){
+    public Result<List<AiConversationVO>> getSessions(){
         return Result.success(service.getSessions());
     }
 
@@ -27,5 +27,10 @@ public class AiController {
     public Result<Void> createSession(){
         service.createSession();
         return Result.success();
+    }
+
+    @PostMapping("/chat")
+    public Mono<Result<AiMessagesVO>> chat(@RequestBody AiMessagesDTO dto){
+        return service.chat(dto);
     }
 }

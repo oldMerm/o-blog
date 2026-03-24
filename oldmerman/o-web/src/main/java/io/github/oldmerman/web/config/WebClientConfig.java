@@ -23,7 +23,7 @@ public class WebClientConfig {
                 .responseTimeout(Duration.ofSeconds(10));
 
         return WebClient.builder()
-                .baseUrl("localhost")
+                .baseUrl("http://localhost:8000")
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
                 .build();

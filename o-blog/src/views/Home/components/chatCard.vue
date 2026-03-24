@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue';
 import JumpingText from '@/utils/JumpingText.vue'; // 假设你的工具组件路径
-import { httpInstance } from '@/utils/http';
+import { httpInstance, type Response } from '@/utils/http';
 
 // --- 弹窗状态管理 ---
 const isChatOpen = ref(false);
@@ -17,10 +17,9 @@ const chatHistory = ref([
 // 2. 右侧对话内容假数据
 interface Session {
     id: number;
-    user_id: bigint;
-    session_id: string;
-    session_decr: string;
-    created_at: string;
+    userId: string;
+    sessionId: string;
+    sessionDecr: string;
 }
 interface Message {
     id: number;
@@ -28,6 +27,8 @@ interface Message {
     role: 'human' | 'ai';
     content: string;
 }
+
+const sessionHistory = ref<Session[]>([]);
 
 const messages = ref<Message[]>([
     { id: 1, session_id:'111',role: 'ai', content: '你好！我是老鱼人智能体，有什么我可以帮你的吗？' },
@@ -42,12 +43,15 @@ const chatScrollRef = ref<HTMLElement | null>(null);
 // 打开弹窗
 const openChat = () => {
     isChatOpen.value = true;
+    gethistroySession();
     scrollToBottom();
 };
 
 // 渲染历史会话
 const gethistroySession = async() => {
-    
+    const res = await httpInstance.get<any, Response>("/agent");
+    sessionHistory.value = res.data;
+    console.log(sessionHistory.value);
 }
 
 // 新建会话
@@ -128,8 +132,8 @@ const scrollToBottom = async () => {
                             <img class="topbar-item" src="../../../static/删除.svg" title="删除所有会话">
                             <img class="topbar-item" src="../../../static/公告.svg" title="须知">
                         </div>
-                        <div v-for="item in chatHistory" :key="item.id" class="history-item">
-                            {{ item.title }}
+                        <div v-for="item in sessionHistory" class="history-item">
+                            {{ item.sessionDecr }}
                         </div>
                     </div>
 

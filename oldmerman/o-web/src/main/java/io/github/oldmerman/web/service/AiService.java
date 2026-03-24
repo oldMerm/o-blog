@@ -1,6 +1,10 @@
 package io.github.oldmerman.web.service;
 
-import io.github.oldmerman.model.po.AiConversation;
+import io.github.oldmerman.common.response.Result;
+import io.github.oldmerman.model.dto.AiMessagesDTO;
+import io.github.oldmerman.model.vo.AiConversationVO;
+import io.github.oldmerman.model.vo.AiMessagesVO;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -16,10 +20,18 @@ public interface AiService {
      *
      * @return 会话信息对应的集合
      */
-    List<AiConversation> getSessions();
+    List<AiConversationVO> getSessions();
 
     /**
      * 用户创建会话
      */
     void createSession();
+
+    /**
+     * ai基础会话
+     *
+     * @param dto 会话id和请求内容
+     * @return 会话信息
+     */
+    Mono<Result<AiMessagesVO>> chat(AiMessagesDTO dto);
 }
