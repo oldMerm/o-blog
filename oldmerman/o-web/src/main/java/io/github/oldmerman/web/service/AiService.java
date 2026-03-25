@@ -23,6 +23,21 @@ public interface AiService {
     List<AiConversationVO> getSessions();
 
     /**
+     * 获取对话信息
+     *
+     * @param sessionId 唯一会话Id
+     * @return 对话信息
+     */
+    List<AiMessagesVO> getChatInfo(String sessionId);
+
+    /**
+     * ai服务心跳
+     *
+     * @return 1 -> 正常
+     */
+    Mono<Result<Integer>> health();
+
+    /**
      * 用户创建会话
      */
     void createSession();

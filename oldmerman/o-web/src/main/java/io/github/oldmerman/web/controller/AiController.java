@@ -23,6 +23,16 @@ public class AiController {
         return Result.success(service.getSessions());
     }
 
+    @GetMapping("/chatInfo")
+    public Result<List<AiMessagesVO>> getChatInfo(@RequestParam("sessionId") String sessionId){
+        return Result.success(service.getChatInfo(sessionId));
+    }
+
+    @GetMapping("/health")
+    public Mono<Result<Integer>> health(){
+        return service.health();
+    }
+
     @PostMapping("/session")
     public Result<Void> createSession(){
         service.createSession();

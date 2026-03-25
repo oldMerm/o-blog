@@ -2,10 +2,11 @@ package io.github.oldmerman.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.github.oldmerman.common.enums.BusErrorCode;
-import io.github.oldmerman.common.exception.BusinessException;
+import io.github.oldmerman.common.response.AiResponse;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.AiMessagesDTO;
 import io.github.oldmerman.model.po.AiConversation;
+import io.github.oldmerman.model.po.AiMessages;
 import io.github.oldmerman.model.vo.AiConversationVO;
 import io.github.oldmerman.model.vo.AiMessagesVO;
 import io.github.oldmerman.web.converter.AiConverter;
@@ -44,6 +45,26 @@ public class AiServiceImpl implements AiService {
     }
 
     @Override
+    public List<AiMessagesVO> getChatInfo(String sessionId) {
+        LambdaQueryWrapper<AiMessages> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AiMessages::getSessionId, sessionId)
+                .orderByAsc(AiMessages::getCreatedAt);
+        return messageMapper.selectList(wrapper).stream()
+                .map(converter::messagePoToVo)
+                .toList();
+    }
+
+    @Override
+    public Mono<Result<Integer>> health() {
+        return webClient.get()
+                .uri("/agent/health")
+                .retrieve()
+                .bodyToMono(AiResponse.class)
+                .map(response -> Result.success(Integer.parseInt(response.getData())))
+                .onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
+    }
+
+    @Override
     public void createSession() {
         AiConversation session = new AiConversation();
         session.setUserId(UserContext.getUserId());
@@ -65,16 +86,15 @@ public class AiServiceImpl implements AiService {
                         .build()
                 )
                 .retrieve()
-                .bodyToMono(String.class)
-                .map(str -> {
+                .bodyToMono(AiResponse.class)
+                .map(res -> {
                     AiMessagesVO vo = new AiMessagesVO();
+                    vo.setSessionId(dto.getSessionId());
                     vo.setRole("ai");
-                    vo.setContent(str);
+                    vo.setContent(res.data);
                     return Result.success(vo);
                 })
-                .onErrorResume(e -> {
-                    throw new BusinessException(BusErrorCode.AI_SYSTEM_ERROR);
-                });
+                .onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
     }
 
 

@@ -5,12 +5,12 @@ import lombok.Data;
 @Data
 public class AiMessagesVO {
 
+    private Long id;
+
     private String sessionId;
 
     private String role;
 
     private String content;
-
-    private int tokens;
 
 }
