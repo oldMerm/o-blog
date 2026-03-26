@@ -1,57 +1,3 @@
-<template>
-  <div class="vp-wrapper">
-    <!-- 1. 顶部栏 (VitePress 风格) -->
-    <nav class="vp-nav">
-      <div class="nav-layout">
-        <div class="brand">
-          <span class="logo"></span>
-          <span class="site-name">老鱼人文档中心</span>
-        </div>
-        <div class="nav-links">
-          <a @click="goToHome" style="cursor: pointer;">主页</a>
-          <a href="https://github.com" target="_blank">GitHub</a>
-        </div>
-      </div>
-    </nav>
-
-    <div class="vp-body">
-      <!-- 2. 左侧栏：完整目录树 -->
-      <aside class="vp-sidebar-left">
-        <div class="sidebar-content">
-          <div class="sidebar-title">章节目录</div>
-          <ul class="toc-tree">
-            <li v-for="h in allHeadings" :key="h.id" :class="['toc-item', `depth-${h.level}`]">
-              <a :href="`#${h.id}`" @click.prevent="scrollTo(h.id)">{{ h.text }}</a>
-            </li>
-          </ul>
-        </div>
-      </aside>
-
-      <!-- 3. 中间内容区：VitePress 渲染引擎 -->
-      <main class="vp-content">
-        <!-- vp-doc 是 VitePress 样式的核心入口类 -->
-        <div class="vp-doc-container">
-          <article class="vp-doc" v-html="renderedHtml"></article>
-        </div>
-      </main>
-
-      <!-- 4. 右侧栏：仅展示末级标题 (Leaf Nodes) -->
-      <aside class="vp-sidebar-right">
-        <div class="aside-content">
-          <div class="aside-title">本页重点</div>
-          <ul class="leaf-list">
-            <li v-for="leaf in leafHeadings" :key="leaf.id">
-              <a :href="`#${leaf.id}`" @click.prevent="scrollTo(leaf.id)">
-                {{ leaf.text }}
-              </a>
-            </li>
-          </ul>
-        </div>
-      </aside>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import MarkdownIt from 'markdown-it';
@@ -74,7 +20,7 @@ interface Heading {
 const renderedHtml = ref('');
 const allHeadings = ref<Heading[]>([]);
 
-// --- Markdown-It 配置 (复刻 VitePress 核心) ---
+// --- Markdown-It 配置 ---
 const md = new MarkdownIt({
   html: true,
   linkify: true,
@@ -188,7 +134,62 @@ const scrollTo = (id: string) => {
 const goToHome = () => {
   router.push({ name: 'home' });
 }
+
 </script>
+
+<template>
+  <div class="vp-wrapper">
+    <!-- 1. 顶部栏 (VitePress 风格) -->
+    <nav class="vp-nav">
+      <div class="nav-layout">
+        <div class="brand">
+          <span class="logo"></span>
+          <span class="site-name">老鱼人文档中心</span>
+        </div>
+        <div class="nav-links">
+          <a @click="goToHome" style="cursor: pointer;">主页</a>
+          <a href="https://github.com" target="_blank">GitHub</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="vp-body">
+      <!-- 2. 左侧栏：完整目录树 -->
+      <aside class="vp-sidebar-left">
+        <div class="sidebar-content">
+          <div class="sidebar-title">章节目录</div>
+          <ul class="toc-tree">
+            <li v-for="h in allHeadings" :key="h.id" :class="['toc-item', `depth-${h.level}`]">
+              <a :href="`#${h.id}`" @click.prevent="scrollTo(h.id)">{{ h.text }}</a>
+            </li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- 3. 中间内容区：VitePress 渲染引擎 -->
+      <main class="vp-content">
+        <!-- vp-doc 是 VitePress 样式的核心入口类 -->
+        <div class="vp-doc-container">
+          <article class="vp-doc" v-html="renderedHtml"></article>
+        </div>
+      </main>
+
+      <!-- 4. 右侧栏：仅展示末级标题 (Leaf Nodes) -->
+      <aside class="vp-sidebar-right">
+        <div class="aside-content">
+          <div class="aside-title">本页重点</div>
+          <ul class="leaf-list">
+            <li v-for="leaf in leafHeadings" :key="leaf.id">
+              <a :href="`#${leaf.id}`" @click.prevent="scrollTo(leaf.id)">
+                {{ leaf.text }}
+              </a>
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 /* 🎨 VitePress 极简淡蓝配色方案 */
@@ -356,7 +357,6 @@ const goToHome = () => {
   color: #3b82f6;
 }
 
-/* --- 核心：VitePress 样式复刻 --- */
 :deep(.vp-doc) {
   line-height: 1.7;
   font-size: 16px;

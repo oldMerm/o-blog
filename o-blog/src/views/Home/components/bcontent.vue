@@ -20,16 +20,16 @@ onMounted(async () => {
 
         if (res.code !== 200) {
             console.error(`服务错误:${res.message}`);
-            alert(`服务错误:${res.message}`); 
+            alert(`服务错误:${res.message}`);
             return;
         }
-        
+
         versionData.value = res.data;
-        
+
         if (versionData.value?.versionId) {
             const currentVersionId = versionData.value.versionId;
             const localVersion = localStorage.getItem("version_news");
-            
+
             if (localVersion !== currentVersionId) {
                 isModalVisible.value = true;
                 localStorage.setItem("version_news", currentVersionId);
@@ -44,20 +44,16 @@ onMounted(async () => {
 </script>
 
 <template>
-    <UpdateModel 
-        v-model="isModalVisible" 
-        :title="versionData?.versionId" 
-        :content="versionData?.versionContent" 
-    />
+    <UpdateModel v-model="isModalVisible" :title="versionData?.versionId" :content="versionData?.versionContent" />
 
     <div class="bc">
         该网页不获取任何个人信息，请注意甄别！
         <br>
         <a href="http://beian.miit.gov.cn" class="beian" target="_blank" rel="noopener noreferrer">
             粤ICP备2026023638号-1
-        </a> 
+        </a>
+        <span><img src="https://beian.mps.gov.cn/img/logo01.dd7ff50e.png">粤公网安备44196202000120号</span>
         ©版本号: {{ versionData?.versionId || '获取中...' }}
-        邮箱: oldmerman@outlook.com
     </div>
 </template>
 
@@ -77,5 +73,11 @@ onMounted(async () => {
 
 .beian:hover {
     color: red;
+}
+
+img {
+    width: 16px;
+    height: 17px;
+    vertical-align: middle;
 }
 </style>
