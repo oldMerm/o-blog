@@ -2,6 +2,7 @@ package io.github.oldmerman.web.controller;
 
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.AiMessagesDTO;
+import io.github.oldmerman.model.po.AiConversation;
 import io.github.oldmerman.model.vo.AiConversationVO;
 import io.github.oldmerman.model.vo.AiMessagesVO;
 import io.github.oldmerman.web.service.AiService;
@@ -34,13 +35,24 @@ public class AiController {
     }
 
     @PostMapping("/session")
-    public Result<Void> createSession(){
-        service.createSession();
-        return Result.success();
+    public Result<AiConversation> createSession(){
+        return Result.success(service.createSession());
     }
 
     @PostMapping("/chat")
     public Mono<Result<AiMessagesVO>> chat(@RequestBody AiMessagesDTO dto){
         return service.chat(dto);
+    }
+
+    @DeleteMapping
+    public Result<Void> deleteOneSession(@RequestParam("sessionId") String sessionId){
+        service.deleteOneSession(sessionId);
+        return Result.success();
+    }
+
+    @DeleteMapping("/all")
+    public Result<Void> deleteAllSessions(){
+        service.deleteAllSession();
+        return Result.success();
     }
 }

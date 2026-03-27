@@ -89,7 +89,6 @@ watch(selectedId, async (newVal) => {
         if(res.code !== 200){
             alert(`服务错误：${res.message}`);
         }
-        console.log(res.data);
         messages.value = res.data;
     } catch (error) {
         alert(`系统错误:${error}`);
@@ -101,6 +100,7 @@ const createSession = async () => {
 
 }
 
+const flag = ref<boolean>(false);
 // 发送消息
 const sendMessage = async () => {
     if (!inputText.value.trim() || selectedId.value === undefined) return;
@@ -114,24 +114,33 @@ const sendMessage = async () => {
         role: 'ai',
         sessionId: selectedId.value,
         content: "思考中..."
-    }
+    };
 
     // 添加用户消息
     messages.value.push(humanMessage);
+    flag.value = true;
     inputText.value = ''; 
     scrollToBottom();
     messages.value.push(aiMessage);
 
     try {
-        const res = await httpInstance.post<any, Response>("/agent/chat", humanMessage);
+        const res = await httpInstance.post<any, Response>("/agent/chat", humanMessage, {timeout: 60000});
         if(res.code !== 200){
             alert(`服务错误:${res.message}`);
             return;
         }
-        console.log(res.data);
-        aiMessage.content = res.data.content;
+
+        const lastIndex = messages.value.length - 1;
+        const lastMessage = messages.value[lastIndex];
+    
+        if(lastMessage){
+            lastMessage.content = res.data.content;
+        }
+        
     } catch (error) {
         alert(`系统错误:${error}`);
+    } finally {
+        flag.value = false;
     }
 };
 
@@ -209,7 +218,7 @@ const scrollToBottom = async () => {
                             <div class="input-container">
                                 <input v-model="inputText" type="text" placeholder="请输入你的问题吧..."
                                     @keyup.enter="sendMessage" />
-                                <button @click="sendMessage">发送</button>
+                                <button @click="sendMessage" :disabled="false">发送</button>
                             </div>
                         </div>
 

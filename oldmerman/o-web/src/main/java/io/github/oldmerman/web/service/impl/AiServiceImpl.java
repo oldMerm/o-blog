@@ -17,6 +17,7 @@ import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -39,62 +40,63 @@ public class AiServiceImpl implements AiService {
     @Override
     public List<AiConversationVO> getSessions() {
         LambdaQueryWrapper<AiConversation> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(AiConversation::getUserId, UserContext.getUserId())
-                .orderByDesc(AiConversation::getCreatedAt);
+        wrapper.eq(AiConversation::getUserId, UserContext.getUserId()).orderByDesc(AiConversation::getCreatedAt);
         return conversationsMapper.selectList(wrapper).stream().map(converter::poToVo).toList();
     }
 
     @Override
     public List<AiMessagesVO> getChatInfo(String sessionId) {
         LambdaQueryWrapper<AiMessages> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(AiMessages::getSessionId, sessionId)
-                .orderByAsc(AiMessages::getCreatedAt);
-        return messageMapper.selectList(wrapper).stream()
-                .map(converter::messagePoToVo)
-                .toList();
+        wrapper.eq(AiMessages::getSessionId, sessionId).orderByAsc(AiMessages::getCreatedAt);
+        return messageMapper.selectList(wrapper).stream().map(converter::messagePoToVo).toList();
     }
 
     @Override
     public Mono<Result<Integer>> health() {
-        return webClient.get()
-                .uri("/agent/health")
-                .retrieve()
-                .bodyToMono(AiResponse.class)
-                .map(response -> Result.success(Integer.parseInt(response.getData())))
-                .onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
+        return webClient.get().uri("/agent/health").retrieve().bodyToMono(AiResponse.class).map(response -> Result.success(Integer.parseInt(response.getData()))).onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
     }
 
     @Override
-    public void createSession() {
+    public AiConversation createSession() {
         AiConversation session = new AiConversation();
         session.setUserId(UserContext.getUserId());
         session.setSessionDecr("新建会话");
         session.setSessionId(UUID.randomUUID().toString().replace("-", ""));
         conversationsMapper.insert(session);
+        return session;
     }
 
     @Override
     public Mono<Result<AiMessagesVO>> chat(AiMessagesDTO dto) {
         Long userId = UserContext.getUserId();
         log.info("[agent]用户：{}，请求会话。", userId);
-        return webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/agent/chat")
-                        .queryParam("session_id", dto.getSessionId())
-                        .queryParam("content", dto.getContent())
-                        .queryParam("user_id", userId)
-                        .build()
-                )
-                .retrieve()
-                .bodyToMono(AiResponse.class)
-                .map(res -> {
-                    AiMessagesVO vo = new AiMessagesVO();
-                    vo.setSessionId(dto.getSessionId());
-                    vo.setRole("ai");
-                    vo.setContent(res.data);
-                    return Result.success(vo);
-                })
-                .onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
+        return webClient.get().uri(uriBuilder -> uriBuilder.path("/agent/chat").queryParam("session_id", dto.getSessionId()).queryParam("content", dto.getContent()).queryParam("user_id", userId).build()).retrieve().bodyToMono(AiResponse.class).map(res -> {
+            AiMessagesVO vo = new AiMessagesVO();
+            vo.setSessionId(dto.getSessionId());
+            vo.setRole("ai");
+            vo.setContent(res.data);
+            return Result.success(vo);
+        }).onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
+    }
+
+    @Override
+    @Transactional
+    public void deleteOneSession(String sessionId) {
+        messageMapper.deleteBySessionId(sessionId);
+        conversationsMapper.deleteBySessionId(sessionId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllSession() {
+        Long userId = UserContext.getUserId();
+        LambdaQueryWrapper<AiConversation> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(AiConversation::getUserId, userId);
+        List<String> sessionIds = conversationsMapper.selectList(queryWrapper).stream()
+                .map(AiConversation::getSessionId)
+                .toList();
+        messageMapper.deleteBySessionIds(sessionIds);
+        conversationsMapper.deleteAllByUserId(userId);
     }
 
 
