@@ -41,7 +41,7 @@ public interface AiService {
     /**
      * 用户创建会话
      */
-    AiConversation createSession();
+    AiConversationVO createSession();
 
     /**
      * ai基础会话

@@ -35,7 +35,7 @@ public class AiController {
     }
 
     @PostMapping("/session")
-    public Result<AiConversation> createSession(){
+    public Result<AiConversationVO> createSession(){
         return Result.success(service.createSession());
     }
 

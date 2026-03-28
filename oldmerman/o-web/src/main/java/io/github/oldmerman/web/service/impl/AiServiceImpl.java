@@ -57,13 +57,13 @@ public class AiServiceImpl implements AiService {
     }
 
     @Override
-    public AiConversation createSession() {
+    public AiConversationVO createSession() {
         AiConversation session = new AiConversation();
         session.setUserId(UserContext.getUserId());
         session.setSessionDecr("新建会话");
         session.setSessionId(UUID.randomUUID().toString().replace("-", ""));
         conversationsMapper.insert(session);
-        return session;
+        return converter.poToVo(session);
     }
 
     @Override
@@ -95,6 +95,7 @@ public class AiServiceImpl implements AiService {
         List<String> sessionIds = conversationsMapper.selectList(queryWrapper).stream()
                 .map(AiConversation::getSessionId)
                 .toList();
+        if(sessionIds.isEmpty()) return;
         messageMapper.deleteBySessionIds(sessionIds);
         conversationsMapper.deleteAllByUserId(userId);
     }

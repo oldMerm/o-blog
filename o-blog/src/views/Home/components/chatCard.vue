@@ -3,10 +3,21 @@ import { ref, nextTick, watch, onMounted } from 'vue';
 import JumpingText from '@/utils/JumpingText.vue'; // 假设你的工具组件路径
 import { httpInstance, type Response } from '@/utils/http';
 import { MarkdownRenderer } from '@/utils/mdRender';
+import Dialog from '@/utils/dia/Dialog.vue';
+
 
 // --- 弹窗状态管理 ---
 const isChatOpen = ref(false);
 const renderer = new MarkdownRenderer();
+const defaultContent = ref<string>("你好，我是老鱼人的专属智能体，请问有什么能帮助你吗？注意先看一下使用须知(左上角第三个图标)！！！");
+
+const renderDefaultContent = () => {
+    if(sessionHistory.value.length === 0){
+        defaultContent.value = "点击左侧第一个按钮开始会话吧！";
+    }else{
+        defaultContent.value = "你好，我是老鱼人的专属智能体，请问有什么能帮助你吗？注意先看一下使用须知(左上角第三个图标)！！！";
+    }
+}
 
 // 2. 右侧对话内容假数据
 interface Session {
@@ -23,11 +34,7 @@ interface Message {
 
 const sessionHistory = ref<Session[]>([]);
 
-const messages = ref<Message[]>([
-    { sessionId: '111', role: 'ai', content: '你好！我是老鱼人智能体，有什么我可以帮你的吗？' },
-    { sessionId: '111', role: 'human', content: '我想了解一下这篇博客的核心内容。' },
-    { sessionId: '111', role: 'ai', content: '好的，这篇博客主要介绍了如何使用 Vue3 和 TypeScript 构建一个内嵌的 AI 聊天界面，包括布局设计、状态管理和样式美化等内容。' }
-]);
+const messages = ref<Message[]>([]);
 
 const inputText = ref('');
 const chatScrollRef = ref<HTMLElement | null>(null);
@@ -69,15 +76,16 @@ const selectSession = (sessionId: string, decr: string) => {
     selectedDecr.value = decr;
 }
 
-const gethistroySession = async () => {
+const gethistorySession = async () => {
     const res = await httpInstance.get<any, Response>("/agent");
     sessionHistory.value = res.data;
 }
 
 onMounted(async () => {
-    await gethistroySession();
+    await gethistorySession();
     selectedId.value = sessionHistory.value[0]?.sessionId;
     selectedDecr.value = sessionHistory.value[0]?.sessionDecr;
+    renderDefaultContent();
 })
 
 watch(selectedId, async (newVal) => {
@@ -97,13 +105,24 @@ watch(selectedId, async (newVal) => {
 
 // 新建会话
 const createSession = async () => {
-
+    try {
+        const res = await httpInstance.post<any, Response>("/agent/session");
+        if(res.code !== 200){
+            alert(`服务出错:${res.message}`);
+        }
+        const newSession: Session = res.data;
+        sessionHistory.value.unshift(newSession);
+        selectSession(newSession.sessionId, newSession.sessionDecr);
+        renderDefaultContent();
+    } catch (error) {
+        alert(`系统错误:${error}`);
+    }
 }
 
 const flag = ref<boolean>(false);
 // 发送消息
 const sendMessage = async () => {
-    if (!inputText.value.trim() || selectedId.value === undefined) return;
+    if (!inputText.value.trim() || selectedId.value === undefined || flag.value === true) return;
 
     const humanMessage:Message = {
         role: 'human',
@@ -118,7 +137,6 @@ const sendMessage = async () => {
 
     // 添加用户消息
     messages.value.push(humanMessage);
-    flag.value = true;
     inputText.value = ''; 
     scrollToBottom();
     messages.value.push(aiMessage);
@@ -151,6 +169,23 @@ const scrollToBottom = async () => {
         chatScrollRef.value.scrollTop = chatScrollRef.value.scrollHeight;
     }
 };
+
+// 删除所有会话
+const confirmDelete = ref<boolean>(false);
+const deleteAll = async () => {
+    try {
+        const res = await httpInstance.delete<any, Response>("/agent/all");
+        if(res.code !== 200){
+            alert(`服务错误:${res.message}`);
+        } 
+        messages.value = sessionHistory.value = [];
+        selectedId.value = undefined;
+        selectedDecr.value = '';
+        renderDefaultContent();
+    } catch (error) {
+        alert(`系统错误:${error}`);
+    }
+}
 </script>
 
 <template>
@@ -185,8 +220,13 @@ const scrollToBottom = async () => {
                     <!-- 左侧：对话历史 -->
                     <div class="chat-history">
                         <div class="chat-history-topbar">
-                            <img class="topbar-item" src="../../../static/添加.svg" title="新建会话" @click="createSession">
-                            <img class="topbar-item" src="../../../static/删除.svg" title="删除所有会话">
+                            <img class="topbar-item" src="../../../static/添加.svg" @click="createSession">
+                            <img class="topbar-item" src="../../../static/删除.svg" @click="confirmDelete = true">
+                            <Dialog
+                                v-model="confirmDelete"
+                                title="确认删除"
+                                content="确认删除所有会话？数据将不可恢复！"
+                                @confirm="deleteAll"/>
                             <img class="topbar-item" src="../../../static/公告.svg" title="使用须知">
                         </div>
                         <div v-for="item in sessionHistory" 
@@ -204,9 +244,7 @@ const scrollToBottom = async () => {
                         <div class="chat-messages" ref="chatScrollRef">
                             <h5 style="text-align: center; text-decoration: underline;">{{ selectedDecr }}</h5>
                             <div class="message-wrapper ai">
-                                <div class="message-bubble">
-                                    你好，我是老鱼人的专属智能体，请问有什么能帮助你吗？
-                                    注意先看一下使用须知(左上角第三个图标)！！！</div>
+                                <div class="message-bubble">{{ defaultContent }}</div>
                             </div>
                             <div v-for="msg in messages" :class="['message-wrapper', msg.role]">
                                 <div class="message-bubble" v-html="renderer.render(msg.content.replace(/\\n/g, '\n'))"></div>
@@ -218,7 +256,7 @@ const scrollToBottom = async () => {
                             <div class="input-container">
                                 <input v-model="inputText" type="text" placeholder="请输入你的问题吧..."
                                     @keyup.enter="sendMessage" />
-                                <button @click="sendMessage" :disabled="false">发送</button>
+                                <button @click="sendMessage">发送</button>
                             </div>
                         </div>
 

@@ -6,7 +6,7 @@
 
     <delete id="deleteBySessionIds">
         DELETE FROM o_blog.ai_messages
-        WHERE id in
+        WHERE session_id in
         <foreach collection="sessionIds" open="(" separator="," close=")" item="sessionId">
             #{sessionId}
         </foreach>
