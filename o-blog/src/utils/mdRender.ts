@@ -55,7 +55,7 @@ export class MarkdownRenderer {
 
 // ================= 使用示例 =================
 
-const renderer = new MarkdownRenderer();
+/* const renderer = new MarkdownRenderer();
 
 const markdownStr = `
 ### TypeScript 高亮测试
@@ -72,7 +72,7 @@ const greet = (user: User): string => {
   return \`Hello, \${user.name}!\`;
 };
 \`\`\`
-`;
+`; */
 
-const htmlResult = renderer.render(markdownStr);
-console.log(htmlResult);
+/* const htmlResult = renderer.render(markdownStr);
+console.log(htmlResult); */

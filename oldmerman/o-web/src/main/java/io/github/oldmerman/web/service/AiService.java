@@ -2,7 +2,6 @@ package io.github.oldmerman.web.service;
 
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.AiMessagesDTO;
-import io.github.oldmerman.model.po.AiConversation;
 import io.github.oldmerman.model.vo.AiConversationVO;
 import io.github.oldmerman.model.vo.AiMessagesVO;
 import reactor.core.publisher.Mono;

@@ -31,7 +31,7 @@ public enum BusErrorCode implements IResultCode {
     ARTICLE_SUBMIT_FREQUENT(1096, "文章上传频繁"),
     ARTICLE_NAME_EXIST(1097, "文章名已存在"),
 
-    AI_SYSTEM_ERROR(1200, "智能体系统出错")
+    AI_SYSTEM_ERROR(1200, "智能体系统出错"),
     ;
 
     private final Integer code;

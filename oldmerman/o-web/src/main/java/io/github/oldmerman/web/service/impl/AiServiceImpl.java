@@ -53,7 +53,12 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public Mono<Result<Integer>> health() {
-        return webClient.get().uri("/agent/health").retrieve().bodyToMono(AiResponse.class).map(response -> Result.success(Integer.parseInt(response.getData()))).onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
+        return webClient.get()
+                .uri("/agent/health")
+                .retrieve()
+                .bodyToMono(AiResponse.class)
+                .map(response -> Result.success(Integer.parseInt(response.getData())))
+                .onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
     }
 
     @Override
@@ -70,13 +75,19 @@ public class AiServiceImpl implements AiService {
     public Mono<Result<AiMessagesVO>> chat(AiMessagesDTO dto) {
         Long userId = UserContext.getUserId();
         log.info("[agent]用户：{}，请求会话。", userId);
-        return webClient.get().uri(uriBuilder -> uriBuilder.path("/agent/chat").queryParam("session_id", dto.getSessionId()).queryParam("content", dto.getContent()).queryParam("user_id", userId).build()).retrieve().bodyToMono(AiResponse.class).map(res -> {
-            AiMessagesVO vo = new AiMessagesVO();
-            vo.setSessionId(dto.getSessionId());
-            vo.setRole("ai");
-            vo.setContent(res.data);
-            return Result.success(vo);
-        }).onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/agent/chat")
+                        .queryParam("session_id", dto.getSessionId())
+                        .queryParam("content", dto.getContent())
+                        .queryParam("user_id", userId).build())
+                .retrieve().bodyToMono(AiResponse.class)
+                .flatMap(res -> {
+                    AiMessagesVO vo = new AiMessagesVO();
+                    vo.setSessionId(dto.getSessionId());
+                    vo.setRole("ai");
+                    vo.setContent(res.data);
+                    return Mono.just(Result.success(vo));
+                }).onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
     }
 
     @Override
@@ -92,10 +103,8 @@ public class AiServiceImpl implements AiService {
         Long userId = UserContext.getUserId();
         LambdaQueryWrapper<AiConversation> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(AiConversation::getUserId, userId);
-        List<String> sessionIds = conversationsMapper.selectList(queryWrapper).stream()
-                .map(AiConversation::getSessionId)
-                .toList();
-        if(sessionIds.isEmpty()) return;
+        List<String> sessionIds = conversationsMapper.selectList(queryWrapper).stream().map(AiConversation::getSessionId).toList();
+        if (sessionIds.isEmpty()) return;
         messageMapper.deleteBySessionIds(sessionIds);
         conversationsMapper.deleteAllByUserId(userId);
     }
