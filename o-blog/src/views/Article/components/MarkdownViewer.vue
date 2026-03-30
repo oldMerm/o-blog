@@ -4,7 +4,7 @@ import MarkdownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
 import container from 'markdown-it-container';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/atom-one-dark.min.css'
+import 'highlight.js/styles/vs.css'
 import router from '@/router/index.ts'
 import { useRoute } from 'vue-router'
 import { httpInstance, type Response } from '@/utils/http';
@@ -24,7 +24,6 @@ const allHeadings = ref<Heading[]>([]);
 const md = new MarkdownIt({
   html: true,
   linkify: true,
-  breaks: true,
   highlight: (str, lang) => {
     if (lang && hljs.getLanguage(lang)) {
       try {
@@ -48,9 +47,24 @@ const route = useRoute();
 
 onMounted(async () => {
   const id = route.params.id;
+  const isPublic = route.query.isPublic;
   if (id === null) {
     alert('未传入数据，文章为空，将渲染默认文本');
     fetchDocument(1);
+  } else if (isPublic === 'private') { 
+    try {
+      const res = await httpInstance.get<any, Response>(`/article/private/${id}`);
+      if (res.code !== 200) {
+        alert(`错误消息: ${res.message}, 将渲染默认文本`);
+        fetchDocument(1);
+        return;
+      }
+      const text: string = await httpInstance.get(res.data);
+      renderedHtml.value = md.render(text);
+      extractHeadings(text);
+    } catch (error) {
+      alert(error);
+    }
   } else {
     try {
       const res = await httpInstance.get<any, Response>(`/article/public/${id}`);
@@ -60,8 +74,7 @@ onMounted(async () => {
         return;
       }
       const text: string = await httpInstance.get(res.data);
-      renderedHtml.value = md.render(text.replace("hh", "<br>"));
-
+      renderedHtml.value = md.render(text);
       extractHeadings(text);
     } catch (error) {
       alert(error);
@@ -100,12 +113,17 @@ const fetchDocument = async (id: number) => {
   extractHeadings(mockMd);
 };
 
-// 提取标题用于侧边栏
 const extractHeadings = (content: string) => {
+  // 1. 先过滤掉所有代码块的内容，防止误匹配其中的 # 注释
+  // 匹配 ```...``` 之间的所有内容，替换为空格
+  const cleanContent = content.replace(/```[\s\S]*?```/g, '');
+
+  // 2. 使用增强后的正则：确保标题必须在行首，且前面没有被代码块干扰
   const headingRegex = /^(#{1,6})\s+(.*)$/gm;
   const list: Heading[] = [];
   let match: any;
-  while ((match = headingRegex.exec(content)) !== null) {
+
+  while ((match = headingRegex.exec(cleanContent)) !== null) {
     const text = match[2].trim();
     list.push({
       level: match[1].length,
@@ -117,18 +135,18 @@ const extractHeadings = (content: string) => {
 };
 
 // --- 计算属性：过滤出末级标题 ---
+// 简单高效：直接过滤出所有 H2 标题作为“本页重点”
 const leafHeadings = computed(() => {
-  return allHeadings.value.filter((current, i) => {
-    const next = allHeadings.value[i + 1];
-    // 如果没有下一个标题，或者下一个标题的等级 <= 当前 (说明当前是该分支最后一位)
-    return !next || next.level <= current.level;
-  });
+  return allHeadings.value.filter(h => h.level === 2);
 });
 
 // 丝滑滚动
 const scrollTo = (id: string) => {
   const el = document.getElementById(id);
-  if (el) el.scrollIntoView({ behavior: 'smooth' });
+  if (el) {
+    const y = el.getBoundingClientRect().top + window.pageYOffset - 80; // 80 是导航栏高度 + 一点余量
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
 };
 
 const goToHome = () => {
@@ -302,11 +320,11 @@ const goToHome = () => {
 
 .depth-2 {
   padding-left: 12px;
+  font-weight: 600;
 }
 
 .depth-3 {
-  padding-left: 24px;
-  font-size: 0.9em;
+  padding-left: 12px;
 }
 
 /* 📝 内容区 */
@@ -364,20 +382,30 @@ const goToHome = () => {
 
 :deep(.vp-doc h1) {
   font-size: 32px;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
   font-weight: 700;
 }
 
 :deep(.vp-doc h2) {
-  font-size: 24px;
+  font-size: 28px;
   margin: 48px 0 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid #f1f1f1;
 }
 
 :deep(.vp-doc h3) {
-  font-size: 20px;
+  font-size: 24px;
   margin: 32px 0 16px;
+}
+
+:deep(.vp-doc h4) {
+  font-size: 20px;
+  margin: 12px 0 16px;
+}
+
+:deep(.vp-doc h5) {
+  font-size: 16px;
+  margin: 12px 0 16px;
 }
 
 /* Container 样式 */
@@ -409,12 +437,23 @@ const goToHome = () => {
 
 /* 代码块样式 */
 :deep(pre) {
-  background-color: #282c34;
+  background-color: #ffffff;
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;
   border: 1px solid #e2e8f0;
 }
 
-:deep(p) { margin-top: 2px; }
+:deep(pre>code) {
+  color: #000000 !important;
+  font-weight: 300;
+}
+
+:deep(p) {
+  margin-bottom: 14px;
+}
+
+:deep(img) {
+  width: 100%;
+}
 </style>

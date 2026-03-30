@@ -77,7 +77,7 @@ public class ArticleServiceImpl implements ArticleService {
     public List<ArticleRenderVO> getRenderArticle(Byte articleType, Long size) throws JsonProcessingException {
         String data = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_RENDER + articleType);
         if (!ObjectUtils.isEmpty(data)) {
-            return objectMapper.readValue(data, new TypeReference<>() {
+                return objectMapper.readValue(data, new TypeReference<>() {
             });
         }
         List<ArticleRenderVO> vo;
