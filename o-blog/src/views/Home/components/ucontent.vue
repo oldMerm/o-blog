@@ -35,7 +35,7 @@ onMounted(() => {
       <div v-for="(item, index) in articleList" :key="index" class="article-item">
         
         <!-- 左侧：标题 (自动截断) -->
-        <span class="title-text" @click="goToArticle(item.id, true)">{{ item.articleName }}</span>
+        <span class="title-text" @click="goToArticle(item.id)">{{ item.articleName }}</span>
         
         <!-- 右侧：数据 (固定不换行) -->
         <p class="stats-info">

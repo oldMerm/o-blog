@@ -12,9 +12,11 @@ import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
 import io.github.oldmerman.model.dto.ArticlePriDTO;
 import io.github.oldmerman.model.po.Article;
+import io.github.oldmerman.model.po.ArticleHistory;
 import io.github.oldmerman.model.po.ArticleImage;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.converter.ArticleConverter;
+import io.github.oldmerman.web.mapper.ArticleHistoryMapper;
 import io.github.oldmerman.web.mapper.ArticleImageMapper;
 import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.mapper.UserMapper;
@@ -32,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
@@ -47,6 +50,8 @@ public class ArticleServiceImpl implements ArticleService {
     private final ArticleImageMapper articleImageMapper;
 
     private final UserMapper userMapper;
+
+    private final ArticleHistoryMapper historyMapper;
 
     private final OssService ossService;
 
@@ -112,6 +117,20 @@ public class ArticleServiceImpl implements ArticleService {
         String key = article.getKey();
         if (key == null) {
             throw new BusinessException(BusErrorCode.FILE_UNEXIST);
+        }
+        // 记录用户浏览历史
+        Long userId = UserContext.getUserId();
+        if(userId != null){
+            Integer historyId = historyMapper.selectByUsrArtId(userId, article.getId());
+            if(historyId != null){
+                historyMapper.updateHistoryTime(historyId, LocalDateTime.now());
+            }else{
+                ArticleHistory ah = new ArticleHistory();
+                ah.setUserId(userId);
+                ah.setArticleId(article.getId());
+                ah.setArticleName(article.getArticleName());
+                historyMapper.insert(ah);
+            }
         }
         return ossService.genPreviewURL(key, null);
     }

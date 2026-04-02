@@ -157,7 +157,7 @@ const toggleFeedbackList = () => {
     <h3>我的文章列表</h3>
     <div class="scroll-area">
       <ul class="article-list">
-        <li v-for="article in articleList" :key="article.id" class="article-item" @click="goToArticle(article.id, true)">
+        <li v-for="article in articleList" :key="article.id" class="article-item" @click="goToArticle(article.id, true, 'private')">
           <span class="article-title">{{ article.articleName }}</span>
           <span class="article-date">{{ statusMap.get(article.articleStatus) + '-' + article.createdAt }}</span>
         </li>

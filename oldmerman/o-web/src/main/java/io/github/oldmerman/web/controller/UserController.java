@@ -4,11 +4,13 @@ import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.UserManageDTO;
 import io.github.oldmerman.model.po.Counter;
 import io.github.oldmerman.model.vo.UserInfoVO;
+import io.github.oldmerman.web.service.OssService;
 import io.github.oldmerman.web.service.UserService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,6 +21,8 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+
+    private final OssService ossService;
 
     @GetMapping("info")
     public Result<UserInfoVO> getUsrInfo() {
@@ -37,6 +41,13 @@ public class UserController {
         log.info("更新用户数据：{}", dto.getId());
         userService.updateUsrInfo(dto);
         return Result.success();
+    }
+
+    @PutMapping("upload")
+    public Result<String> uploadUsrImage(@RequestParam("img") MultipartFile file){
+        Long userId = UserContext.getUserId();
+        log.info("上传图片，{}",userId);
+        return Result.success(ossService.uploadUsrImage(userId, file));
     }
 
     @DeleteMapping("delete")

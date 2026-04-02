@@ -9,26 +9,23 @@ export interface Article {
 }
 
 // 访问文章功能，根据文章id渲染并跳转
-export const goToArticle = async (articleId?:string, open?:boolean) => {
+export const goToArticle = async (articleId?:string, open?:boolean, isPublic:'public' | 'private' = 'public') => {
   if(!articleId){
     alert('文章ID不存在，无法跳转');
     return;
   }
-  if(open === true){
-    const routerUrl = router.resolve({ 
+  const routerConfig = { 
       name: 'markdown',
       params: { 
         id:articleId,
-      }
-    });
+      },
+      query: {isPublic}
+  }
+  if(open === true){
+    const routerUrl = router.resolve(routerConfig);
     window.open(routerUrl.href, '_blank');
   }else{
-    router.push({
-      name: 'markdown',
-      params: { 
-        id:articleId
-      }
-    });
+    router.push(routerConfig);
   }
   
 }

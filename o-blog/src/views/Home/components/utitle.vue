@@ -13,6 +13,10 @@ const getNewMess = async () => {
             return;
         }
         newMess.value = res.data;
+        if(newMess.value){
+            const name:string = newMess.value.articleName;
+            newMess.value.articleName = name.length >= 8 ? name.slice(0, 8)+'...' : name;
+        }
     } catch (error) {
         alert(error);
     }
@@ -29,7 +33,7 @@ setInterval(
 <template>
     <div class="ut" v-if="newMess">
         oldmerman<strong>更新推送:</strong>
-        <span class="newMess" @click="goToArticle(newMess.id)">{{ newMess.articleName.slice(0, 8) }}</span>
+        <span class="newMess" @click="goToArticle(newMess.id)">{{ newMess.articleName}}</span>
         <span class="time">于{{ newMess.createdAt.slice(0, 11) }}</span>
     </div>
 </template>

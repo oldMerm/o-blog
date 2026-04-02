@@ -52,7 +52,8 @@ onMounted(async () => {
         <a href="http://beian.miit.gov.cn" class="beian" target="_blank" rel="noopener noreferrer">
             粤ICP备2026023638号-1
         </a>
-        <span><img src="https://beian.mps.gov.cn/img/logo01.dd7ff50e.png">粤公网安备44196202000120号</span>
+        <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=44196202000120" class="beian">
+            <img src="https://beian.mps.gov.cn/img/logo01.dd7ff50e.png">粤公网安备44196202000120号</a>
         ©版本号: {{ versionData?.versionId || '获取中...' }}
     </div>
 </template>
@@ -72,7 +73,7 @@ onMounted(async () => {
 }
 
 .beian:hover {
-    color: red;
+    color: rgb(8, 0, 255);
 }
 
 img {

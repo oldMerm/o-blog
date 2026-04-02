@@ -442,10 +442,11 @@ const goToHome = () => {
   border-radius: 8px;
   overflow-x: auto;
   border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
 }
 
 :deep(pre>code) {
-  color: #000000 !important;
+  color: #363636 !important;
   font-weight: 300;
 }
 
@@ -456,4 +457,6 @@ const goToHome = () => {
 :deep(img) {
   width: 100%;
 }
+
+
 </style>

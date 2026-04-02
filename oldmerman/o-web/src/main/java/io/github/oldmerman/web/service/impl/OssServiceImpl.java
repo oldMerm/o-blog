@@ -9,7 +9,6 @@ import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.enums.WebEnum;
 import io.github.oldmerman.common.exception.BusinessException;
-import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.OssService;
 import lombok.RequiredArgsConstructor;
@@ -49,9 +48,7 @@ public class OssServiceImpl implements OssService {
 
         // 准备新文件Key和旧文件Key
         String newFileKey = genFileName(userId.toString(), ext, WebEnum.USER_PREFIX.getValue());
-        String oldFileKey = Optional.ofNullable(userMapper.selectUserById(userId))
-                .map(User::getAttr)
-                .orElse(null);
+        String oldFileKey = userMapper.selectUserById(userId).getAttr();
 
         try {
             // 上传到 OSS
@@ -61,7 +58,7 @@ public class OssServiceImpl implements OssService {
             userMapper.updateUserAttrKey(userId, newFileKey);
 
             // 异步或尝试删除旧图片（非核心业务，即使失败也不应影响主流程）
-            deleteOldImageSilently(oldFileKey);
+            ossClient.deleteObject(BUCKET, oldFileKey);
 
             return newFileKey;
 
@@ -175,20 +172,6 @@ public class OssServiceImpl implements OssService {
             throw new BusinessException(BusErrorCode.FILE_EXT_FAILED);
         }
         return ext;
-    }
-
-    /**
-     * 辅助方法：静默删除旧图片
-     * 删除旧图属于清理操作，不应因为网络抖动导致用户修改头像失败
-     */
-    private void deleteOldImageSilently(String key) {
-        if (StringUtils.hasText(key)) {
-            try {
-                ossClient.deleteObject(BUCKET, key);
-            } catch (Exception e) {
-                log.warn("旧头像清理失败，Key: {}, 原因: {}", key, e.getMessage());
-            }
-        }
     }
 
     // genFileName 方法保持不变，或者根据需要优化
