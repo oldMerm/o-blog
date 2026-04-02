@@ -38,7 +38,7 @@ spring:
 jwt:
   secret: oldmerman20051223secret111111111
   expiration: 2880
-  refresh-expiration: 86400
+  refresh-expiration: 10080
 alias:
   oss:
     endpoint: https://oss-cn-guangzhou.aliyuncs.com
