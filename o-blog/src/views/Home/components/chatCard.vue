@@ -12,9 +12,9 @@ const renderer = new MarkdownRenderer();
 const defaultContent = ref<string>("你好，我是老鱼人的专属智能体，请问有什么能帮助你吗？注意先看一下使用须知(左上角第三个图标)！！！");
 
 const renderDefaultContent = () => {
-    if(sessionHistory.value.length === 0){
+    if (sessionHistory.value.length === 0) {
         defaultContent.value = "点击左侧第一个按钮开始会话吧！";
-    }else{
+    } else {
         defaultContent.value = "你好，我是老鱼人的专属智能体，请问有什么能帮助你吗？注意先看一下使用须知(左上角第三个图标)！！！";
     }
 }
@@ -47,7 +47,7 @@ const openChat = async () => {
         alert("未登录或ai服务错误");
         return;
     }
-    
+
     scrollToBottom();
     isChatOpen.value = true;
 };
@@ -89,25 +89,21 @@ onMounted(async () => {
 })
 
 watch(selectedId, async (newVal) => {
-    try {
-        if(newVal === undefined) return;
-        const formData = new FormData();
-        formData.append('sessionId', newVal);
-        const res = await httpInstance<any, Response>(`/agent/chatInfo?sessionId=${newVal}`);
-        if(res.code !== 200){
-            alert(`服务错误：${res.message}`);
-        }
-        messages.value = res.data;
-    } catch (error) {
-        alert(`系统错误:${error}`);
+    if (newVal === undefined) return;
+    const formData = new FormData();
+    formData.append('sessionId', newVal);
+    const res = await httpInstance<any, Response>(`/agent/chatInfo?sessionId=${newVal}`);
+    if (res.code !== 200) {
+        alert(`服务错误：${res.message}`);
     }
-}, {immediate: true})
+    messages.value = res.data;
+}, { immediate: true })
 
 // 新建会话
 const createSession = async () => {
     try {
         const res = await httpInstance.post<any, Response>("/agent/session");
-        if(res.code !== 200){
+        if (res.code !== 200) {
             alert(`服务出错:${res.message}`);
         }
         const newSession: Session = res.data;
@@ -124,12 +120,12 @@ const flag = ref<boolean>(false);
 const sendMessage = async () => {
     if (!inputText.value.trim() || selectedId.value === undefined || flag.value === true) return;
 
-    const humanMessage:Message = {
+    const humanMessage: Message = {
         role: 'human',
         sessionId: selectedId.value,
         content: inputText.value
     }
-    const aiMessage:Message = {
+    const aiMessage: Message = {
         role: 'ai',
         sessionId: selectedId.value,
         content: "思考中..."
@@ -137,24 +133,24 @@ const sendMessage = async () => {
 
     // 添加用户消息
     messages.value.push(humanMessage);
-    inputText.value = ''; 
+    inputText.value = '';
     scrollToBottom();
     messages.value.push(aiMessage);
 
     try {
-        const res = await httpInstance.post<any, Response>("/agent/chat", humanMessage, {timeout: 60000});
-        if(res.code !== 200){
+        const res = await httpInstance.post<any, Response>("/agent/chat", humanMessage, { timeout: 60000 });
+        if (res.code !== 200) {
             alert(`服务错误:${res.message}`);
             return;
         }
 
         const lastIndex = messages.value.length - 1;
         const lastMessage = messages.value[lastIndex];
-    
-        if(lastMessage){
+
+        if (lastMessage) {
             lastMessage.content = res.data.content;
         }
-        
+
     } catch (error) {
         alert(`系统错误:${error}`);
     } finally {
@@ -175,9 +171,9 @@ const confirmDelete = ref<boolean>(false);
 const deleteAll = async () => {
     try {
         const res = await httpInstance.delete<any, Response>("/agent/all");
-        if(res.code !== 200){
+        if (res.code !== 200) {
             alert(`服务错误:${res.message}`);
-        } 
+        }
         messages.value = sessionHistory.value = [];
         selectedId.value = undefined;
         selectedDecr.value = '';
@@ -222,15 +218,11 @@ const deleteAll = async () => {
                         <div class="chat-history-topbar">
                             <img class="topbar-item" src="../../../static/添加.svg" @click="createSession">
                             <img class="topbar-item" src="../../../static/删除.svg" @click="confirmDelete = true">
-                            <Dialog
-                                v-model="confirmDelete"
-                                title="确认删除"
-                                content="确认删除所有会话？数据将不可恢复！"
-                                @confirm="deleteAll"/>
+                            <Dialog v-model="confirmDelete" title="确认删除" content="确认删除所有会话？数据将不可恢复！"
+                                @confirm="deleteAll" />
                             <img class="topbar-item" src="../../../static/公告.svg" title="使用须知">
                         </div>
-                        <div v-for="item in sessionHistory" 
-                            class="history-item"
+                        <div v-for="item in sessionHistory" class="history-item"
                             :class="{ active: selectedId === item.sessionId }"
                             @click="selectSession(item.sessionId, item.sessionDecr)">
                             {{ item.sessionDecr }}
@@ -247,7 +239,8 @@ const deleteAll = async () => {
                                 <div class="message-bubble">{{ defaultContent }}</div>
                             </div>
                             <div v-for="msg in messages" :class="['message-wrapper', msg.role]">
-                                <div class="message-bubble" v-html="renderer.render(msg.content.replace(/\\n/g, '\n'))"></div>
+                                <div class="message-bubble" v-html="renderer.render(msg.content.replace(/\\n/g, '\n'))">
+                                </div>
                             </div>
                         </div>
 
@@ -562,7 +555,8 @@ const deleteAll = async () => {
     background-color: #444444;
 }
 
-:deep(ul), :deep(ol) {
+:deep(ul),
+:deep(ol) {
     margin-left: 20px;
 }
 </style>

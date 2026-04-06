@@ -10,7 +10,6 @@ onMounted(() => {
 })
 
 const renderHomePage = async () => {
-  try {
     const res = await httpInstance.get<any, Response>('/article/public/info',{
       params: {
         id: articleType.TECNO,
@@ -18,9 +17,6 @@ const renderHomePage = async () => {
       }
     });
     articleList.value = res.data;
-  } catch (error) {
-    alert(`错误:${error}`);
-  }
 }
 </script>
 

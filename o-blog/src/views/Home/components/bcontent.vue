@@ -15,31 +15,26 @@ const versionData = ref<Version>();
 const isModalVisible = ref(false); // 单独控制弹窗显隐
 
 onMounted(async () => {
-    try {
-        const res = await httpInstance.get<any, Response>("/version");
+    const res = await httpInstance.get<any, Response>("/version");
 
-        if (res.code !== 200) {
-            console.error(`服务错误:${res.message}`);
-            alert(`服务错误:${res.message}`);
-            return;
-        }
-
-        versionData.value = res.data;
-
-        if (versionData.value?.versionId) {
-            const currentVersionId = versionData.value.versionId;
-            const localVersion = localStorage.getItem("version_news");
-
-            if (localVersion !== currentVersionId) {
-                isModalVisible.value = true;
-                localStorage.setItem("version_news", currentVersionId);
-            }
-        }
-
-    } catch (error) {
-        console.error("版本获取失败:", error);
-        alert(`系统错误:${error}`);
+    if (res.code !== 200) {
+        console.error(`服务错误:${res.message}`);
+        return;
     }
+
+    versionData.value = res.data;
+
+    if (versionData.value?.versionId) {
+        const currentVersionId = versionData.value.versionId;
+        const localVersion = localStorage.getItem("version_news");
+
+        if (localVersion !== currentVersionId) {
+            isModalVisible.value = true;
+            localStorage.setItem("version_news", currentVersionId);
+        }
+    }
+
+
 })
 </script>
 

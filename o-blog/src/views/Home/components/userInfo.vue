@@ -93,17 +93,13 @@ const showHistory = ref(false);
 const articleHistoryList = ref<ArticleHistory[]>([]);
 const hasHistory = ref(false);
 onMounted(async() => {
-    try {
-        if(localStorage.getItem('token') === null) return;
-        const res = await httpInstance.get<any, Response>("/article/history");
-        if(res.code !== 200){
-            alert(`服务错误:${res.message}`);
-        }
-        articleHistoryList.value = res.data;
-        hasHistory.value = articleHistoryList.value.length !== 0;
-    } catch (error) {
-        alert(`系统错误:${error}`);
+    if(localStorage.getItem('token') === null) return;
+    const res = await httpInstance.get<any, Response>("/article/history");
+    if(res.code !== 200){
+        return;
     }
+    articleHistoryList.value = res.data;
+    hasHistory.value = articleHistoryList.value.length !== 0;
 })
 
 </script>

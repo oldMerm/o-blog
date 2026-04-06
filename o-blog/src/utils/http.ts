@@ -67,6 +67,11 @@ httpInstance.interceptors.response.use(
     // if (error.response?.status === 401) {
     //   window.location.href = '/login';
     // }
+    if (error.response?.status === 500 && error.config?.url?.includes('/usr/info')) {
+      alert('获取用户信息失败，请刷新页面重试');
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    }
     return Promise.reject(error);
   }
 );
