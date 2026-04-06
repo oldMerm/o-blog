@@ -75,7 +75,7 @@ public class AiServiceImpl implements AiService {
     public Mono<Result<AiMessagesVO>> chat(AiMessagesDTO dto) {
         Long userId = UserContext.getUserId();
         log.info("[agent]用户：{}，请求会话。", userId);
-        return webClient.get()
+        return webClient.post()
                 .uri(uriBuilder -> uriBuilder.path("/agent/chat")
                         .queryParam("session_id", dto.getSessionId())
                         .queryParam("content", dto.getContent())

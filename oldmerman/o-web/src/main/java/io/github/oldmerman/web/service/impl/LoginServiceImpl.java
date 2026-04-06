@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -97,7 +98,7 @@ public class LoginServiceImpl implements LoginService {
         Claims claims = jwtUtil.parseToken(token);
         String refreshSign = claims.getSubject();
         redisTemplate.opsForValue().set(RedisPrefix.BLACK_TOKEN + token, "1",
-                claims.getExpiration().getTime() + 1000 * 60, TimeUnit.MILLISECONDS);
+                claims.getExpiration().getTime(), TimeUnit.MILLISECONDS);
         redisTemplate.delete(RedisPrefix.REFRESH_TOKEN + refreshSign);
     }
 
@@ -132,7 +133,7 @@ public class LoginServiceImpl implements LoginService {
         Claims claims = jwtUtil.parseToken(sign);
         String userId = claims.getSubject();
         String refreshToken = redisTemplate.opsForValue().get(RedisPrefix.REFRESH_TOKEN + userId);
-        if (jwtUtil.isTokenExpiring(refreshToken)) {
+        if (jwtUtil.isTokenExpiring(refreshToken) || !StringUtils.hasText(refreshToken)) {
             throw new BusinessException(BusErrorCode.TOKEN_EXPIRED);
         }
         String accessToken = jwtUtil.generateAccessToken(userId, null);

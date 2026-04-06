@@ -7,7 +7,7 @@ import axios, {
 import rateLimit from 'axios-rate-limit';
 
 // 环境变量配置（推荐）或使用默认值
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = 'http://localhost:8080/';
 
 // 创建带类型的 axios 实例
 const httpInstance: AxiosInstance = rateLimit(axios.create({
