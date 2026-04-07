@@ -65,6 +65,7 @@ public class JwtFilter implements Filter {
             }
         }
         try {
+            if(!StringUtils.hasText(authorization)) return;
             String token = authorization.substring(WebEnum.AUTH_PREFIX.getValue().length());
             if ("1".equals(redisTemplate.opsForValue().get(RedisPrefix.BLACK_TOKEN + token))) {
                 throw new BusinessException(BusErrorCode.TOKEN_EXPIRED);
