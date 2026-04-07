@@ -57,6 +57,8 @@ const isLoginUser = async () => {
         const res1 = await httpInstance.get<any, Response>("/usr/info");
         const res2 = await httpInstance.get<any, Response>("/agent/health");
 
+        console.log(res1);
+        
         if (res1.code === 200 && res2.code === 200) {
             return true;
         } else {
