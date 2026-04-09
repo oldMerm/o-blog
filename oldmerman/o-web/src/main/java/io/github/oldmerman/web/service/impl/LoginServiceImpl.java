@@ -28,6 +28,7 @@ import io.jsonwebtoken.Claims;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -51,6 +52,12 @@ public class LoginServiceImpl implements LoginService {
     private final EmailSender sender;
 
     private final LoginConverter converter;
+
+    @Value("${jwt.expiration}") // 默认48小时
+    private Long expiration;
+
+    @Value("${jwt.refresh-expiration}") // 默认7天
+    private Long refreshExpiration;
 
     @Override
     public LoginVO login(LoginDTO dto) {
@@ -81,11 +88,11 @@ public class LoginServiceImpl implements LoginService {
         String accessToken = jwtUtil.generateAccessToken(sign, null);
         String refreshToken = jwtUtil.generateRefreshToken(sign);
         redisTemplate.opsForValue().set(RedisPrefix.REFRESH_TOKEN + sign, refreshToken,
-                NumEnum.REFRESH_TOKEN_EXPIRATION.getValue(), TimeUnit.MINUTES);
+                refreshExpiration, TimeUnit.MINUTES);
         return LoginVO.builder()
                 .token(accessToken)
                 .refreshToken(refreshToken)
-                .timeout(NumEnum.ACCESS_TOKEN_EXPIRATION.getValue())
+                .timeout(refreshExpiration)
                 .build();
     }
 
@@ -139,7 +146,7 @@ public class LoginServiceImpl implements LoginService {
         return LoginVO.builder()
                 .token(accessToken)
                 .refreshToken(refreshToken)
-                .timeout(NumEnum.ACCESS_TOKEN_EXPIRATION.getValue())
+                .timeout(expiration)
                 .build();
     }
 

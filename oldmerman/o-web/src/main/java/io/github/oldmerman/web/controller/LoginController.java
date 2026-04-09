@@ -72,4 +72,9 @@ public class LoginController {
         return Result.success();
     }
 
+    @GetMapping
+    public Result<Void> isLoginUser(){
+        return Result.success();
+    }
+
 }

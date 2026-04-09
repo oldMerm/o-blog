@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.response.AiResponse;
 import io.github.oldmerman.common.response.Result;
+import io.github.oldmerman.model.RPC.ChatRequest;
 import io.github.oldmerman.model.dto.AiMessagesDTO;
 import io.github.oldmerman.model.po.AiConversation;
 import io.github.oldmerman.model.po.AiMessages;
@@ -16,12 +17,14 @@ import io.github.oldmerman.web.service.AiService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -76,10 +79,9 @@ public class AiServiceImpl implements AiService {
         Long userId = UserContext.getUserId();
         log.info("[agent]用户：{}，请求会话。", userId);
         return webClient.post()
-                .uri(uriBuilder -> uriBuilder.path("/agent/chat")
-                        .queryParam("session_id", dto.getSessionId())
-                        .queryParam("content", dto.getContent())
-                        .queryParam("user_id", userId).build())
+                .uri("/agent/chat")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new ChatRequest(dto.getSessionId(), userId, dto.getContent()))
                 .retrieve().bodyToMono(AiResponse.class)
                 .flatMap(res -> {
                     AiMessagesVO vo = new AiMessagesVO();
