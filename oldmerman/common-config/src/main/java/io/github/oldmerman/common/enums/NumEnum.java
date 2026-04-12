@@ -7,7 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum NumEnum implements EnumVal<Long>{
 
-    ALLOW_ACCESS_TIME(30L),
+    ALLOW_ACCESS_TIME(900000L),
     USER_ATTR_EXPIRE(120L),
     ARTICLE_EXPIRE_TIME(7L),
     ;

@@ -8,23 +8,10 @@ import utitle from './components/utitle.vue';
 import utitle2 from './components/utitle2.vue';
 import bcontent from './components/bcontent.vue';
 import chatCard from './components/chatCard.vue';
-import { onBeforeMount, ref } from 'vue';
-import { httpInstance } from '@/utils/http';
-
-const isReady = ref(false);
-onBeforeMount(async() => {
-    try {
-        await httpInstance.get<any, Response>('/usr/info')
-    } finally {
-        isReady.value = true;
-    }
-})
-
-
 </script>
 
 <template>
-    <div class="main" v-if="isReady">
+    <div class="main">
         <topbar />
         <div class="c">
             <ontice />

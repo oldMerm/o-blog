@@ -1,9 +1,10 @@
-import axios, { 
-    type AxiosInstance,
-    type AxiosRequestConfig,
-    type AxiosResponse,
-    type InternalAxiosRequestConfig,
-    AxiosError } from 'axios';
+import axios, {
+  type AxiosInstance,
+  type AxiosRequestConfig,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+  AxiosError
+} from 'axios';
 import rateLimit from 'axios-rate-limit';
 
 // 环境变量配置（推荐）或使用默认值 /oldmerman/ if prod
@@ -43,7 +44,7 @@ httpInstance.interceptors.request.use(
   }
 );
 
-interface Response{
+interface Response {
   code?: number;
   data?: any;
   message?: string;
@@ -55,37 +56,21 @@ interface Response{
 
 // 响应拦截器 - 使用泛型保持类型安全
 httpInstance.interceptors.response.use(
-  <Response>(response: AxiosResponse<Response>): Response => {
+  <Response>(response: AxiosResponse<Response>): Promise<Response> => {
     // 直接返回响应数据体
-    return response.data;
+    const res: any = response.data;
+    return res;
   },
   async (error: AxiosError<Response>): Promise<AxiosError<Response>> => {
     // 统一处理响应错误（状态码、网络错误等）
     const errorMessage = error.response?.data?.message || error.message || 'Request failed';
     console.error('Response Error:', errorMessage);
-    // 可根据状态码做特殊处理
-    // if (error.response?.status === 401) {
-    //   window.location.href = '/login';
-    // }
-    if (error.response?.status === 500 && error.config?.url?.includes('/usr/info')) {
-      const data = await httpInstance.get<any, Response>('/auth/refresh');
-        if (data.code !== 200) {
-            alert('获取用户信息失败，请重新登录');
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-        }
-        const { token, refreshToken, timeout } = <any>data.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('timeout', timeout);
-        location.reload();
-    }
     return Promise.reject(error);
   }
 );
 
 export { httpInstance };
-  export type { Response };
+export type { Response };
 
 // ==================== 使用示例 ====================
 //
@@ -102,12 +87,12 @@ export { httpInstance };
 //   id: number;
 //   name: string;
 // }
-// 
+//
 // // 自动推断返回类型为 UserData
 // const getUser = async (id: number) => {
 //   return await httpInstance.get<UserData>(`/api/user/${id}`);
 // };
-// 
+//
 // // 错误处理
 // try {
 //   const user = await getUser(1);

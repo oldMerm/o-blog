@@ -180,7 +180,6 @@ const handleLogin = async () => {
 
   loginForm.uuid = <string>localStorage.getItem("cuid");
   try {
-    console.log(loginForm.password);
     const data = await httpInstance.post<any, Response>('/auth/login', loginForm);
     if(data.code !== 200){
       alert(data.message);

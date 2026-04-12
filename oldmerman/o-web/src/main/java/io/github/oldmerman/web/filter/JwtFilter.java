@@ -21,9 +21,10 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.util.Set;
 
-@Component
+/* 暂时弃用 */
+//@Component
 @RequiredArgsConstructor
-@Order(1)
+//@Order(1)
 public class JwtFilter implements Filter {
 
     private final JwtUtil jwtUtil;

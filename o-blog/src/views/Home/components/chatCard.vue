@@ -79,12 +79,18 @@ const selectSession = (sessionId: string, decr: string) => {
 }
 
 const gethistorySession = async () => {
-    const res = await httpInstance.get<any, Response>("/agent");
-    sessionHistory.value = res.data;
+    try {
+        const res = await httpInstance.get<any, Response>("/agent");
+        sessionHistory.value = res.data;
+        return res.code;
+    } catch (error) {
+        alert(`系统错误:${error}`);
+    }
 }
 
 onMounted(async () => {
-    await gethistorySession();
+    const code = await gethistorySession();
+    if(code !== 200) return;
     selectedId.value = sessionHistory.value[0]?.sessionId;
     selectedDecr.value = sessionHistory.value[0]?.sessionDecr;
     renderDefaultContent();

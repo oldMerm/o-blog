@@ -11,7 +11,8 @@ const showbox = ref(false)
 
 onMounted(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (token || refreshToken) {
         renderUsrInfo();
     }
 });
@@ -26,23 +27,29 @@ const article = ref();
 const like = ref();
 const url = ref("https://picsum.photos/200");
 const renderUsrInfo = async () => {
-    try {
-        const res = await httpInstance.get<any, Response>('/usr/info');
-        if (res.code !== 200) {
-            return;
-        }
-        const data: UserInfo = res.data;
-        username.value = data.username;
-        article.value = data.article;
-        like.value = data.like;
-        if (data.attrURL !== null) {
-            url.value = data.attrURL;
-        }
-        showbox.value = !showbox.value;
+    const res = await httpInstance.get<any, Response>('/usr/info');
+    if (res.code === 401 && localStorage.getItem("refreshToken")){
+        reSetToken();
+    }
+    if (res.code !== 200) {
+        return;
+    }
+    const data: UserInfo = res.data;
+    username.value = data.username;
+    article.value = data.article;
+    like.value = data.like;
+    if (data.attrURL !== null) {
+        url.value = data.attrURL;
+    }
+    showbox.value = !showbox.value;
+}
 
-    } catch (error) {
-        const data = await httpInstance.get<any, Response>('/auth/refresh');
+const reSetToken = async () => {
+    const data = await httpInstance.get<any, Response>('/auth/refresh');
         if (data.code !== 200) {
+            alert("令牌已过期，请重新登录");
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
             return;
         }
         const { token, refreshToken, timeout } = <any>data.data;
@@ -50,7 +57,6 @@ const renderUsrInfo = async () => {
         localStorage.setItem('refreshToken', refreshToken);
         localStorage.setItem('timeout', timeout);
         location.reload();
-    }
 }
 
 // 打开图片管理器
