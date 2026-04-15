@@ -5,7 +5,6 @@ import cn.hutool.captcha.CircleCaptcha;
 import cn.hutool.core.util.RandomUtil;
 import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.enums.BusErrorCode;
-import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.enums.WebEnum;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
@@ -61,8 +60,7 @@ public class LoginServiceImpl implements LoginService {
 
     @Override
     public LoginVO login(LoginDTO dto) {
-        if (!dto.getCode().equals(redisTemplate.opsForValue().get(dto.getUuid()))) {
-            log.info(redisTemplate.opsForValue().get(dto.getUuid()));
+        if (!dto.getCode().equals(redisTemplate.opsForValue().get(RedisPrefix.CAPTCHA_CHECK + dto.getUuid()))) {
             throw new BusinessException(BusErrorCode.ERROR_VERIFY_CODE);
         }
         // 校验密码并获取凭证
@@ -154,7 +152,7 @@ public class LoginServiceImpl implements LoginService {
     public CaptchaVO generateCaptcha() {
         CircleCaptcha circleCaptcha = CaptchaUtil.createCircleCaptcha(200, 100);
         String uuid = UUID.randomUUID().toString();
-        redisTemplate.opsForValue().set(uuid, circleCaptcha.getCode(), 10, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(RedisPrefix.CAPTCHA_CHECK + uuid, circleCaptcha.getCode(), 10, TimeUnit.MINUTES);
         CaptchaVO vo = new CaptchaVO();
         vo.setCaptcha(WebEnum.BASE64_IMAGE_PREFIX.getValue() + circleCaptcha.getImageBase64());
         vo.setUuid(uuid);

@@ -73,8 +73,8 @@ public class LoginController {
     }
 
     @GetMapping
-    public Result<Void> isLoginUser(){
-        return Result.success();
+    public Result<String> isLoginUser(){
+        return Result.success(String.valueOf(UserContext.getUserId()));
     }
 
 }

@@ -57,8 +57,6 @@ const isLoginUser = async () => {
         const res1 = await httpInstance.get<any, Response>("/usr/info");
         const res2 = await httpInstance.get<any, Response>("/agent/health");
 
-        console.log(res1);
-        
         if (res1.code === 200 && res2.code === 200) {
             return true;
         } else {
@@ -72,12 +70,10 @@ const isLoginUser = async () => {
 // 渲染历史会话
 const selectedId = ref<string>();
 const selectedDecr = ref<string>();
-
 const selectSession = (sessionId: string, decr: string) => {
     selectedId.value = sessionId;
     selectedDecr.value = decr;
 }
-
 const gethistorySession = async () => {
     try {
         const res = await httpInstance.get<any, Response>("/agent");
@@ -146,7 +142,16 @@ const sendMessage = async () => {
     messages.value.push(aiMessage);
 
     try {
-        const res = await httpInstance.post<any, Response>("/agent/chat", humanMessage, { timeout: 60000 });
+        await simpleChat(humanMessage);
+    } catch (error) {
+        alert(`系统错误:${error}`);
+    } finally {
+        flag.value = false;
+    }
+};
+
+const simpleChat = async (humanMessage: Message) => {
+    const res = await httpInstance.post<any, Response>("/agent/chat", humanMessage, { timeout: 60000 });
         if (res.code !== 200) {
             alert(`服务错误:${res.message}`);
             return;
@@ -158,13 +163,23 @@ const sendMessage = async () => {
         if (lastMessage) {
             lastMessage.content = res.data.content;
         }
+}
 
-    } catch (error) {
-        alert(`系统错误:${error}`);
-    } finally {
-        flag.value = false;
+let eventSource = null;
+const streamChat = async (humanMessage: Message) => {
+    const token = localStorage.getItem('token');
+    if(token === null){
+        alert('未认证')
+        return;
     }
-};
+    const params = new URLSearchParams({
+        sessionId: humanMessage.sessionId,
+        message: humanMessage.content,
+        token: token
+    })
+
+    eventSource = new EventSource("")
+}
 
 // 自动滚动到最新消息
 const scrollToBottom = async () => {
@@ -565,6 +580,30 @@ const deleteAll = async () => {
 
 :deep(ul),
 :deep(ol) {
+    margin: 15px 0px;
     margin-left: 20px;
+}
+
+:deep(h1) {
+    margin-bottom: 12px;
+}
+
+:deep(h2) {
+    margin-top: 25px;
+    margin-bottom: 8px;
+}
+
+:deep(h3) {
+    margin-bottom: 6px;
+}
+:deep(h4) {
+    margin-bottom: 6px;
+}
+:deep(h5) {
+    margin-bottom: 6px;
+}
+
+:deep(pre) {
+    margin: 8px 0px;
 }
 </style>

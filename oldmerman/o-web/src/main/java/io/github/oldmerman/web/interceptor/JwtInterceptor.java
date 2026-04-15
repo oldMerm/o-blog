@@ -66,7 +66,7 @@ public class JwtInterceptor implements HandlerInterceptor {
 
         // 受保护路径必须有 token
         if (!StringUtils.hasText(authorization)) {
-            throw new BusinessException(ResultCode.UNAUTHORIZED); // 建议新增这个错误码
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
         }
 
         String token = authorization.substring(WebEnum.AUTH_PREFIX.getValue().length());

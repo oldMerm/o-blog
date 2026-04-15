@@ -11,4 +11,5 @@ public class RedisPrefix {
     public static final String ARTICLE_RENDER = OLDMERMAN + "article:render:";
     public static final String SYSTEM_RUNTIME = OLDMERMAN + "system:time";
     public static final String ARTICLE_SUBMIT = OLDMERMAN + "article:submit:";
+    public static final String ADMIN_CACHE = OLDMERMAN + "admin:";
 }

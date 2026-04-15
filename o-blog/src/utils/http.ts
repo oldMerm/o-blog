@@ -9,6 +9,8 @@ import rateLimit from 'axios-rate-limit';
 
 // 环境变量配置（推荐）或使用默认值 /oldmerman/ if prod
 const API_BASE_URL = 'http://localhost:8080/';
+// 
+const AGENT_SERVER = 'http://localhost:8000/';
 
 // 创建带类型的 axios 实例
 const httpInstance: AxiosInstance = rateLimit(axios.create({

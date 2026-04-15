@@ -10,4 +10,6 @@ public class AiMessagesDTO {
     private String sessionId;
 
     private String content;
+
+    private String token;
 }

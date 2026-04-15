@@ -4,10 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.response.AiResponse;
 import io.github.oldmerman.common.response.Result;
-import io.github.oldmerman.model.RPC.ChatRequest;
 import io.github.oldmerman.model.dto.AiMessagesDTO;
 import io.github.oldmerman.model.po.AiConversation;
 import io.github.oldmerman.model.po.AiMessages;
+import io.github.oldmerman.model.rpcp.ChatRequest;
 import io.github.oldmerman.model.vo.AiConversationVO;
 import io.github.oldmerman.model.vo.AiMessagesVO;
 import io.github.oldmerman.web.converter.AiConverter;
@@ -24,7 +24,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -81,7 +80,7 @@ public class AiServiceImpl implements AiService {
         return webClient.post()
                 .uri("/agent/chat")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new ChatRequest(dto.getSessionId(), userId, dto.getContent()))
+                .bodyValue(new ChatRequest(dto.getSessionId(), userId.toString(), dto.getContent(), ""))
                 .retrieve().bodyToMono(AiResponse.class)
                 .flatMap(res -> {
                     AiMessagesVO vo = new AiMessagesVO();

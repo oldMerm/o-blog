@@ -1,4 +1,4 @@
-package io.github.oldmerman.model.RPC;
+package io.github.oldmerman.model.rpcp;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +9,9 @@ public class ChatRequest {
 
     private String sessionId;
 
-    private Long userId;
+    private String userId;
 
     private String message;
+
+    private String token;
 }
