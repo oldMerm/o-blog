@@ -14,6 +14,7 @@ import io.github.oldmerman.model.dto.ArticlePriDTO;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.po.ArticleHistory;
 import io.github.oldmerman.model.po.ArticleImage;
+import io.github.oldmerman.model.vo.ArticleInfoVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.ArticleHistoryMapper;
@@ -107,7 +108,7 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public String getPublicArticleById(Long id) {
+    public ArticleInfoVO getPublicArticleById(Long id) {
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Article::getArticleStatus, Article.ArticleStatus.PUBLISHED).eq(Article::getId, id);
         Article article = articleMapper.selectOne(queryWrapper);
@@ -132,7 +133,10 @@ public class ArticleServiceImpl implements ArticleService {
                 historyMapper.insert(ah);
             }
         }
-        return ossService.genPreviewURL(key, null);
+
+        ArticleInfoVO articleInfoVO = converter.poToInfoVO(article);
+        articleInfoVO.setUrl(ossService.genPreviewURL(key, null));
+        return articleInfoVO;
     }
 
     @Override

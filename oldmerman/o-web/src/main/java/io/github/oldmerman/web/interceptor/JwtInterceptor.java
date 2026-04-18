@@ -32,7 +32,8 @@ public class JwtInterceptor implements HandlerInterceptor {
     private static final Set<String> SKIP = Set.of(
             "/auth/login", "/auth/captcha", "/auth/email", "/auth/register", "/auth/refresh",
             "/counter/newArt", "/counter/health",
-            "/version", "/version/*"
+            "/version", "/version/*",
+            "/agent/chat/stream"
     );
 
     // 公共路径：未登录可访问，有 token 则解析并设置上下文

@@ -6,7 +6,10 @@ import io.github.oldmerman.model.vo.AiConversationVO;
 import io.github.oldmerman.model.vo.AiMessagesVO;
 import io.github.oldmerman.web.service.AiService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -31,6 +34,13 @@ public class AiController {
     @GetMapping("/health")
     public Mono<Result<Integer>> health(){
         return service.health();
+    }
+
+    @GetMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> stream(@RequestParam("sessionId") String sessionId,
+                                                @RequestParam("message") String content,
+                                                @RequestParam("token") String token){
+        return service.stream(sessionId, content, token);
     }
 
     @PostMapping("/session")

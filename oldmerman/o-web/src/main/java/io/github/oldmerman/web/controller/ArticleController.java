@@ -6,6 +6,7 @@ import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
+import io.github.oldmerman.model.vo.ArticleInfoVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.util.UserContext;
@@ -28,12 +29,12 @@ public class ArticleController {
 
     private final StringRedisTemplate redisTemplate;
 
-    @GetMapping("info")
+    @GetMapping("/info")
     public Result<List<ArticleRenderVO>> info(){
         return Result.success(articleService.info());
     }
 
-    @GetMapping("public/info")
+    @GetMapping("/public/info")
     public Result<List<ArticleRenderVO>> getRenderArticle(@RequestParam(name = "id", defaultValue = "1") Byte articleType,
                                                           @RequestParam(name = "size", defaultValue = "10") Long size) throws JsonProcessingException {
         return Result.success(articleService.getRenderArticle(articleType, size));
@@ -45,7 +46,7 @@ public class ArticleController {
     }
 
     @GetMapping("/public/{articleId}")
-    public Result<String> getPublicArticleById(@PathVariable Long articleId){
+    public Result<ArticleInfoVO> getPublicArticleById(@PathVariable Long articleId){
         return Result.success(articleService.getPublicArticleById(articleId));
     }
 

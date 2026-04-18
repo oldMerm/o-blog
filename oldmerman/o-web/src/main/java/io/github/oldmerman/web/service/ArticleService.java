@@ -2,6 +2,7 @@ package io.github.oldmerman.web.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
+import io.github.oldmerman.model.vo.ArticleInfoVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,7 +43,7 @@ public interface ArticleService {
      * @param id 文章id
      * @return url
      */
-    String getPublicArticleById(Long id);
+    ArticleInfoVO getPublicArticleById(Long id);
 
     /**
      * 上传图片并返回替换URL

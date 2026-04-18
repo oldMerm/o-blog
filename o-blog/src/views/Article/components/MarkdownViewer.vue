@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import MarkdownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
 import container from 'markdown-it-container';
@@ -19,6 +19,7 @@ interface Heading {
 // --- 响应式数据 ---
 const renderedHtml = ref('');
 const allHeadings = ref<Heading[]>([]);
+const showAboutPopup = ref(false);
 
 // --- Markdown-It 配置 ---
 const md = new MarkdownIt({
@@ -45,13 +46,28 @@ const md = new MarkdownIt({
 
 const route = useRoute();
 
+interface ArticleInfo {
+  url: string;
+  articleWriter: string;
+  articleDecr: string;
+  createdAt: string;
+}
+
+const articleInfo = ref<ArticleInfo>(
+  {
+    url: '',
+    articleWriter: 'oldmerman',
+    articleDecr: '无',
+    createdAt: '2026-1-1'
+  });
+const isPublic = route.query.isPublic;
+
 onMounted(async () => {
   const id = route.params.id;
-  const isPublic = route.query.isPublic;
   if (id === null) {
     alert('未传入数据，文章为空，将渲染默认文本');
     fetchDocument(1);
-  } else if (isPublic === 'private') { 
+  } else if (isPublic === 'private') {
     try {
       const res = await httpInstance.get<any, Response>(`/article/private/${id}`);
       if (res.code !== 200) {
@@ -73,9 +89,13 @@ onMounted(async () => {
         fetchDocument(1);
         return;
       }
-      const text: string = await httpInstance.get(res.data);
-      renderedHtml.value = md.render(text);
-      extractHeadings(text);
+      articleInfo.value = res.data;
+      if (articleInfo.value && articleInfo.value.url !== '') {
+        const text: string = await httpInstance.get(articleInfo.value.url);
+        renderedHtml.value = md.render(text);
+        extractHeadings(text);
+      }
+
     } catch (error) {
       alert(error);
     }
@@ -153,6 +173,29 @@ const goToHome = () => {
   router.push({ name: 'home' });
 }
 
+const closeAboutPopup = () => {
+  showAboutPopup.value = false;
+};
+
+const toggleAbout = (e: Event) => {
+  e.stopPropagation();
+  showAboutPopup.value = !showAboutPopup.value;
+};
+
+const handleClickOutside = (e: Event) => {
+  if (showAboutPopup.value) {
+    showAboutPopup.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
 </script>
 
 <template>
@@ -164,9 +207,30 @@ const goToHome = () => {
           <span class="logo"></span>
           <span class="site-name">老鱼人文档中心</span>
         </div>
+
         <div class="nav-links">
-          <a @click="goToHome" style="cursor: pointer;">主页</a>
-          <a href="https://github.com" target="_blank">GitHub</a>
+          <div class="nav-item-wrapper">
+            <a @click="toggleAbout" v-if="isPublic === 'public'" style="cursor: pointer;">简介</a>
+            <Transition name="popup-fade">
+              <div v-if="showAboutPopup" class="about-popup" @click.stop>
+                <div class="popup-row">
+                  <span class="popup-label">作者：</span>
+                  <span class="popup-value">{{ articleInfo.articleWriter }}</span>
+                </div>
+                <div class="popup-row">
+                  <span class="popup-label">日期：</span>
+                  <span class="popup-value">{{ articleInfo.createdAt.slice(0, 10) }}</span>
+                </div>
+                <div class="popup-row">
+                  <span class="popup-label">简介：</span>
+                  <span class="popup-value">{{ articleInfo.articleDecr.length > 30 ? articleInfo.articleDecr.slice(0,
+                    30) + '...' : articleInfo.articleDecr }}</span>
+                </div>
+              </div>
+            </Transition>
+          </div>
+          <div><a @click="goToHome" style="cursor: pointer;">主页</a></div>
+          <div><a href="https://github.com" target="_blank">GitHub</a></div>
         </div>
       </div>
     </nav>
@@ -258,8 +322,13 @@ const goToHome = () => {
   color: #3b82f6;
 }
 
+.nav-links {
+  display: flex;
+
+}
+
 .nav-links a {
-  margin-left: 20px;
+  margin-left: 35px;
   text-decoration: none;
   color: #4b5563;
   font-size: 14px;
@@ -267,6 +336,60 @@ const goToHome = () => {
 
 .nav-links a:hover {
   color: #3b82f6;
+}
+
+/* 📋 简介弹框 */
+.nav-item-wrapper {
+  position: relative;
+}
+
+.about-popup {
+  position: absolute;
+  top: 100%;
+  left: -60%;
+  margin-top: 8px;
+  background: #f5faff;
+  border: 2px solid #bddff9;
+  border-top: 4px solid rgb(56, 172, 249);
+  border-radius: 3px;
+  padding: 12px 16px;
+  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+  z-index: 200;
+}
+
+.popup-row {
+  margin-bottom: 8px;
+}
+
+.popup-row:last-child {
+  margin-bottom: 0;
+}
+
+.popup-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-right: 6px;
+}
+
+.popup-value {
+  font-size: 12px;
+  color: #1e293b;
+}
+
+/* 弹框动画 */
+.popup-fade-enter-active,
+.popup-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.popup-fade-enter-from,
+.popup-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 /* 🗂 布局 */
@@ -457,6 +580,4 @@ const goToHome = () => {
 :deep(img) {
   width: 100%;
 }
-
-
 </style>

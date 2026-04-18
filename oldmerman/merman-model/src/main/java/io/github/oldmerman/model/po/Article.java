@@ -5,12 +5,13 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Builder;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
 @TableName("o_article")
 @Builder
-public class Article {
+public class Article implements Serializable {
 
     @TableId
     private Long id;

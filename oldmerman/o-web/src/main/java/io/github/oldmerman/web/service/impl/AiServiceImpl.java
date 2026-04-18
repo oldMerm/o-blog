@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.response.AiResponse;
 import io.github.oldmerman.common.response.Result;
+import io.github.oldmerman.common.util.JwtUtil;
 import io.github.oldmerman.model.dto.AiMessagesDTO;
 import io.github.oldmerman.model.po.AiConversation;
 import io.github.oldmerman.model.po.AiMessages;
@@ -18,9 +19,11 @@ import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -39,6 +42,8 @@ public class AiServiceImpl implements AiService {
 
     private final WebClient webClient;
 
+    private final JwtUtil jwtUtil;
+
     @Override
     public List<AiConversationVO> getSessions() {
         LambdaQueryWrapper<AiConversation> wrapper = new LambdaQueryWrapper<>();
@@ -51,6 +56,23 @@ public class AiServiceImpl implements AiService {
         LambdaQueryWrapper<AiMessages> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AiMessages::getSessionId, sessionId).orderByAsc(AiMessages::getCreatedAt);
         return messageMapper.selectList(wrapper).stream().map(converter::messagePoToVo).toList();
+    }
+
+    @Override
+    public Flux<ServerSentEvent<String>> stream(String sessionId, String content, String token) {
+        String userId = jwtUtil.parseToken(token).getSubject();
+        log.info("[agent]用户：{}，请求会话。", userId);
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/agent/stream")
+                        .queryParam("session_id", sessionId)
+                        .queryParam("user_id", String.valueOf(userId))
+                        .queryParam("content", content)
+                        .build())
+                .retrieve()
+                .bodyToFlux(String.class)
+                .map(data -> ServerSentEvent.builder(data).build())
+                .doOnError(e -> log.error("SEE forward error", e));
     }
 
     @Override
@@ -80,7 +102,7 @@ public class AiServiceImpl implements AiService {
         return webClient.post()
                 .uri("/agent/chat")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new ChatRequest(dto.getSessionId(), userId.toString(), dto.getContent(), ""))
+                .bodyValue(new ChatRequest(dto.getSessionId(), userId.toString(), dto.getContent()))
                 .retrieve().bodyToMono(AiResponse.class)
                 .flatMap(res -> {
                     AiMessagesVO vo = new AiMessagesVO();

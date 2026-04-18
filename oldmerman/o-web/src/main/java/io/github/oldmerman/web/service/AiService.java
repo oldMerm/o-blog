@@ -4,6 +4,8 @@ import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.AiMessagesDTO;
 import io.github.oldmerman.model.vo.AiConversationVO;
 import io.github.oldmerman.model.vo.AiMessagesVO;
+import org.springframework.http.codec.ServerSentEvent;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -29,6 +31,15 @@ public interface AiService {
      * @return 对话信息
      */
     List<AiMessagesVO> getChatInfo(String sessionId);
+
+    /**
+     * SSE流式获取agent服务响应
+     *
+     * @param sessionId 会话id
+     * @param content 提示内容
+     * @return Json块
+     */
+    Flux<ServerSentEvent<String>> stream(String sessionId, String content, String token);
 
     /**
      * ai服务心跳

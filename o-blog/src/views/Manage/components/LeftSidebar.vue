@@ -141,8 +141,6 @@ const handleDeleteUserAccount = async () => {
   <div class="sidebar-block future-module">
     <h3>待开发模块</h3>
     <div class="placeholder-content">
-      <p>这里是预留的功能区域...</p>
-      <p>Coming Soon</p>
     </div>
   </div>
 </template>

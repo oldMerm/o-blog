@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick, watch, onMounted } from 'vue';
 import JumpingText from '@/utils/JumpingText.vue'; // 假设你的工具组件路径
-import { httpInstance, type Response } from '@/utils/http';
+import { API_BASE_URL, httpInstance, type Response } from '@/utils/http';
 import { MarkdownRenderer } from '@/utils/mdRender';
 import Dialog from '@/utils/dia/Dialog.vue';
 
@@ -86,7 +86,7 @@ const gethistorySession = async () => {
 
 onMounted(async () => {
     const code = await gethistorySession();
-    if(code !== 200) return;
+    if (code !== 200) return;
     selectedId.value = sessionHistory.value[0]?.sessionId;
     selectedDecr.value = sessionHistory.value[0]?.sessionDecr;
     renderDefaultContent();
@@ -142,7 +142,7 @@ const sendMessage = async () => {
     messages.value.push(aiMessage);
 
     try {
-        await simpleChat(humanMessage);
+        await streamChat(humanMessage);
     } catch (error) {
         alert(`系统错误:${error}`);
     } finally {
@@ -152,23 +152,30 @@ const sendMessage = async () => {
 
 const simpleChat = async (humanMessage: Message) => {
     const res = await httpInstance.post<any, Response>("/agent/chat", humanMessage, { timeout: 60000 });
-        if (res.code !== 200) {
-            alert(`服务错误:${res.message}`);
-            return;
-        }
+    if (res.code !== 200) {
+        alert(`服务错误:${res.message}`);
+        return;
+    }
 
-        const lastIndex = messages.value.length - 1;
-        const lastMessage = messages.value[lastIndex];
+    const lastIndex = messages.value.length - 1;
+    const lastMessage = messages.value[lastIndex];
 
-        if (lastMessage) {
-            lastMessage.content = res.data.content;
-        }
+    if (lastMessage) {
+        lastMessage.content = res.data.content;
+    }
 }
 
-let eventSource = null;
+interface StreamChunk {
+    type: string;
+    content: string;
+    node: string;
+    done: boolean
+}
+
+let eventSource: any = null;
 const streamChat = async (humanMessage: Message) => {
     const token = localStorage.getItem('token');
-    if(token === null){
+    if (token === null) {
         alert('未认证')
         return;
     }
@@ -178,7 +185,45 @@ const streamChat = async (humanMessage: Message) => {
         token: token
     })
 
-    eventSource = new EventSource("")
+    if (eventSource) {
+        eventSource.close();
+        eventSource = null
+    }
+
+    const lastIndex = messages.value.length - 1;
+    const lastMessage = messages.value[lastIndex];
+
+    console.log(humanMessage.content);
+
+    eventSource = new EventSource(`${API_BASE_URL}/agent/chat/stream?${params}`);
+
+    if (lastMessage) {
+        lastMessage.content = '';
+    }
+
+    eventSource.onmessage = (event: any) => {
+        const chunk: StreamChunk = JSON.parse(event.data);
+        if (chunk.done === true) {
+            eventSource.close();
+        } else if (chunk.node === 'tools') {
+            // 处理tools渲染逻辑
+            if (lastMessage) {
+                lastMessage.content += `<br><br>正在调用工具....<br><br>`
+            }
+
+        } else if (chunk.node === 'model'){
+            if (lastMessage) {
+                lastMessage.content += chunk.content;
+            }
+        } 
+    }
+
+    eventSource.onerror = (error: any) => {
+        alert(`流传输错误:${error}`);
+        eventSource.close();
+        return;
+    }
+
 }
 
 // 自动滚动到最新消息
@@ -596,9 +641,11 @@ const deleteAll = async () => {
 :deep(h3) {
     margin-bottom: 6px;
 }
+
 :deep(h4) {
     margin-bottom: 6px;
 }
+
 :deep(h5) {
     margin-bottom: 6px;
 }
