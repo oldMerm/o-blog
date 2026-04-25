@@ -23,6 +23,7 @@
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-container": "^4.0.0",
     "markdown-it-prism": "^3.0.1",
+    "mermaid": "^11.14.0",
     "pinia": "^3.0.4",
     "shiki": "^3.21.0",
     "vue": "^3.5.25",

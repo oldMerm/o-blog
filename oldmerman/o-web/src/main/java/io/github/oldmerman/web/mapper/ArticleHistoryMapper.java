@@ -2,6 +2,7 @@ package io.github.oldmerman.web.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.github.oldmerman.model.po.ArticleHistory;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
@@ -14,4 +15,7 @@ public interface ArticleHistoryMapper extends BaseMapper<ArticleHistory> {
 
     @Update("UPDATE o_blog.o_article_history SET updated_at = #{now} WHERE id = #{id}")
     void updateHistoryTime(int id, LocalDateTime now);
+
+    @Delete("DELETE FROM o_blog.o_article_history WHERE article_id = #{articleId}")
+    void deleteByArticleId(Long articleId);
 }

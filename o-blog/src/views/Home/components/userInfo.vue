@@ -30,8 +30,11 @@ const renderUsrInfo = async () => {
     const res = await httpInstance.get<any, Response>('/usr/info');
     if (res.code === 401 && localStorage.getItem("refreshToken")){
         reSetToken();
+    }else if (res.code === 401) {
+        localStorage.removeItem("token");
+        location.reload();
     }else if (res.code !== 200) {
-        alert(`服务错误:${res.message}`)
+        alert(`服务错误:${res.message}`);
         return;
     }
     const data: UserInfo = res.data;
@@ -50,6 +53,7 @@ const reSetToken = async () => {
             alert("令牌已过期，请重新登录");
             localStorage.removeItem('token');
             localStorage.removeItem('refreshToken');
+            localStorage.removeItem('timeout');
             return;
         }
         const { token, refreshToken, timeout } = <any>data.data;

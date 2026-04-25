@@ -210,6 +210,7 @@ public class ArticleServiceImpl implements ArticleService {
             ossService.deleteOne(article.getKey(), null);
         }
 
+        historyMapper.deleteByArticleId(articleId);
         // 重构缓存
         RedisUtils.rebuildArticleRenderCache(article.getArticleType(), articleId, redisTemplate, objectMapper);
     }
