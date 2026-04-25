@@ -84,11 +84,11 @@ const gethistorySession = async () => {
 }
 
 onMounted(async () => {
-    const code = await gethistorySession();
-    if (code !== 200) return;
-    selectedId.value = sessionHistory.value[0]?.sessionId;
-    selectedDecr.value = sessionHistory.value[0]?.sessionDecr;
-    renderDefaultContent();
+    // const code = await gethistorySession();
+    // if (code !== 200) return;
+    // selectedId.value = sessionHistory.value[0]?.sessionId;
+    // selectedDecr.value = sessionHistory.value[0]?.sessionDecr;
+    // renderDefaultContent();
 })
 
 watch(selectedId, async (newVal) => {

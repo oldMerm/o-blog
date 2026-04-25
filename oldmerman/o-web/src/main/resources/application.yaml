@@ -4,7 +4,7 @@ spring:
   application:
     name: web
   profiles:
-    active: dev # 改为prod则为生产环境
+    active: prod # 改为prod则为生产环境
   # your config
   datasource:
     driver-class-name: ${oldmerman.datasource.driver-class-name}
@@ -23,6 +23,7 @@ spring:
       port: ${oldmerman.redis.port}
       database: ${oldmerman.redis.database}
       timeout: 5s
+      password: jun051123y
   mail:
     username: ${oldmerman.mail.username}
     password: ${oldmerman.mail.password}
