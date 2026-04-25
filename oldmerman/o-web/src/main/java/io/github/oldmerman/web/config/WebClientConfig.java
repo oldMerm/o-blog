@@ -16,11 +16,11 @@ public class WebClientConfig {
     public WebClient webClient() {
         ConnectionProvider connectionProvider = ConnectionProvider.builder("oldmerman-agent")
                 .maxConnections(100)
-                .pendingAcquireTimeout(Duration.ofSeconds(30))
+                .pendingAcquireTimeout(Duration.ofSeconds(60))
                 .build();
 
         HttpClient httpClient = HttpClient.create(connectionProvider)
-                .responseTimeout(Duration.ofSeconds(10));
+                .responseTimeout(Duration.ofSeconds(30));
 
         return WebClient.builder()
                 .baseUrl("http://localhost:8000")

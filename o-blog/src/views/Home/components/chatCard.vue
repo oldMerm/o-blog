@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, nextTick, watch, onMounted } from 'vue';
-import JumpingText from '@/utils/JumpingText.vue'; // 假设你的工具组件路径
 import { API_BASE_URL, httpInstance, type Response } from '@/utils/http';
 import { MarkdownRenderer } from '@/utils/mdRender';
 import Dialog from '@/utils/dia/Dialog.vue';
@@ -150,21 +149,6 @@ const sendMessage = async () => {
     }
 };
 
-const simpleChat = async (humanMessage: Message) => {
-    const res = await httpInstance.post<any, Response>("/agent/chat", humanMessage, { timeout: 60000 });
-    if (res.code !== 200) {
-        alert(`服务错误:${res.message}`);
-        return;
-    }
-
-    const lastIndex = messages.value.length - 1;
-    const lastMessage = messages.value[lastIndex];
-
-    if (lastMessage) {
-        lastMessage.content = res.data.content;
-    }
-}
-
 interface StreamChunk {
     type: string;
     content: string;
@@ -193,8 +177,6 @@ const streamChat = async (humanMessage: Message) => {
     const lastIndex = messages.value.length - 1;
     const lastMessage = messages.value[lastIndex];
 
-    console.log(humanMessage.content);
-
     eventSource = new EventSource(`${API_BASE_URL}/agent/chat/stream?${params}`);
 
     if (lastMessage) {
@@ -208,10 +190,11 @@ const streamChat = async (humanMessage: Message) => {
         } else if (chunk.node === 'tools') {
             // 处理tools渲染逻辑
             if (lastMessage) {
-                lastMessage.content += `<br><br>正在调用工具....<br><br>`
+                lastMessage.content += `<br><br>正在调用工具：${chunk.content}...<br><br>`
             }
 
         } else if (chunk.node === 'model'){
+            console.log(chunk.content);
             if (lastMessage) {
                 lastMessage.content += chunk.content;
             }
@@ -256,20 +239,14 @@ const deleteAll = async () => {
     <!-- 原有页面触发区域 -->
     <div class="cc">
         <div class="title">老鱼人的专属智能体</div>
-        <JumpingText text="分析本站文章内容" :delay="0.1" duration="2.5s"
-            style="color: black; font-size: 1rem; margin-top: 30px;" />
-        <JumpingText text="粗略实用的介绍文章" :delay="0.1" duration="2.5s"
-            style="color: black; font-size: 1rem; margin-top: 20px;" />
-        <JumpingText text="更多功能，请看公告" :delay="0.1" duration="2.5s"
-            style="color: black; font-size: 1rem; margin-top: 20px;" />
+        <div class="chat-content">专门服务于该博客网页的智能体！尚处于内部测试阶段，暂不开放，敬请期待！</div>
         <!-- 绑定点击事件 -->
         <div class="btn" @click="openChat">发起会话</div>
     </div>
 
     <!-- AI 聊天弹窗 (使用 Teleport 挂载到 body 防止样式被父级截断) -->
     <Teleport to="body">
-        <!-- 遮罩层，点击空白处关闭 -->
-        <div v-if="isChatOpen" class="chat-overlay" @click.self="isChatOpen = false">
+        <div v-if="isChatOpen" class="chat-overlay">
             <!-- 弹窗主体 -->
             <div class="chat-modal">
 
@@ -348,8 +325,15 @@ const deleteAll = async () => {
     font-weight: 300;
 }
 
+.chat-content {
+    color: #505050;
+    font-weight: 300;
+    margin: 10px 0;
+    max-width: 200px;
+    font-size: 14px;
+}
+
 .btn {
-    margin-top: 25px;
     font-weight: 400;
     text-decoration: underline;
     cursor: pointer;
@@ -652,5 +636,12 @@ const deleteAll = async () => {
 
 :deep(pre) {
     margin: 8px 0px;
+}
+
+:deep(p) {
+    margin-top: 20px;
+}
+:deep(p:first-child) {
+    margin-top: 0;
 }
 </style>

@@ -54,14 +54,6 @@ public interface AiService {
     AiConversationVO createSession();
 
     /**
-     * ai基础会话
-     *
-     * @param dto 会话id和请求内容
-     * @return 会话信息
-     */
-    Mono<Result<AiMessagesVO>> chat(AiMessagesDTO dto);
-
-    /**
      * 删除单个会话
      */
     void deleteOneSession(String sessionId);

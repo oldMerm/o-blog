@@ -5,10 +5,8 @@ import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.response.AiResponse;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.common.util.JwtUtil;
-import io.github.oldmerman.model.dto.AiMessagesDTO;
 import io.github.oldmerman.model.po.AiConversation;
 import io.github.oldmerman.model.po.AiMessages;
-import io.github.oldmerman.model.rpcp.ChatRequest;
 import io.github.oldmerman.model.vo.AiConversationVO;
 import io.github.oldmerman.model.vo.AiMessagesVO;
 import io.github.oldmerman.web.converter.AiConverter;
@@ -18,7 +16,6 @@ import io.github.oldmerman.web.service.AiService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,24 +90,6 @@ public class AiServiceImpl implements AiService {
         session.setSessionId(UUID.randomUUID().toString().replace("-", ""));
         conversationsMapper.insert(session);
         return converter.poToVo(session);
-    }
-
-    @Override
-    public Mono<Result<AiMessagesVO>> chat(AiMessagesDTO dto) {
-        Long userId = UserContext.getUserId();
-        log.info("[agent]用户：{}，请求会话。", userId);
-        return webClient.post()
-                .uri("/agent/chat")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new ChatRequest(dto.getSessionId(), userId.toString(), dto.getContent()))
-                .retrieve().bodyToMono(AiResponse.class)
-                .flatMap(res -> {
-                    AiMessagesVO vo = new AiMessagesVO();
-                    vo.setSessionId(dto.getSessionId());
-                    vo.setRole("ai");
-                    vo.setContent(res.data);
-                    return Mono.just(Result.success(vo));
-                }).onErrorResume(e -> Mono.just(Result.fail(BusErrorCode.AI_SYSTEM_ERROR)));
     }
 
     @Override

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import MarkdownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
 import container from 'markdown-it-container';
@@ -8,6 +8,7 @@ import 'highlight.js/styles/vs.css'
 import router from '@/router/index.ts'
 import { useRoute } from 'vue-router'
 import { httpInstance, type Response } from '@/utils/http';
+import mermaid from 'mermaid';
 
 // --- 类型定义 ---
 interface Heading {
@@ -20,6 +21,9 @@ interface Heading {
 const renderedHtml = ref('');
 const allHeadings = ref<Heading[]>([]);
 const showAboutPopup = ref(false);
+
+// Mermaid配置
+mermaid.initialize({ startOnLoad: false, theme: 'default' });
 
 // --- Markdown-It 配置 ---
 const md = new MarkdownIt({
@@ -43,6 +47,27 @@ const md = new MarkdownIt({
   .use(container as any, 'tip')
   .use(container as any, 'warning')
   .use(container as any, 'danger');
+
+// --- Mermaid 渲染拦截 ---
+const defaultRender = md.renderer.rules.fence;
+md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+  const token:any = tokens[idx];
+  if (token.info === 'mermaid') {
+    const code = token.content.trim();
+    return `<div class="mermaid">${code}</div>`;
+  }
+  return defaultRender!(tokens, idx, options, env, self);
+};
+
+// --- Mermaid 渲染触发函数 ---
+const triggerMermaid = async () => {
+  await nextTick();
+  // 查找页面中所有的 .mermaid 元素并渲染
+  const elements = document.querySelectorAll('.mermaid');
+  if (elements.length > 0) {
+    await mermaid.run({ nodes: elements as any });
+  }
+};
 
 const route = useRoute();
 
@@ -78,6 +103,7 @@ onMounted(async () => {
       const text: string = await httpInstance.get(res.data);
       renderedHtml.value = md.render(text);
       extractHeadings(text);
+      triggerMermaid();
     } catch (error) {
       alert(error);
     }
@@ -94,6 +120,7 @@ onMounted(async () => {
         const text: string = await httpInstance.get(articleInfo.value.url);
         renderedHtml.value = md.render(text);
         extractHeadings(text);
+        triggerMermaid();
       }
 
     } catch (error) {
@@ -346,14 +373,13 @@ onUnmounted(() => {
 .about-popup {
   position: absolute;
   top: 100%;
-  left: -60%;
+  left: -20%;
   margin-top: 8px;
   background: #f5faff;
   border: 2px solid #bddff9;
-  border-top: 4px solid rgb(56, 172, 249);
-  border-radius: 3px;
+  border-radius: 8px;
   padding: 12px 16px;
-  min-width: 180px;
+  min-width: 150px;
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
   z-index: 200;
 }
@@ -578,6 +604,35 @@ onUnmounted(() => {
 }
 
 :deep(img) {
-  width: 100%;
+  width: 96%;
+  
+}
+
+:deep(table) {
+  border-collapse: collapse;
+  text-align: center;
+  background-color: #cde2ee;
+}
+
+:deep(th){
+  padding: 1px 3px;
+  border: 2px solid black;
+}
+:deep(td){
+  padding: 1px 10px;
+  border: 2px solid black;
+}
+
+:deep(.mermaid) {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+  overflow-x: auto;
+}
+
+/* 确保 SVG 渲染后不会溢出 */
+:deep(.mermaid svg) {
+  max-width: 100%;
+  height: auto;
 }
 </style>

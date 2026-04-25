@@ -2,6 +2,7 @@ package io.github.oldmerman.common.util;
 
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
+import io.github.oldmerman.common.response.ResultCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -66,10 +67,8 @@ public class JwtUtil {
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-        } catch (ExpiredJwtException e) {
-            throw new BusinessException(BusErrorCode.TOKEN_EXPIRED);
         } catch (JwtException e) {
-            throw new BusinessException(BusErrorCode.TOKEN_PARSING_FAILED);
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
         }
     }
 

@@ -40,6 +40,7 @@ httpInstance.interceptors.request.use(
   },
   (error: AxiosError): Promise<AxiosError> => {
     console.error('Request Error:', error);
+    console.log(error.status);
     return Promise.reject(error);
   }
 );

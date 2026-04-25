@@ -72,8 +72,8 @@ public class OssServiceImpl implements OssService {
     @Override
     public String genPreviewURL(String key, String bucket) {
         String newBucket = bucket == null ? BUCKET : bucket;
-        Date expires = new Date(System.currentTimeMillis() + NumEnum.USER_ATTR_EXPIRE.getValue()*1000);
-        if(!StringUtils.hasText(key)){
+        Date expires = new Date(System.currentTimeMillis() + NumEnum.USER_ATTR_EXPIRE.getValue() * 1000);
+        if (!StringUtils.hasText(key)) {
             return null;
         }
         URL url = ossClient.generatePresignedUrl(newBucket, key, expires);
@@ -81,9 +81,9 @@ public class OssServiceImpl implements OssService {
     }
 
     @Override
-    public List<String> genPublicURL(List<String> keys, String bucket){
+    public List<String> genPublicURL(List<String> keys, String bucket) {
         String newBucket = bucket == null ? BUCKET : bucket;
-        if(keys.isEmpty()){
+        if (keys.isEmpty()) {
             throw new BusinessException(BusErrorCode.UPLOAD_FAILED);
         }
         return keys.stream().map(key -> "https://" + newBucket + ".oss-cn-guangzhou.aliyuncs.com/" + key).toList();
@@ -91,10 +91,10 @@ public class OssServiceImpl implements OssService {
 
     @Override
     public List<String> uploadBatch(Long id, List<String> path,
-                                    List<MultipartFile> files,String bucket) {
+                                    List<MultipartFile> files, String bucket) {
         List<String> batchList = new ArrayList<>();
         int size, i;
-        if((size = path.size()) != files.size()){
+        if ((size = path.size()) != files.size()) {
             throw new BusinessException(BusErrorCode.FILE_LEN_FAILED);
         }
         try {
@@ -103,8 +103,8 @@ public class OssServiceImpl implements OssService {
                 // 校验文件扩展名
                 String ext = getAllowExt(file, IMG_ALLOWED_EXTENSIONS);
                 String key = genFileName(RandomUtil.randomString(16), ext, WebEnum.MD_IMG_PREFIX.getValue());
-                if(key.contains("/./")){
-                    key = Paths.get("", key.split("/")).normalize().toString().replace("\\","/");
+                if (key.contains("/./")) {
+                    key = Paths.get("", key.split("/")).normalize().toString().replace("\\", "/");
                 }
                 batchList.add(key);
                 ossClient.putObject(bucket, key, file.getInputStream());
@@ -118,7 +118,7 @@ public class OssServiceImpl implements OssService {
     }
 
     @Override
-    public String uploadMd(Long id, MultipartFile file){
+    public String uploadMd(Long id, MultipartFile file) {
         String ext = getAllowExt(file, MD_ALLOWED_EXTENSIONS);
         String key = genFileName(id.toString(), ext, WebEnum.MD_PREFIX.getValue());
         try {
@@ -142,22 +142,20 @@ public class OssServiceImpl implements OssService {
     }
 
     @Override
-    public void deleteBatch(List<String> keys, String bucket){
+    public void deleteBatch(List<String> keys, String bucket) {
         bucket = bucket == null ? BUCKET : bucket;
-        DeleteObjectsRequest request = new DeleteObjectsRequest(bucket);
-        request.setKeys(keys);
-        request.setQuiet(true);
-        DeleteObjectsResult result = ossClient.deleteObjects(request);
-        List<String> deletedObjects = result.getDeletedObjects();
-        if(!deletedObjects.isEmpty()){
-            for (String key : deletedObjects) {
-                log.warn("文件删除失败,key:{}",key);
-            }
+        try {
+            DeleteObjectsResult result = ossClient.deleteObjects(
+                    new DeleteObjectsRequest(bucket)
+                            .withKeys(keys).withQuiet(true));
+        } catch (Exception e) {
+            log.warn("删除Keys失败: {}, 原因: {}", keys, e.getMessage());
         }
     }
 
     /**
      * 安全获取对应文件拓展名
+     *
      * @param file 文件
      * @param flag 文件集合
      * @return ext 文件拓展名
@@ -175,7 +173,7 @@ public class OssServiceImpl implements OssService {
     }
 
     // genFileName 方法保持不变，或者根据需要优化
-    private String genFileName(String userId, String ext, String folder){
+    private String genFileName(String userId, String ext, String folder) {
         return folder + "/" + userId + "_" + DateUtil.format(new Date(), "yyyyMM") + RandomUtil.randomString(4) + "." + ext;
     }
 

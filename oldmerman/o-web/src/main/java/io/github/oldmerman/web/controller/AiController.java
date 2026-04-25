@@ -48,11 +48,6 @@ public class AiController {
         return Result.success(service.createSession());
     }
 
-    @PostMapping("/chat")
-    public Mono<Result<AiMessagesVO>> chat(@RequestBody AiMessagesDTO dto){
-        return service.chat(dto);
-    }
-
     @DeleteMapping
     public Result<Void> deleteOneSession(@RequestParam("sessionId") String sessionId){
         service.deleteOneSession(sessionId);

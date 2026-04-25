@@ -19,7 +19,7 @@ public class PathUtils {
     public static List<String> getOssPubKeys(List<String> urls){
         return urls.stream().map(url -> {
             try {
-                return new URL(url).getPath().replace("^/", "");
+                return new URL(url).getPath().replaceFirst("^/", "");
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
             }

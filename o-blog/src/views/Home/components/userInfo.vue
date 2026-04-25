@@ -30,8 +30,8 @@ const renderUsrInfo = async () => {
     const res = await httpInstance.get<any, Response>('/usr/info');
     if (res.code === 401 && localStorage.getItem("refreshToken")){
         reSetToken();
-    }
-    if (res.code !== 200) {
+    }else if (res.code !== 200) {
+        alert(`服务错误:${res.message}`)
         return;
     }
     const data: UserInfo = res.data;
@@ -58,6 +58,8 @@ const reSetToken = async () => {
         localStorage.setItem('timeout', timeout);
         location.reload();
 }
+
+
 
 // 打开图片管理器
 const fileRef: any = ref(null);
@@ -107,6 +109,7 @@ onMounted(async() => {
     articleHistoryList.value = res.data;
     hasHistory.value = articleHistoryList.value.length !== 0;
 })
+
 
 </script>
 
