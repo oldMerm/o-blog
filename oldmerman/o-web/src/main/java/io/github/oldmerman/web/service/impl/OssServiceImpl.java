@@ -145,7 +145,7 @@ public class OssServiceImpl implements OssService {
     public void deleteBatch(List<String> keys, String bucket) {
         bucket = bucket == null ? BUCKET : bucket;
         try {
-            DeleteObjectsResult result = ossClient.deleteObjects(
+            ossClient.deleteObjects(
                     new DeleteObjectsRequest(bucket)
                             .withKeys(keys).withQuiet(true));
         } catch (Exception e) {
