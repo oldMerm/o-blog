@@ -3,7 +3,18 @@ import { ref, nextTick, watch, onMounted } from 'vue';
 import { API_BASE_URL, httpInstance, type Response } from '@/utils/http';
 import { MarkdownRenderer } from '@/utils/mdRender';
 import Dialog from '@/utils/dia/Dialog.vue';
+import Toast from '@/utils/toast/Toast.vue';
 
+// 提示信息弹框
+const toastRef = ref();
+const msg = ref('');
+const type = ref<'success' | 'error'>('success');
+// 弹窗函数
+const triggerToast = (message: string, status: 'success' | 'error') => {
+    type.value = status;
+    msg.value = message;
+    toastRef.value?.show();
+}
 
 // --- 弹窗状态管理 ---
 const isChatOpen = ref(false);
@@ -107,7 +118,8 @@ const createSession = async () => {
     try {
         const res = await httpInstance.post<any, Response>("/agent/session");
         if (res.code !== 200) {
-            alert(`服务出错:${res.message}`);
+            if(res.message) triggerToast(res.message, 'error');
+            return;
         }
         const newSession: Session = res.data;
         sessionHistory.value.unshift(newSession);
@@ -160,7 +172,6 @@ let eventSource: any = null;
 const streamChat = async (humanMessage: Message) => {
     const token = localStorage.getItem('token');
     if (token === null) {
-        alert('未认证')
         return;
     }
     const params = new URLSearchParams({
@@ -193,12 +204,12 @@ const streamChat = async (humanMessage: Message) => {
                 lastMessage.content += `<br><br>正在调用工具：${chunk.content}...<br><br>`
             }
 
-        } else if (chunk.node === 'model'){
+        } else if (chunk.node === 'model') {
             console.log(chunk.content);
             if (lastMessage) {
                 lastMessage.content += chunk.content;
             }
-        } 
+        }
     }
 
     eventSource.onerror = (error: any) => {
@@ -223,7 +234,8 @@ const deleteAll = async () => {
     try {
         const res = await httpInstance.delete<any, Response>("/agent/all");
         if (res.code !== 200) {
-            alert(`服务错误:${res.message}`);
+            if(res.message) triggerToast(res.message, 'error');
+            return;
         }
         messages.value = sessionHistory.value = [];
         selectedId.value = undefined;
@@ -236,6 +248,9 @@ const deleteAll = async () => {
 </script>
 
 <template>
+    <!-- info弹框 -->
+    <Toast ref="toastRef" :message="msg" :type="type" />
+
     <!-- 原有页面触发区域 -->
     <div class="cc">
         <div class="title">老鱼人的专属智能体</div>
@@ -641,6 +656,7 @@ const deleteAll = async () => {
 :deep(p) {
     margin-top: 20px;
 }
+
 :deep(p:first-child) {
     margin-top: 0;
 }

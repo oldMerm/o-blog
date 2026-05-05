@@ -19,7 +19,7 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.util.Set;
 
-/* 暂时弃用 */
+/* 弃用 */
 //@Component
 @RequiredArgsConstructor
 //@Order(1)

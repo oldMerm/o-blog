@@ -83,7 +83,7 @@ public class UserServiceImpl implements UserService {
         if (!password.isEmpty() && !RegexUtils.isValidPassword(password)) {
             throw new BusinessException(BusErrorCode.PASSWORD_WRONG_FORMAT);
         }
-        if (!username.isEmpty() && RegexUtils.isValidUsername(username)) {
+        if (!username.isEmpty() && !RegexUtils.isValidUsername(username)) {
             throw new BusinessException(BusErrorCode.USERNAME_WRONG_FORMAT);
         }
     }

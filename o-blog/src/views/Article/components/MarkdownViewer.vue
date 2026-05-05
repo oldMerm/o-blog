@@ -635,4 +635,8 @@ onUnmounted(() => {
   max-width: 100%;
   height: auto;
 }
+
+:deep(table) {
+  margin-bottom: 10px;
+}
 </style>

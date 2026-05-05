@@ -18,7 +18,6 @@ onMounted(async () => {
     const res = await httpInstance.get<any, Response>("/version");
 
     if (res.code !== 200) {
-        console.error(`服务错误:${res.message}`);
         return;
     }
 

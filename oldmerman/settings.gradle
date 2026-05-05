@@ -2,7 +2,6 @@ rootProject.name = 'oldmerman'
 
 include(
    'o-web',
-   'o-app',
    'common-config',
    'merman-model'
 )

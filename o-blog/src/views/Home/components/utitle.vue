@@ -9,7 +9,6 @@ const getNewMess = async () => {
     try {
         const res = await httpInstance.get<any, Response>('/counter/newArt');
         if (res.code !== 200) {
-            alert(`系统出现错误:${res.message}`);
             return;
         }
         newMess.value = res.data;

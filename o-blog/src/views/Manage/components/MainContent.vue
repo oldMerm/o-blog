@@ -3,13 +3,13 @@ import { ref, computed, onMounted } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
 import { goToArticle, type Article } from '@/views/public/Article';
 import UploadModal from '../utils/ContentDialog.vue';
+import Toast from '@/utils/toast/Toast.vue';
 
 onMounted(() => {
   getFeedback();
   getUserMdToRender();
 })
 
-// 假数据：生成多一点以展示滚动条效果
 const statusMap = new Map([
   [1, "未审核"],
   [2, "已过审"],
@@ -27,6 +27,17 @@ const getUserMdToRender = async () => {
 interface FeedbackType {
   id: number;
   content: string;
+}
+
+// 弹框设置
+const toastRef = ref();
+const msg = ref('');
+const type = ref<'success' | 'error'>('success');
+// 弹窗函数
+const triggerToast = (message: string, status: 'success' | 'error') => {
+  type.value = status;
+  msg.value = message;
+  toastRef.value?.show();
 }
 
 // 反馈功能
@@ -67,7 +78,7 @@ interface submitTable {
 }
 const submitFeedback = async () => {
   if (feedbackContent.value.length >= 255) {
-    alert("反馈内容信息过长！");
+    triggerToast('反馈内容信息过长！', 'error');
     return;
   }
 
@@ -78,11 +89,11 @@ const submitFeedback = async () => {
   try {
     const res = await httpInstance.post<any, Response>('/feedback', req);
     if (res.code === 200) {
-      alert("感谢您的反馈，会尽快回复！");
+      triggerToast('感谢您的反馈，会尽快回复！', 'success');
       selectedIds.value = [];
       feedbackContent.value = '';
     } else {
-      alert(res.message);
+      if(res.message) triggerToast(res.message, 'error');
       return;
     }
   } catch (error) {
@@ -99,7 +110,8 @@ const deleteArticle = async () => {
   try {
     const res:Response = await httpInstance.delete(`/article/remove/${articleName}`);
     if(res.code !== 200){
-      alert(`系统错误:${res.message}`);
+      if(res.message) triggerToast(res.message, 'error');
+      return;
     }
     getUserMdToRender();
   } catch (error) {
@@ -131,7 +143,7 @@ const getFeedback = async () => {
     const res = await httpInstance.get<any, Response>('/feedback/batch_info');
 
     if(res.code !== 200){
-      alert(`发生错误：${res}`);
+      if(res.message) triggerToast(res.message, 'error');
       return;
     }
     mockData.value = res.data;
@@ -152,6 +164,8 @@ const toggleFeedbackList = () => {
 </script>
 
 <template>
+  <!-- info弹框 -->
+  <Toast ref="toastRef" :message="msg" :type="type" />
   <!-- 区块3：文章列表 -->
   <div class="main-block article-list-container">
     <h3>我的文章列表</h3>

@@ -4,6 +4,7 @@ import { httpInstance, type Response } from '@/utils/http';
 import UserInfo from '@/views/Home/components/userInfo.vue';
 import router from '@/router';
 import Dialog from '@/utils/dia/Dialog.vue';
+import Toast from '@/utils/toast/Toast.vue';
 
 const usrInfo: UserManageInfo = reactive({
   username: '',
@@ -37,6 +38,18 @@ const renderUsrInfo = async () => {
 }
 onMounted(renderUsrInfo);
 
+// 弹框设置
+const toastRef = ref();
+const msg = ref('');
+const type = ref<'success' | 'error'>('success');
+// 弹窗函数
+const triggerToast = (message: string, status: 'success' | 'error') => {
+  type.value = status;
+  msg.value = message;
+  toastRef.value?.show();
+}
+
+// 用户管理相关接口
 interface UserManageInfo {
   username: string;
   password: string;
@@ -44,17 +57,17 @@ interface UserManageInfo {
 let checkedPassword = ref('');
 const updateUserInfo = async () => {
   if (usrInfo.password !== checkedPassword.value) {
-    alert("请输入相同的新密码");
+    triggerToast("两次输入的密码应一致！", "error");
     checkedPassword.value = usrInfo.password = '';
     return;
   }
   try {
     const res = await httpInstance.post<any, Response>('/usr/manage', usrInfo);
     if (res.code === 200) {
-      alert("信息修改成功！");
+      triggerToast("信息修改成功", 'success');
       renderUsrInfo();
     } else {
-      alert(res.message);
+      if (res.message) triggerToast(res.message, 'error');
     }
   } catch (error) {
     alert(`系统错误:${error}`)
@@ -64,7 +77,7 @@ const updateUserInfo = async () => {
 
 /* 上方管理栏目的行为 */
 const checkTheWeekReport = () => {
-  alert("功能尚未开发!");
+  triggerToast("功能尚未开发", 'error');
 }
 
 const visible1 = ref(false);
@@ -75,7 +88,7 @@ const logout = async () => {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('timeout');
-      setTimeout(() => {router.push({name:'home'})},1000);
+      setTimeout(() => { router.push({ name: 'home' }) }, 1000);
     } else {
       alert(res.message);
     }
@@ -92,7 +105,7 @@ const handleDeleteUserAccount = async () => {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('timeout');
-      setTimeout(() => {router.push({name:'home'})},1000);
+      setTimeout(() => { router.push({ name: 'home' }) }, 1000);
     } else {
       alert(res.message);
     }
@@ -103,6 +116,9 @@ const handleDeleteUserAccount = async () => {
 </script>
 
 <template>
+  <!-- info弹框 -->
+  <Toast ref="toastRef" :message="msg" :type="type" />
+
   <!-- 区块2：一些管理项 -->
   <div class="manage-info">
     <div class="manage-box" @click="router.push({ name: 'home' })">返回主页</div>
