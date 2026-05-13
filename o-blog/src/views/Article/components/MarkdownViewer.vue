@@ -525,7 +525,7 @@ onUnmounted(() => {
 }
 
 :deep(.vp-doc) {
-  line-height: 1.7;
+  line-height: 1.6;
   font-size: 16px;
 }
 
@@ -600,27 +600,42 @@ onUnmounted(() => {
 }
 
 :deep(p) {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
+  color: black;
 }
 
 :deep(img) {
   width: 96%;
-  
 }
 
 :deep(table) {
+  width: 90%;
+  margin: 15px auto;
   border-collapse: collapse;
-  text-align: center;
-  background-color: #cde2ee;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  font-size: 14px;
 }
 
-:deep(th){
-  padding: 1px 3px;
-  border: 2px solid black;
+:deep(th) {
+  text-align: start;
+  padding: 14px 16px;
+  background: #f1f5f9;
+  font-weight: 600;
+  color: #1e293b;
 }
-:deep(td){
-  padding: 1px 10px;
-  border: 2px solid black;
+
+:deep(td) {
+  text-align: start;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+:deep(tr:last-child td) {
+  border-bottom: none;
 }
 
 :deep(.mermaid) {
@@ -636,7 +651,25 @@ onUnmounted(() => {
   height: auto;
 }
 
-:deep(table) {
-  margin-bottom: 10px;
+/* 超链接渲染 */
+:deep(p>a) {
+  color: rgb(0, 0, 0);
+  background-color: rgb(246, 246, 247);
+  padding: 3px;
+  border-top-left-radius: 8px;
+  border-bottom: 1px solid black;
+  box-shadow: #1e293b;
+  transition: all 0.2s ease;
+}
+
+:deep(p>a:hover) {
+  box-shadow: 0 1px black;
+}
+
+:deep(p>code) {
+  background-color: rgb(246, 246, 247);
+  padding: 5px 5px;
+  border-radius: 8px;
+  font-weight: 300;
 }
 </style>

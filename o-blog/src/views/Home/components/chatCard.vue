@@ -54,7 +54,7 @@ const chatScrollRef = ref<HTMLElement | null>(null);
 const openChat = async () => {
     const flag = await isLoginUser();
     if (!flag) {
-        alert("未登录或ai服务错误");
+        triggerToast("ai未开放，敬请期待...", 'error');
         return;
     }
 

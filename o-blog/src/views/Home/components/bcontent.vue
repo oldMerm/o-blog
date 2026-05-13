@@ -48,7 +48,7 @@ onMounted(async () => {
         </a>
         <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=44196202000120" class="beian">
             <img src="https://beian.mps.gov.cn/img/logo01.dd7ff50e.png">粤公网安备44196202000120号</a>
-        ©版本号: {{ versionData?.versionId || '获取中...' }}
+        <span class="version-c" @click="isModalVisible = true"> ©版本号: {{ versionData?.versionId || '获取中...' }}</span>
     </div>
 </template>
 
@@ -74,5 +74,14 @@ img {
     width: 16px;
     height: 17px;
     vertical-align: middle;
+}
+
+.version-c {
+    cursor: pointer;
+    transition: color 0.1s ease;
+}
+
+.version-c:hover {
+    color: rgb(224, 20, 20);
 }
 </style>

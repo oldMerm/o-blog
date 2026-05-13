@@ -94,6 +94,7 @@ public class LoginServiceImpl implements LoginService {
                 .build();
     }
 
+    @Override
     public void logout(String sign) {
         if (sign == null) {
             throw new BusinessException(ResultCode.DATA_NOT_EXIST);
