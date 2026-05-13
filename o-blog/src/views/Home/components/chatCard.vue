@@ -52,14 +52,15 @@ const chatScrollRef = ref<HTMLElement | null>(null);
 // --- 交互逻辑 ---
 // 打开弹窗
 const openChat = async () => {
-    const flag = await isLoginUser();
-    if (!flag) {
-        triggerToast("ai未开放，敬请期待...", 'error');
-        return;
-    }
+    // const flag = await isLoginUser();
+    // if (!flag) {
+    //     triggerToast("ai未开放，敬请期待...", 'error');
+    //     return;
+    // }
+    triggerToast("ai未开放，敬请期待...", 'error');
 
-    scrollToBottom();
-    isChatOpen.value = true;
+    // scrollToBottom();
+    // isChatOpen.value = true;
 };
 
 const isLoginUser = async () => {
@@ -354,6 +355,7 @@ const deleteAll = async () => {
     cursor: pointer;
     transition: all 0.1s ease-in-out;
     font-size: 1.1rem;
+    margin-top: 60px;
 }
 
 .btn:hover {

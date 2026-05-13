@@ -8,6 +8,7 @@ import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.exception.BusinessException;
+import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
 import io.github.oldmerman.model.dto.ArticlePriDTO;
@@ -100,6 +101,11 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     public String getPrivateArticleById(Long id) {
         ArticlePriDTO dto = articleMapper.getPrivateKeyById(id);
+        Long userId = UserContext.getUserId();
+        if (!userId.equals(dto.getWriterId()) || userMapper.selectUserById(userId).getType() != 1) {
+            throw new BusinessException(ResultCode.FORBIDDEN);
+        }
+
         String key = dto.getKey();
         if (key == null || !Objects.equals(UserContext.getUserId(), dto.getWriterId())) {
             throw new BusinessException(BusErrorCode.FILE_UNEXIST);
@@ -189,15 +195,14 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public void removeArticle(String articleName, Long userId) throws JsonProcessingException {
+    public void removeArticle(Long articleId, Long userId) throws JsonProcessingException {
         LambdaQueryWrapper<Article> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(Article::getWriterId, userId).eq(Article::getArticleName, articleName);
+        lambdaQueryWrapper.eq(Article::getWriterId, userId).eq(Article::getId, articleId);
         Article article = articleMapper.selectOne(lambdaQueryWrapper);
         if (ObjectUtils.isEmpty(article)) {
             throw new BusinessException(BusErrorCode.FILE_UNEXIST);
         }
-        Long articleId = article.getId();
-        articleMapper.deleteById(article.getId());
+        articleMapper.deleteById(articleId);
 
         List<ArticleImage> articleImages = articleImageMapper.selectByArticleId(articleId);
         articleImageMapper.deleteByIds(articleImages.stream().map(ArticleImage::getId).toList());

@@ -657,6 +657,7 @@ onUnmounted(() => {
   background-color: rgb(246, 246, 247);
   padding: 3px;
   border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
   border-bottom: 1px solid black;
   box-shadow: #1e293b;
   transition: all 0.2s ease;
@@ -671,5 +672,6 @@ onUnmounted(() => {
   padding: 5px 5px;
   border-radius: 8px;
   font-weight: 300;
+  margin: 0 5px;
 }
 </style>

@@ -4,6 +4,7 @@ import { httpInstance, type Response } from '@/utils/http';
 import { goToArticle, type Article } from '@/views/public/Article';
 import UploadModal from '../utils/ContentDialog.vue';
 import Toast from '@/utils/toast/Toast.vue';
+import ArticleDeleteModel from '../utils/ArticleDeleteModel.vue';
 
 onMounted(() => {
   getFeedback();
@@ -101,29 +102,38 @@ const submitFeedback = async () => {
   }
 }
 
-const deleteArticle = async () => {
-  const articleName = prompt("请输入要删除的文章名:", "");
-  if(articleName === "" || articleName === null){
-    return;
-  }
-  // 这里执行删除文章逻辑(根据文章名)
-  try {
-    const res:Response = await httpInstance.delete(`/article/remove/${articleName}`);
-    if(res.code !== 200){
-      if(res.message) triggerToast(res.message, 'error');
-      return;
-    }
-    getUserMdToRender();
-  } catch (error) {
-    alert(`系统错误:${error}`);
-  }
-}
-
+// 文章相关逻辑
 const uploadModalRef = ref<InstanceType<typeof UploadModal> | null>(null);
 
 const openModal = () => {
   uploadModalRef.value?.openModal();
 };
+
+const showArticleDeleteModal = ref(false)
+
+const handleArticleDelete = (article: Article) => {
+  if(confirm(`确定删除文章: ${article.articleName}？`)){
+    deleteArticle(article.id);
+  }
+}
+
+const deleteArticle = async (articleId: string) => {
+  if(!articleId){
+    triggerToast('不存在对应的文章！','error');
+  }
+  // 这里执行删除文章逻辑(根据文章名)
+  try {
+    const res:Response = await httpInstance.delete(`/article/remove/${articleId}`);
+    if(res.code !== 200){
+      if(res.message) triggerToast(res.message, 'error');
+      return;
+    }
+    triggerToast('文章删除成功！', 'success');
+    articleList.value = articleList.value.filter((a) => a.id !== articleId)
+  } catch (error) {
+    alert(`系统错误:${error}`);
+  }
+}
 
 
 // 反馈功能
@@ -166,6 +176,13 @@ const toggleFeedbackList = () => {
 <template>
   <!-- info弹框 -->
   <Toast ref="toastRef" :message="msg" :type="type" />
+  <!-- artcle delete 弹框 -->
+  <ArticleDeleteModel
+    v-model:visible="showArticleDeleteModal"
+    :articles="articleList"
+    modal-title="文章管理(点击任意位置关闭)"
+    @delete="handleArticleDelete"
+  />
   <!-- 区块3：文章列表 -->
   <div class="main-block article-list-container">
     <h3>我的文章列表</h3>
@@ -189,7 +206,7 @@ const toggleFeedbackList = () => {
           3.若修改请重新上传<br>
           4.请勿上传非法内容<br>
           5.文章通过审核后发布<br>
-          6.<span style="color: red;cursor: pointer;" @click="deleteArticle">点此红字</span>删除文章
+          6.<span style="color: red;cursor: pointer;" @click="showArticleDeleteModal = true">点此红字</span>删除文章
         </p>
       </div>
     </div>

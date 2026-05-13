@@ -150,7 +150,7 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
                             <ArticleCheckDialog v-model:visible="item.visable" :onConfirm="handleCheckAction" :extraParam="item" />
 
                             <span class="divider">|</span>
-                            <button class="btn-text" @click="goToArticle(item.id, true)">
+                            <button class="btn-text" @click="goToArticle(item.id, true, 'private')">
                                 查看详细
                             </button>
                         </td>

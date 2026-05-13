@@ -41,8 +41,8 @@ public class ArticleController {
     }
 
     @GetMapping("/private/{articleId}")
-    public Result<String> getPrivateArticleById(@PathVariable String articleId){
-        return Result.success(articleService.getPrivateArticleById(Long.parseLong(articleId)));
+    public Result<String> getPrivateArticleById(@PathVariable Long articleId){
+        return Result.success(articleService.getPrivateArticleById(articleId));
     }
 
     @GetMapping("/public/{articleId}")
@@ -79,11 +79,11 @@ public class ArticleController {
         return Result.success();
     }
 
-    @DeleteMapping("remove/{articleName}")
-    public Result<Void> removeArticle(@PathVariable String articleName) throws JsonProcessingException {
+    @DeleteMapping("remove/{articleId}")
+    public Result<Void> removeArticle(@PathVariable Long articleId) throws JsonProcessingException {
         Long userId = UserContext.getUserId();
-        log.info("用户删除文章:{}", articleName);
-        articleService.removeArticle(articleName, userId);
+        log.info("用户删除文章:{}", articleId);
+        articleService.removeArticle(articleId, userId);
         return Result.success();
     }
 }

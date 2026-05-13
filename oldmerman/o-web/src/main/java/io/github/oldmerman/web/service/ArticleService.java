@@ -67,8 +67,8 @@ public interface ArticleService {
     /**
      * 删除文章
      *
-     * @param articleName 文章名
+     * @param articleId 要删除的文章id
      * @param userId      用户唯一id
      */
-    void removeArticle(String articleName, Long userId) throws JsonProcessingException;
+    void removeArticle(Long articleId, Long userId) throws JsonProcessingException;
 }
