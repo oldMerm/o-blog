@@ -25,6 +25,7 @@
     "markdown-it-prism": "^3.0.1",
     "mermaid": "^11.14.0",
     "pinia": "^3.0.4",
+    "prismjs": "^1.30.0",
     "shiki": "^3.21.0",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3"
