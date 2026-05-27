@@ -8,19 +8,20 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("ai_conversations")
-public class AiConversation {
+@TableName("o_article_group")
+public class ArticleGroup {
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
     private Long userId;
 
-    private String sessionId;
+    private String groupName;
 
-    private String sessionDecr;
+    private String groupDesc;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
 }
