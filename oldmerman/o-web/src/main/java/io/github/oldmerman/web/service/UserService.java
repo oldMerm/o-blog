@@ -36,6 +36,15 @@ public interface UserService {
     void updateUsrInfo(UserManageDTO dto);
 
     /**
+     * 更新用户文章数量接口
+     *
+     * @param userId 用户id
+     * @param number 数目
+     * @param isAdd true -> 新增，反之
+     */
+    void updateUsrArticle(Long userId, Integer number, Boolean isAdd);
+
+    /**
      * 注销用户接口
      *
      * @param userId 注销用户的id

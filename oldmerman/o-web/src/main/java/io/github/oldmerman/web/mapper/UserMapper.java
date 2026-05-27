@@ -31,8 +31,6 @@ public interface UserMapper extends BaseMapper<User> {
     @Select("SELECT username FROM o_blog.o_user WHERE id = #{userId}")
     String selectNameById(Long userId);
 
-    void updateUserArticle();
-
     List<Counter> countUserMonData(LocalDateTime now, Long count);
 
     @Select("SELECT type FROM o_blog.o_user WHERE id = #{userId}")
@@ -40,4 +38,7 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Update("UPDATE o_blog.o_user SET is_delete = #{status} WHERE id = #{id}")
     void toggleUserStatus(UserToggleDTO dto);
+
+    @Update("UPDATE o_blog.o_user SET article = #{articleNumber} WHERE id = #{userId}")
+    void updateUserArticleNum(Integer articleNumber, Long userId);
 }

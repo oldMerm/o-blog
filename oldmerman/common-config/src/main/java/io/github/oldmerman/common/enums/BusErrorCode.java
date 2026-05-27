@@ -30,6 +30,7 @@ public enum BusErrorCode implements IResultCode {
     ARTICLE_WAS_REMOVED(1095, "文章未通过审核或已下架"),
     ARTICLE_SUBMIT_FREQUENT(1096, "文章上传频繁"),
     ARTICLE_NAME_EXIST(1097, "文章名已存在"),
+    ARTICLE_NUM_INVALID(1098, "更新数大于文章总数"),
 
     AI_SYSTEM_ERROR(1200, "智能体系统出错"),
     ;

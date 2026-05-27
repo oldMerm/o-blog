@@ -71,6 +71,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void updateUsrArticle(Long userId, Integer number, Boolean isAdd) {
+        User user = userMapper.selectUserById(userId);
+        Integer articleNumber = user.getArticle();
+        if(Boolean.TRUE.equals(isAdd)){
+            articleNumber += number;
+        }else{
+            if (articleNumber - number < 0){
+                throw new BusinessException(BusErrorCode.ARTICLE_NUM_INVALID);
+            }
+            articleNumber -= number;
+        }
+        userMapper.updateUserArticleNum(articleNumber, userId);
+    }
+
+    @Override
     public void deleteUsr(Long userId, String token) {
         userMapper.logicDeleteUser(userId);
         // 成功后删除缓存，几乎等价于用户登出

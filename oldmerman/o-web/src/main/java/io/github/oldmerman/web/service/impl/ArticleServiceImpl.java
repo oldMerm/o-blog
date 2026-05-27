@@ -24,6 +24,7 @@ import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.service.OssService;
+import io.github.oldmerman.web.service.UserService;
 import io.github.oldmerman.web.util.PathUtils;
 import io.github.oldmerman.web.util.RedisUtils;
 import io.github.oldmerman.web.util.UserContext;
@@ -34,6 +35,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -54,6 +56,8 @@ public class ArticleServiceImpl implements ArticleService {
     private final UserMapper userMapper;
 
     private final ArticleHistoryMapper historyMapper;
+
+    private final UserService userService;
 
     private final OssService ossService;
 
@@ -84,7 +88,7 @@ public class ArticleServiceImpl implements ArticleService {
     public List<ArticleRenderVO> getRenderArticle(Byte articleType, Long size) throws JsonProcessingException {
         String data = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_RENDER + articleType);
         if (!ObjectUtils.isEmpty(data)) {
-                return objectMapper.readValue(data, new TypeReference<>() {
+            return objectMapper.readValue(data, new TypeReference<>() {
             });
         }
         List<ArticleRenderVO> vo;
@@ -127,11 +131,11 @@ public class ArticleServiceImpl implements ArticleService {
         }
         // 记录用户浏览历史
         Long userId = UserContext.getUserId();
-        if(userId != null){
+        if (userId != null) {
             Integer historyId = historyMapper.selectByUsrArtId(userId, article.getId());
-            if(historyId != null){
+            if (historyId != null) {
                 historyMapper.updateHistoryTime(historyId, LocalDateTime.now());
-            }else{
+            } else {
                 ArticleHistory ah = new ArticleHistory();
                 ah.setUserId(userId);
                 ah.setArticleId(article.getId());
@@ -147,6 +151,17 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     public List<String> uploadImagesToOSS(Long userId, List<String> paths, List<MultipartFile> imgList) {
+        Long expire = redisTemplate.getExpire(RedisPrefix.ARTICLE_SUBMIT + userId, TimeUnit.MINUTES);
+        String submitCountStr = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_SUBMIT + userId);
+
+        int submitCount = 0;
+        if(StringUtils.hasText(submitCountStr)){
+            submitCount = Integer.parseInt(submitCountStr);
+        }
+
+        if(submitCount >= 5 && expire > 0){
+            throw new BusinessException(BusErrorCode.ARTICLE_SUBMIT_FREQUENT.getCode(), "上传过于频繁，请"+expire+"分钟后尝试");
+        }
         List<String> keys = ossService.uploadBatch(userId, paths, imgList, BUCKET);
         return ossService.genPublicURL(keys, BUCKET);
     }
@@ -154,7 +169,7 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     @Transactional
     public void upload(Long userId, MultipartFile file, ArticleCreateDTO dto) {
-        if(articleMapper.exist(dto.getArticleName()) == 1){
+        if (articleMapper.exist(dto.getArticleName()) == 1) {
             // 存在文章（文章同名）
             throw new BusinessException(BusErrorCode.ARTICLE_NAME_EXIST);
         }
@@ -169,7 +184,7 @@ public class ArticleServiceImpl implements ArticleService {
         po.setId(articleId);
         po.setWriterId(userId);
         po.setArticleStatus(Article.ArticleStatus.UNDER_REVIEW);
-        po.setArticleWriter(userMapper.selectNameById(userId));
+        po.setArticleWriter(userService.getUsrInfo(userId).getUsername());
         po.setKey(mdKey);
         // 3.构建图片对象
         List<String> attrs = dto.getAttrs();
@@ -186,11 +201,15 @@ public class ArticleServiceImpl implements ArticleService {
                     .toList();
             articleImageMapper.insert(images);
         }
-        // 4.插入数据库
+        // 4.插入数据库并更新用户文章信息
         articleMapper.insertPO(po);
-        // 5.用户加入缓存
-        redisTemplate.opsForValue().set(RedisPrefix.ARTICLE_SUBMIT + userId, articleId.toString(), 1440, TimeUnit.MINUTES);
-
+        userService.updateUsrArticle(userId, 1, Boolean.TRUE);
+        // 5.用户提交加入缓存
+        String submitKey = RedisPrefix.ARTICLE_SUBMIT + userId;
+        Long count = redisTemplate.opsForValue().increment(submitKey);
+        if (count == 1) {
+            redisTemplate.expire(submitKey, 1440, TimeUnit.MINUTES);
+        }
     }
 
     @Override
