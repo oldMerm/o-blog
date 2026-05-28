@@ -24,7 +24,31 @@ const showAboutPopup = ref(false);
 
 // Mermaid配置
 mermaid.initialize({ startOnLoad: false, theme: 'default' });
+// 用户信息嵌入组件
+const authorPlugin = (md: any, option: any) => {
+  const { articleWriter, createdAt, len } = option;
+  md.core.ruler.push('inject_author', (state: any) => {
+    const h1Index = state.tokens.findIndex((t: any) => t.type === 'heading_open' && t.tag === 'h1');
 
+    if (h1Index === -1) return
+
+    const h1CloseIndex = state.tokens.findIndex((t: any, i: any) => i > h1Index && t.type === 'heading_close');
+    const authorInfoHtml = `
+        <div class="author-info">
+          <span class="author-info-span">🖊︎${articleWriter}</span>
+          <span class="author-info-span">🕮${len}字</span>
+          <span class="author-info-span">⏰︎${String(createdAt).substring(0, 10)}</span>
+        </div>
+      `
+
+    state.tokens.splice(h1CloseIndex + 1, 0, {
+      type: 'html_block',
+      content: authorInfoHtml,
+      block: true,
+      level: 0
+    })
+  })
+}
 // --- Markdown-It 配置 ---
 const md = new MarkdownIt({
   html: true,
@@ -47,18 +71,16 @@ const md = new MarkdownIt({
   .use(container as any, 'tip')
   .use(container as any, 'warning')
   .use(container as any, 'danger');
-
 // --- Mermaid 渲染拦截 ---
 const defaultRender = md.renderer.rules.fence;
 md.renderer.rules.fence = (tokens, idx, options, env, self) => {
-  const token:any = tokens[idx];
+  const token: any = tokens[idx];
   if (token.info === 'mermaid') {
     const code = token.content.trim();
     return `<div class="mermaid">${code}</div>`;
   }
   return defaultRender!(tokens, idx, options, env, self);
 };
-
 // --- Mermaid 渲染触发函数 ---
 const triggerMermaid = async () => {
   await nextTick();
@@ -69,8 +91,9 @@ const triggerMermaid = async () => {
   }
 };
 
-const route = useRoute();
-
+/* 
+实体相关信息
+*/
 interface ArticleInfo {
   url: string;
   articleWriter: string;
@@ -84,7 +107,16 @@ const articleInfo = ref<ArticleInfo>(
     articleWriter: 'oldmerman',
     articleDecr: '无',
     createdAt: '2026-1-1'
-  });
+  }
+);
+
+const articleLength = ref<number>(0);
+
+interface ArticleLink {
+
+}
+const articleLinkList = ref<ArticleLink[]>([]);
+const route = useRoute();
 const isPublic = route.query.isPublic;
 
 onMounted(async () => {
@@ -118,6 +150,9 @@ onMounted(async () => {
       articleInfo.value = res.data;
       if (articleInfo.value && articleInfo.value.url !== '') {
         const text: string = await httpInstance.get(articleInfo.value.url);
+        articleLength.value = text.length;
+        md.use(authorPlugin, { articleWriter: articleInfo.value.articleWriter, createdAt: articleInfo.value.createdAt, len: articleLength.value });
+        // 渲染文档
         renderedHtml.value = md.render(text);
         extractHeadings(text);
         triggerMermaid();
@@ -200,15 +235,6 @@ const goToHome = () => {
   router.push({ name: 'home' });
 }
 
-const closeAboutPopup = () => {
-  showAboutPopup.value = false;
-};
-
-const toggleAbout = (e: Event) => {
-  e.stopPropagation();
-  showAboutPopup.value = !showAboutPopup.value;
-};
-
 const handleClickOutside = (e: Event) => {
   if (showAboutPopup.value) {
     showAboutPopup.value = false;
@@ -236,26 +262,6 @@ onUnmounted(() => {
         </div>
 
         <div class="nav-links">
-          <div class="nav-item-wrapper">
-            <a @click="toggleAbout" v-if="isPublic === 'public'" style="cursor: pointer;">简介</a>
-            <Transition name="popup-fade">
-              <div v-if="showAboutPopup" class="about-popup" @click.stop>
-                <div class="popup-row">
-                  <span class="popup-label">作者：</span>
-                  <span class="popup-value">{{ articleInfo.articleWriter }}</span>
-                </div>
-                <div class="popup-row">
-                  <span class="popup-label">日期：</span>
-                  <span class="popup-value">{{ articleInfo.createdAt.slice(0, 10) }}</span>
-                </div>
-                <div class="popup-row">
-                  <span class="popup-label">简介：</span>
-                  <span class="popup-value">{{ articleInfo.articleDecr.length > 30 ? articleInfo.articleDecr.slice(0,
-                    30) + '...' : articleInfo.articleDecr }}</span>
-                </div>
-              </div>
-            </Transition>
-          </div>
           <div><a @click="goToHome" style="cursor: pointer;">主页</a></div>
           <div><a href="https://github.com" target="_blank">GitHub</a></div>
         </div>
@@ -268,8 +274,7 @@ onUnmounted(() => {
         <div class="sidebar-content">
           <div class="sidebar-title">章节目录</div>
           <ul class="toc-tree">
-            <li v-for="h in allHeadings" :key="h.id" :class="['toc-item', `depth-${h.level}`]">
-              <a :href="`#${h.id}`" @click.prevent="scrollTo(h.id)">{{ h.text }}</a>
+            <li v-for="item in articleLinkList" class="">
             </li>
           </ul>
         </div>
@@ -365,59 +370,6 @@ onUnmounted(() => {
   color: #3b82f6;
 }
 
-/* 📋 简介弹框 */
-.nav-item-wrapper {
-  position: relative;
-}
-
-.about-popup {
-  position: absolute;
-  top: 100%;
-  left: -20%;
-  margin-top: 8px;
-  background: #f5faff;
-  border: 2px solid #bddff9;
-  border-radius: 8px;
-  padding: 12px 16px;
-  min-width: 150px;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
-  z-index: 200;
-}
-
-.popup-row {
-  margin-bottom: 8px;
-}
-
-.popup-row:last-child {
-  margin-bottom: 0;
-}
-
-.popup-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #64748b;
-  margin-right: 6px;
-}
-
-.popup-value {
-  font-size: 12px;
-  color: #1e293b;
-}
-
-/* 弹框动画 */
-.popup-fade-enter-active,
-.popup-fade-leave-active {
-  transition: all 0.2s ease;
-}
-
-.popup-fade-enter-from,
-.popup-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-
 /* 🗂 布局 */
 .vp-body {
   display: flex;
@@ -450,21 +402,6 @@ onUnmounted(() => {
 .toc-tree {
   list-style: none;
   padding: 0;
-}
-
-.toc-item {
-  margin: 8px 0;
-}
-
-.toc-item a {
-  text-decoration: none;
-  color: #475569;
-  font-size: 0.9rem;
-  transition: color 0.2s;
-}
-
-.toc-item a:hover {
-  color: #3b82f6;
 }
 
 .depth-2 {
@@ -524,6 +461,19 @@ onUnmounted(() => {
   color: #3b82f6;
 }
 
+/* author介绍 */
+:deep(.author-info) {
+  margin-top: 5px;
+  margin-bottom: 15px;
+  width: 75%;
+  border-bottom: 2px solid rgba(183, 183, 183);
+  font-size: 17px;
+}
+
+:deep(.author-info-span) {
+  margin-right: 5px;
+}
+
 :deep(.vp-doc) {
   line-height: 1.6;
   font-size: 16px;
@@ -531,7 +481,6 @@ onUnmounted(() => {
 
 :deep(.vp-doc h1) {
   font-size: 32px;
-  margin-bottom: 20px;
   font-weight: 700;
 }
 

@@ -54,6 +54,7 @@ const reSetToken = async () => {
             localStorage.removeItem('token');
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('timeout');
+            location.reload();
             return;
         }
         const { token, refreshToken, timeout } = <any>data.data;
