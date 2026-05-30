@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
 import { goToArticle, type Article } from '@/views/public/Article';
 import UploadModal from '../utils/ContentDialog.vue';
@@ -171,6 +171,22 @@ const toggleFeedbackList = () => {
     showFeedbackList.value = !showFeedbackList.value;
   }
 };
+
+// 点击弹框外部关闭
+const feedbackPopoverRef = ref<HTMLElement | null>(null);
+const closeOutside = (e: MouseEvent) => {
+  if (showFeedbackList.value && feedbackPopoverRef.value && !feedbackPopoverRef.value.contains(e.target as Node)) {
+    showFeedbackList.value = false;
+  }
+};
+watch(showFeedbackList, (val) => {
+  if (val) {
+    document.addEventListener('click', closeOutside);
+  } else {
+    document.removeEventListener('click', closeOutside);
+  }
+});
+onUnmounted(() => document.removeEventListener('click', closeOutside));
 </script>
 
 <template>
@@ -185,7 +201,7 @@ const toggleFeedbackList = () => {
   />
   <!-- 区块3：文章列表 -->
   <div class="main-block article-list-container">
-    <h3>我的文章列表</h3>
+    <h3>文章列表</h3>
     <div class="scroll-area">
       <ul class="article-list">
         <li v-for="article in articleList" :key="article.id" class="article-item" @click="goToArticle(article.id, true, 'private')">
@@ -225,7 +241,8 @@ const toggleFeedbackList = () => {
           <span @click.stop="toggleFeedbackList" class="feedback">信息反馈</span>
           <sup v-if="replyCount > 0" class="reply-badge">{{ replyCount }}</sup>
 
-          <div v-if="showFeedbackList" class="feedback-popover" @click.stop>
+          <Transition name="feedback">
+            <div v-if="showFeedbackList" ref="feedbackPopoverRef" class="feedback-popover" @click.stop>
             <div class="popover-title">
               回复列表
               <span class="popover-close" @click.stop="showFeedbackList = false">&times;</span>
@@ -248,6 +265,7 @@ const toggleFeedbackList = () => {
               </div>
             </div>
           </div>
+          </Transition>
         </h3>
         <div class="feedback-type">
           反馈类型
@@ -551,5 +569,20 @@ h3 {
 
 .popover-close:hover {
   color: #409eff; /* 悬停变为浅蓝色 */
+}
+
+.feedback-enter-active {
+  transition: all 0.3s ease-out;
+}
+.feedback-leave-active {
+  transition: all 0.2s ease-in;
+}
+.feedback-enter-from {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.85);
+}
+.feedback-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.85);
 }
 </style>

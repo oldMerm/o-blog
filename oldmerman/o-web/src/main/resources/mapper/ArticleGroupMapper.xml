@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.github.oldmerman.web.mapper.ArticleGroupMapper">
+
+    <select id="selectGroupRenderList" resultType="io.github.oldmerman.model.vo.ArticleGroupRenderVO">
+        SELECT
+            oa.id,
+            oa.group_name,
+            oa.created_at,
+            COUNT(ol.article_id) AS number
+        FROM o_blog.o_article_group oa
+        LEFT JOIN
+            o_blog.o_article_group_link ol ON oa.id = ol.group_id
+        WHERE oa.user_id = #{userId}
+        GROUP BY
+            oa.id
+    </select>
+</mapper>
+

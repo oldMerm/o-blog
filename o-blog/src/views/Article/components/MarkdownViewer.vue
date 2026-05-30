@@ -36,7 +36,7 @@ const authorPlugin = (md: any, option: any) => {
     const authorInfoHtml = `
         <div class="author-info">
           <span class="author-info-span">🖊︎${articleWriter}</span>
-          <span class="author-info-span">🕮${len}字</span>
+          <span class="author-info-span">🕮约${len}字</span>
           <span class="author-info-span">⏰︎${String(createdAt).substring(0, 10)}</span>
         </div>
       `
@@ -272,7 +272,7 @@ onUnmounted(() => {
       <!-- 2. 左侧栏：完整目录树 -->
       <aside class="vp-sidebar-left">
         <div class="sidebar-content">
-          <div class="sidebar-title">章节目录</div>
+          <div class="sidebar-title">同分类文章</div>
           <ul class="toc-tree">
             <li v-for="item in articleLinkList" class="">
             </li>
@@ -383,7 +383,7 @@ onUnmounted(() => {
 .vp-sidebar-left {
   width: 280px;
   border-right: 1px solid #f1f1f1;
-  padding: 32px 24px;
+  padding: 16px 12px;
   background: #fcfdfe;
   height: calc(100vh - 64px);
   position: sticky;
@@ -465,13 +465,13 @@ onUnmounted(() => {
 :deep(.author-info) {
   margin-top: 5px;
   margin-bottom: 15px;
-  width: 75%;
-  border-bottom: 2px solid rgba(183, 183, 183);
+  width: 60%;
+  border-bottom: 2px solid rgb(170, 180, 182);
   font-size: 17px;
 }
 
 :deep(.author-info-span) {
-  margin-right: 5px;
+  margin-right: 10px;
 }
 
 :deep(.vp-doc) {

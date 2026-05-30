@@ -113,6 +113,22 @@ const handleDeleteUserAccount = async () => {
     alert(`系统错误:${error}`)
   }
 }
+
+/* 文章分组 */
+interface GroupRenderParam {
+  id: number,
+  groupName: string,
+  createdAt: string,
+  number: number,
+}
+const articleGroupList = ref<GroupRenderParam[]>([
+  { id: 1, groupName: "text1", createdAt: "2026.1.1", number: 2 },
+  { id: 1, groupName: "text1", createdAt: "2026.1.1", number: 2 },
+  { id: 1, groupName: "text1", createdAt: "2026.1.1", number: 2 },
+  { id: 1, groupName: "text1", createdAt: "2026.1.1", number: 2 },
+  { id: 1, groupName: "text1", createdAt: "2026.1.1", number: 2 },
+  { id: 1, groupName: "text1", createdAt: "2026.1.1", number: 2 },
+]);
 </script>
 
 <template>
@@ -155,9 +171,15 @@ const handleDeleteUserAccount = async () => {
 
   <!-- 区块3：预留模块 -->
   <div class="sidebar-block future-module">
-    <h3>待开发模块</h3>
-    <div class="placeholder-content">
-    </div>
+      <h3>集合管理</h3>
+      <div class="scroll-area">
+        <ul class="article-list">
+          <li v-for="group in articleGroupList" class="article-item" @click="">
+            <span class="article-title">{{ group.groupName }}</span>
+            <span class="article-date">{{ group.createdAt }}</span>
+          </li>
+        </ul>
+      </div>
   </div>
 </template>
 
@@ -250,9 +272,6 @@ input:focus {
   height: 40vh;
   margin-top: 10px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #e4e3e3;
   /* 稍微深一点的浅蓝背景区分 */
 }
 
@@ -260,5 +279,65 @@ input:focus {
   text-align: center;
   color: #000000;
   font-weight: bold;
+}
+
+/* 集合管理 */
+.article-link-manage {
+  font-weight: 300;
+  font-size: 18px;
+  margin-bottom: 20px;
+  /* border-bottom: 2px solid #e4e7ed; */
+  max-height: 100px;
+}
+
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  /* 关键：内容过多显示下拉条 */
+  padding-right: 10px;
+  border-top: 2px solid #e4e7ed;
+}
+
+/* 自定义滚动条样式 (WebKit内核) */
+.scroll-area::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background-color: #b3e5fc;
+  border-radius: 6px;
+}
+
+.scroll-area::-webkit-scrollbar-track {
+  background-color: #f0f8ff;
+}
+
+.article-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.article-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 15px;
+  border-bottom: 1px solid #e1f5fe;
+  transition: background-color 0.2s;
+  color: #455a64;
+  transition: all 0.2s ease;
+}
+
+.article-item:hover {
+  margin-left: 5px;
+  color: #409eff;
+  cursor: pointer;
+  background-color: #f5f7fa;
+  border-color: #e4e7ed;
+}
+
+.article-date {
+  color: #90a4ae;
+  font-size: 0.85rem;
 }
 </style>

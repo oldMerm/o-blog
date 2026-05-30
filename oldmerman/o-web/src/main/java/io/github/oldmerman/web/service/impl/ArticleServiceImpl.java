@@ -18,10 +18,7 @@ import io.github.oldmerman.model.po.ArticleImage;
 import io.github.oldmerman.model.vo.ArticleInfoVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.converter.ArticleConverter;
-import io.github.oldmerman.web.mapper.ArticleHistoryMapper;
-import io.github.oldmerman.web.mapper.ArticleImageMapper;
-import io.github.oldmerman.web.mapper.ArticleMapper;
-import io.github.oldmerman.web.mapper.UserMapper;
+import io.github.oldmerman.web.mapper.*;
 import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.service.OssService;
 import io.github.oldmerman.web.service.UserService;
@@ -52,6 +49,8 @@ public class ArticleServiceImpl implements ArticleService {
     private final ArticleMapper articleMapper;
 
     private final ArticleImageMapper articleImageMapper;
+
+    private final ArticleGroupLinkMapper articleGroupLinkMapper;
 
     private final UserMapper userMapper;
 
@@ -234,6 +233,7 @@ public class ArticleServiceImpl implements ArticleService {
             ossService.deleteOne(article.getKey(), null);
         }
 
+        articleGroupLinkMapper.unlinkAll(articleId);
         historyMapper.deleteByArticleId(articleId);
         // 重构缓存
         RedisUtils.rebuildArticleRenderCache(article.getArticleType(), articleId, redisTemplate, objectMapper);

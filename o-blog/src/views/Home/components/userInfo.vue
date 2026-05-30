@@ -155,7 +155,8 @@ onMounted(async() => {
                 <div class="action-btn" @click="goToManagePage">内容创作</div>
                 <div class="action-btn" @click="showHistory = true">浏览历史</div>
                 <!-- 历史浏览组件 -->
-                <div v-if="showHistory" class="history-popover">
+                <Transition name="popover">
+                    <div v-if="showHistory" class="history-popover">
                     <div class="popover-title">
                         文章浏览历史
                         <span class="popover-close" @click="showHistory = false">&times;</span>
@@ -169,7 +170,8 @@ onMounted(async() => {
                             去浏览几篇文章吧！
                         </div>
                     </div>
-                </div>
+                    </div>
+                </Transition>
             </div>
 
         </div>
@@ -414,5 +416,20 @@ onMounted(async() => {
 .popover-close:hover {
     color: #409eff;
     /* 悬停变为浅蓝色 */
+}
+
+.popover-enter-active {
+    transition: all 0.3s ease-out;
+}
+.popover-leave-active {
+    transition: all 0.2s ease-in;
+}
+.popover-enter-from {
+    opacity: 0;
+    transform: translateX(30px);
+}
+.popover-leave-to {
+    opacity: 0;
+    transform: translateX(30px);
 }
 </style>
