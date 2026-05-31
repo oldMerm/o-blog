@@ -13,4 +13,7 @@ public interface ArticleGroupLinkMapper {
 
     @Delete("DELETE FROM o_blog.o_article_group_link WHERE article_id = #{articleId}")
     void unlinkAll(Long articleId);
+
+    @Delete("DELETE FROM o_blog.o_article_group_link WHERE group_id = #{groupId}")
+    void unlinkAllByGroupId(Long groupId);
 }

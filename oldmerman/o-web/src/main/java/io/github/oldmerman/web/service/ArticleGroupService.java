@@ -29,6 +29,13 @@ public interface ArticleGroupService {
     void insertArticleGroup(String groupName, String groupDesc);
 
     /**
+     * 删除文章分组
+     *
+     * @param groupId 分组id
+     */
+    void removeArticleGroup(Long groupId);
+
+    /**
      * 关联文章与文章分组
      *
      * @param articleId 文章id

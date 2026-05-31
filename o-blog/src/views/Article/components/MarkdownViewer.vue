@@ -35,9 +35,9 @@ const authorPlugin = (md: any, option: any) => {
     const h1CloseIndex = state.tokens.findIndex((t: any, i: any) => i > h1Index && t.type === 'heading_close');
     const authorInfoHtml = `
         <div class="author-info">
-          <span class="author-info-span">🖊︎${articleWriter}</span>
-          <span class="author-info-span">🕮约${len}字</span>
-          <span class="author-info-span">⏰︎${String(createdAt).substring(0, 10)}</span>
+          🖊︎<span class="author-info-span"> ${articleWriter}</span>
+          🕮<span class="author-info-span"> 约${len}字</span>
+          ⏰︎<span class="author-info-span"> ${String(createdAt).substring(0, 10)}</span>
         </div>
       `
 
@@ -282,7 +282,6 @@ onUnmounted(() => {
 
       <!-- 3. 中间内容区：VitePress 渲染引擎 -->
       <main class="vp-content">
-        <!-- vp-doc 是 VitePress 样式的核心入口类 -->
         <div class="vp-doc-container">
           <article class="vp-doc" v-html="renderedHtml"></article>
         </div>
@@ -471,7 +470,8 @@ onUnmounted(() => {
 }
 
 :deep(.author-info-span) {
-  margin-right: 10px;
+  margin-right: 12px;
+  font-style: italic;
 }
 
 :deep(.vp-doc) {

@@ -27,6 +27,12 @@ public class ArticleGroupController {
         return Result.success();
     }
 
+    @DeleteMapping("/{groupId}")
+    public Result<Void> removeArticleGroup(@PathVariable Long groupId){
+        service.removeArticleGroup(groupId);
+        return Result.success();
+    }
+
     @PostMapping("/link")
     public Result<Void> insertArticleInGroup(@RequestParam Long articleId,
                                              @RequestParam Long groupId){

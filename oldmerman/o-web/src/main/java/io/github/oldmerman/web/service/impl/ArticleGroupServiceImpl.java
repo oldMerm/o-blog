@@ -9,13 +9,16 @@ import io.github.oldmerman.web.mapper.ArticleGroupMapper;
 import io.github.oldmerman.web.service.ArticleGroupService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ArticleGroupServiceImpl implements ArticleGroupService {
 
     private final ArticleGroupMapper mapper;
@@ -36,8 +39,16 @@ public class ArticleGroupServiceImpl implements ArticleGroupService {
         ArticleGroup po = new ArticleGroup();
         po.setUserId(UserContext.getUserId());
         po.setGroupName(groupName);
-        po.setGroupName(groupDesc);
+        po.setGroupDesc(groupDesc);
         mapper.insert(po);
+    }
+
+    @Override
+    @Transactional
+    public void removeArticleGroup(Long groupId) {
+        log.info("删除集合: {}", groupId);
+        mapper.deleteById(groupId);
+        linkMapper.unlinkAllByGroupId(groupId);
     }
 
     @Override
