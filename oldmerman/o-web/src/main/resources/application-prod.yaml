@@ -1,5 +1,5 @@
 oldmerman:
-  host: https://oldmerman.cn,www.oldmerman.cn
+  host: https://oldmerman.cn,https://blog.oldmerman.cn
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     host: localhost

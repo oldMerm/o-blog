@@ -5,10 +5,13 @@ import { goToArticle, type Article } from '@/views/public/Article';
 import UploadModal from '../utils/ContentDialog.vue';
 import Toast from '@/utils/toast/Toast.vue';
 import ArticleDeleteModel from '../utils/ArticleDeleteModel.vue';
+import { useArticleStore } from '@/stores/article.ts';
+import { storeToRefs } from 'pinia';
 
 onMounted(() => {
   getFeedback();
-  getUserMdToRender();
+  // getUserMdToRender();
+  articleStore.fetchUserArticles();
 })
 
 const statusMap = new Map([
@@ -17,13 +20,15 @@ const statusMap = new Map([
   [3, "已发布"],
   [4, "已下架"]
 ]);
-const articleList = ref<Article[]>([]);
 
-/* 请求后端获取（该用户）md文件并渲染 */
-const getUserMdToRender = async () => {
-  const res = await httpInstance.get<any, Response>('/article/info');
-  articleList.value = res.data;
-}
+const articleStore = useArticleStore();
+const {articleList} = storeToRefs(articleStore);
+
+// const articleList = ref<Article[]>([]);
+// const getUserMdToRender = async () => {
+//   const res = await httpInstance.get<any, Response>('/article/info');
+//   articleList.value = res.data;
+// }
 
 interface FeedbackType {
   id: number;

@@ -1,6 +1,8 @@
 package io.github.oldmerman.web.service;
 
+import io.github.oldmerman.model.dto.ArticleGroupCreateDTO;
 import io.github.oldmerman.model.vo.ArticleGroupRenderVO;
+import io.github.oldmerman.model.vo.ArticleRenderVO;
 
 import java.util.List;
 
@@ -21,6 +23,14 @@ public interface ArticleGroupService {
     List<ArticleGroupRenderVO> getRenderGroup();
 
     /**
+     * 根据集合id获取文章信息
+     *
+     * @param groupId 集合id
+     * @return 文章渲染信息
+     */
+    List<ArticleRenderVO> getArticleByGroup(Long groupId);
+
+    /**
      * 新增文章分组
      *
      * @param groupName 分组名称
@@ -38,10 +48,9 @@ public interface ArticleGroupService {
     /**
      * 关联文章与文章分组
      *
-     * @param articleId 文章id
-     * @param groupId   分组id
+     * @param dto 封装对象
      */
-    void insertArticleInGroup(Long articleId, Long groupId);
+    void insertArticleInGroup(ArticleGroupCreateDTO dto);
 
     /**
      * 解除分组和文章的关联

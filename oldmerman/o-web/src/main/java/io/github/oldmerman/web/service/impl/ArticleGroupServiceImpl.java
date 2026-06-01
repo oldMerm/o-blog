@@ -2,17 +2,21 @@ package io.github.oldmerman.web.service.impl;
 
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
+import io.github.oldmerman.model.dto.ArticleGroupCreateDTO;
 import io.github.oldmerman.model.po.ArticleGroup;
 import io.github.oldmerman.model.vo.ArticleGroupRenderVO;
+import io.github.oldmerman.model.vo.ArticleRenderVO;
+import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.ArticleGroupLinkMapper;
 import io.github.oldmerman.web.mapper.ArticleGroupMapper;
+import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.service.ArticleGroupService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ObjectUtils;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -25,6 +29,10 @@ public class ArticleGroupServiceImpl implements ArticleGroupService {
 
     private final ArticleGroupLinkMapper linkMapper;
 
+    private final ArticleMapper articleMapper;
+
+    private final ArticleConverter articleConverter;
+
     @Override
     public List<ArticleGroupRenderVO> getRenderGroup() {
         Long userId = UserContext.getUserId();
@@ -32,8 +40,20 @@ public class ArticleGroupServiceImpl implements ArticleGroupService {
     }
 
     @Override
+    public List<ArticleRenderVO> getArticleByGroup(Long groupId) {
+        List<Long> articleIds = linkMapper.selectByGroupId(groupId);
+        if(CollectionUtils.isEmpty(articleIds)){
+            return null;
+        }
+        return articleMapper.selectByIds(articleIds)
+                .stream()
+                .map(articleConverter::poToRenderVO)
+                .toList();
+    }
+
+    @Override
     public void insertArticleGroup(String groupName, String groupDesc) {
-        if(groupName == null || groupDesc == null){
+        if (groupName == null || groupDesc == null) {
             throw new BusinessException(ResultCode.FAIL);
         }
         ArticleGroup po = new ArticleGroup();
@@ -52,25 +72,23 @@ public class ArticleGroupServiceImpl implements ArticleGroupService {
     }
 
     @Override
-    public void insertArticleInGroup(Long articleId, Long groupId) {
-        checkLinkParam(articleId, groupId);
-        ArticleGroup articleGroup = mapper.selectById(groupId);
-        if(!ObjectUtils.isEmpty(articleGroup)){
-            linkMapper.insert(articleId, groupId);
-        } else {
+    @Transactional
+    public void insertArticleInGroup(ArticleGroupCreateDTO dto) {
+        Long groupId = dto.getGroupId();
+        List<Long> articleIds = dto.getArticleIds();
+        if(groupId == null || CollectionUtils.isEmpty(articleIds)){
             throw new BusinessException(ResultCode.FAIL);
         }
+        log.info("批量插入文章数据至集合: {}", groupId);
+        linkMapper.insertBatch(groupId, articleIds);
     }
 
     @Override
     public void unlinkArticleInGroup(Long articleId, Long groupId) {
-        checkLinkParam(articleId, groupId);
+        if (articleId == null || groupId == null) {
+            throw new BusinessException(ResultCode.FAIL);
+        }
         linkMapper.unlink(articleId, groupId);
     }
 
-    private void checkLinkParam(Long articleId, Long groupId){
-        if(articleId == null || groupId == null){
-            throw new BusinessException(ResultCode.FAIL);
-        }
-    }
 }

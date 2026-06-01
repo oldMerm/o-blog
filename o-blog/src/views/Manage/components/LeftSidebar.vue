@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { onMounted, ref, reactive } from 'vue';
+import { onMounted, ref, reactive, computed } from 'vue';
 import { type Article } from '@/views/public/Article';
 import { httpInstance, type Response } from '@/utils/http';
 import UserInfo from '@/views/Home/components/userInfo.vue';
 import router from '@/router';
 import Dialog from '@/utils/dia/Dialog.vue';
 import Toast from '@/utils/toast/Toast.vue';
+import { useArticleStore } from '@/stores/article';
+import { storeToRefs } from 'pinia';
+
+onMounted(() => {
+  renderUsrInfo();
+  articleStore.fetchUserArticles();
+  getRenderArticleGroupList();
+});
 
 const usrInfo: UserManageInfo = reactive({
   username: '',
@@ -37,7 +45,7 @@ const renderUsrInfo = async () => {
     location.reload();
   }
 }
-onMounted(renderUsrInfo);
+
 
 // 弹框设置
 const toastRef = ref();
@@ -123,6 +131,7 @@ interface GroupRenderParam {
   createdAt: string,
   number: number,
 }
+
 /* 创建分组对象 */
 interface GroupCreateParam {
   groupName: string;
@@ -133,7 +142,6 @@ const getRenderArticleGroupList = async () => {
   const res = await httpInstance.get<any, Response>('/article/group');
   articleGroupList.value = res.data;
 }
-onMounted(getRenderArticleGroupList)
 
 // 添加集合弹框
 const showAddGroupModal = ref(false);
@@ -171,49 +179,111 @@ const handleSubmitAddGroup = async () => {
 const showManageGroupModal = ref(false);
 const selectedGroup = ref<GroupRenderParam | null>(null);
 
-// 模拟各集合内的文章
-const groupArticlesMock = ref<Record<number, Article[]>>({
-  1: [
-    { id: '101', articleName: '文章一', articleStatus: 2, like: 10, createdAt: '2026.1.1' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-    { id: '102', articleName: '文章二', articleStatus: 1, like: 5, createdAt: '2026.1.2' },
-  ],
-});
+const groupArticles = ref<Article[]>([]);
 
-const openManageGroup = (group: GroupRenderParam) => {
+const getGroupArticles = async (groupId: number) => {
+  try {
+    const res = await httpInstance.get<any, Response>(`/article/group/${groupId}`);
+    if (res.code === 200) {
+      groupArticles.value = res.data ?? [];
+    }
+  } catch (error) {
+    triggerToast(`获取文章列表失败: ${error}`, 'error');
+  }
+};
+
+const openManageGroup = async (group: GroupRenderParam) => {
   selectedGroup.value = group;
+  groupArticles.value = [];
+  await getGroupArticles(group.id);
   showManageGroupModal.value = true;
 };
 
 const closeManageGroup = () => {
   showManageGroupModal.value = false;
   selectedGroup.value = null;
+  groupArticles.value = [];
 };
 
-const addArticleToGroup = () => {
-  // TODO: 请求逻辑
+// 添加文章弹框
+const showAddArticlesModal = ref(false);
+const articleStore = useArticleStore();
+const { articleList } = storeToRefs(articleStore);
+const selectedArticlesToAdd = ref<Set<string>>(new Set());
+
+const availableArticles = computed(() => {
+  const groupIds = new Set(groupArticles.value.map(a => a.id));
+  return articleList.value.filter(a => !groupIds.has(a.id));
+});
+
+const openAddArticleDialog = () => {
+  selectedArticlesToAdd.value = new Set();
+  showAddArticlesModal.value = true;
 };
 
-const removeArticleFromGroup = (article: Article) => {
-  // TODO: 请求逻辑
+const closeAddArticleDialog = () => {
+  showAddArticlesModal.value = false;
+  selectedArticlesToAdd.value = new Set();
+};
+
+const toggleSelectArticle = (id: string) => {
+  const newSet = new Set(selectedArticlesToAdd.value);
+  if (newSet.has(id)) {
+    newSet.delete(id);
+  } else {
+    newSet.add(id);
+  }
+  selectedArticlesToAdd.value = newSet;
+};
+
+const handleConfirmAddArticles = async () => {
+  if (selectedArticlesToAdd.value.size === 0) {
+    triggerToast('请至少选择一篇文章', 'error');
+    return;
+  }
+  const articleIds = Array.from(selectedArticlesToAdd.value);
+  try {
+    const res = await httpInstance.post<any, Response>('/article/group/link', {
+      groupId: selectedGroup.value?.id,
+      articleIds
+    });
+    if (res.code === 200) {
+      triggerToast('文章添加成功', 'success');
+      getGroupArticles(selectedGroup.value!.id);
+      closeAddArticleDialog();
+    } else {
+      triggerToast(`添加失败: ${res.message}`, 'error');
+    }
+  } catch (error) {
+    triggerToast(`系统错误: ${error}`, 'error');
+  }
+};
+
+const removeArticleFromGroup = async (article: Article) => {
+  try {
+    if (selectedGroup.value === null) {
+      triggerToast("移除关联失败", 'error');
+      return;
+    }
+    const res = await httpInstance.delete<any, Response>(`/article/group/unlink/${selectedGroup.value.id}/${article.id}`);
+    if (res.code === 200) {
+      triggerToast('文章移除成功', 'success');
+      getGroupArticles(selectedGroup.value!.id);
+    } else {
+      triggerToast(`移除失败: ${res.message}`, 'error');
+    }
+  } catch (error) {
+    triggerToast(`系统错误: ${error}`, 'error');
+  }
 };
 
 const visible3 = ref(false);
 const handleDeleteGroup = async () => {
   // 这里执行你需要的逻辑
   const res = await httpInstance.delete<any, Response>(`/article/group/${selectedGroup.value?.id}`);
-  if(res.code !== 200) {
+  if (res.code !== 200) {
     triggerToast(`集合删除失败: ${res.message}`, 'error');
-  }else{
+  } else {
     triggerToast('集合删除成功', 'success');
     getRenderArticleGroupList();
   }
@@ -263,19 +333,46 @@ const handleDeleteGroup = async () => {
         <div class="modal-body manage-body">
           <div class="manage-left">
             <ul class="manage-article-list">
-              <li v-for="article in groupArticlesMock[selectedGroup?.id ?? -1] || []" :key="article.id"
-                class="manage-article-item">
+              <li v-for="article in groupArticles" :key="article.id" class="manage-article-item">
                 <span class="manage-article-name">{{ article.articleName }}</span>
                 <span class="manage-article-remove" @click="removeArticleFromGroup(article)">删除</span>
               </li>
-              <li v-if="!groupArticlesMock[selectedGroup?.id ?? -1]?.length" class="manage-empty">暂无文章</li>
+              <li v-if="!groupArticles.length" class="manage-empty">暂无文章</li>
             </ul>
           </div>
           <div class="manage-footer">
-            <button class="modal-btn manage-action" @click="addArticleToGroup">添加文章</button>
+            <button class="modal-btn manage-action" @click="openAddArticleDialog">添加文章</button>
             <button class="modal-btn manage-action" @click="visible3 = true">删除集合</button>
             <Dialog v-model="visible3" title="确认删除" content="集合删除后将无法恢复，是否继续？" @confirm="handleDeleteGroup" />
           </div>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- 添加文章弹框 -->
+  <Transition name="modal-fade">
+    <div v-if="showAddArticlesModal" class="modal-overlay" @click.self="closeAddArticleDialog">
+      <div class="modal-panel add-article-panel">
+        <div class="modal-title">
+          选择文章添加到「{{ selectedGroup?.groupName }}」
+          <span class="modal-close" @click="closeAddArticleDialog">&times;</span>
+        </div>
+        <div class="modal-body add-article-body">
+          <ul class="article-picker-list">
+            <li v-for="article in availableArticles" :key="article.id" class="article-picker-item"
+              :class="{ selected: selectedArticlesToAdd.has(article.id) }" @click="toggleSelectArticle(article.id)">
+              <span class="picker-checkbox">{{ selectedArticlesToAdd.has(article.id) ? '☑' : '☐' }}</span>
+              <span class="picker-name">{{ article.articleName }}</span>
+              <span class="picker-date">{{ article.createdAt.substring(0, 10) }}</span>
+            </li>
+            <li v-if="!availableArticles.length" class="manage-empty">暂无可用文章</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn cancel" @click="closeAddArticleDialog">取消</button>
+          <button class="modal-btn confirm" @click="handleConfirmAddArticles">确认添加 ({{ selectedArticlesToAdd.size
+            }})</button>
         </div>
       </div>
     </div>
@@ -515,7 +612,7 @@ input:focus {
 }
 
 .manage-panel {
-  width: 480px;
+  width: 420px;
 }
 
 .modal-title {
@@ -647,7 +744,7 @@ input:focus {
 
 .manage-left {
   flex: 1;
-  max-height: 260px;
+  max-height: 400px;
   overflow-y: auto;
   padding-right: 8px;
 }
@@ -675,9 +772,9 @@ input:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #f0f0f0;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #455a64;
 }
 
@@ -750,5 +847,76 @@ input:focus {
 
 .modal-fade-leave-to {
   opacity: 0;
+}
+
+.add-article-panel {
+  width: 520px;
+}
+
+.add-article-body {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 8px 16px;
+}
+
+.add-article-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.add-article-body::-webkit-scrollbar-thumb {
+  background-color: #b3e5fc;
+  border-radius: 6px;
+}
+
+.add-article-body::-webkit-scrollbar-track {
+  background-color: #f0f8ff;
+}
+
+.article-picker-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.article-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.article-picker-item:hover {
+  background-color: #ecf5ff;
+}
+
+.article-picker-item.selected {
+  background-color: #e6f7ff;
+}
+
+.picker-checkbox {
+  font-size: 1.2rem;
+  color: #409eff;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.picker-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #303133;
+  font-size: 0.95rem;
+}
+
+.picker-date {
+  color: #90a4ae;
+  font-size: 0.8rem;
+  flex-shrink: 0;
 }
 </style>
