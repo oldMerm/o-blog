@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import MarkdownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
 import container from 'markdown-it-container';
@@ -22,25 +22,24 @@ const renderedHtml = ref('');
 const allHeadings = ref<Heading[]>([]);
 const showAboutPopup = ref(false);
 
-// Mermaid配置
+// Mermaid 初始化
 mermaid.initialize({ startOnLoad: false, theme: 'default' });
-// 用户信息嵌入组件
-const authorPlugin = (md: any, option: any) => {
-  const { articleWriter, createdAt, len } = option;
+// 作者信息数据（在渲染前更新）
+const authorMeta = { writer: '', createdAt: '', len: 0 };
+
+// 作者信息注入插件（只注册一次，数据从 authorMeta 读取）
+const authorPlugin = (md: any) => {
   md.core.ruler.push('inject_author', (state: any) => {
     const h1Index = state.tokens.findIndex((t: any) => t.type === 'heading_open' && t.tag === 'h1');
-
     if (h1Index === -1) return
-
     const h1CloseIndex = state.tokens.findIndex((t: any, i: any) => i > h1Index && t.type === 'heading_close');
     const authorInfoHtml = `
-        <div class="author-info">
-          🖊︎<span class="author-info-span"> ${articleWriter}</span>
-          🕮<span class="author-info-span"> 约${len}字</span>
-          ⏰︎<span class="author-info-span"> ${String(createdAt).substring(0, 10)}</span>
-        </div>
-      `
-
+      <div class="author-info">
+        🖊︎<span class="author-info-span"> ${authorMeta.writer}</span>
+        🕮<span class="author-info-span"> 约${authorMeta.len}字</span>
+        ⏰︎<span class="author-info-span"> ${authorMeta.createdAt.substring(0, 10)}</span>
+      </div>
+    `
     state.tokens.splice(h1CloseIndex + 1, 0, {
       type: 'html_block',
       content: authorInfoHtml,
@@ -70,7 +69,8 @@ const md = new MarkdownIt({
   // 模拟 VitePress 的 ::: tip/warning 容器
   .use(container as any, 'tip')
   .use(container as any, 'warning')
-  .use(container as any, 'danger');
+  .use(container as any, 'danger')
+  .use(authorPlugin);
 // --- Mermaid 渲染拦截 ---
 const defaultRender = md.renderer.rules.fence;
 md.renderer.rules.fence = (tokens, idx, options, env, self) => {
@@ -84,16 +84,14 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
 // --- Mermaid 渲染触发函数 ---
 const triggerMermaid = async () => {
   await nextTick();
-  // 查找页面中所有的 .mermaid 元素并渲染
+  // 渲染所有 .mermaid 元素
   const elements = document.querySelectorAll('.mermaid');
   if (elements.length > 0) {
     await mermaid.run({ nodes: elements as any });
   }
 };
 
-/* 
-实体相关信息
-*/
+// 文章信息
 interface ArticleInfo {
   url: string;
   articleWriter: string;
@@ -112,19 +110,32 @@ const articleInfo = ref<ArticleInfo>(
 
 const articleLength = ref<number>(0);
 
-interface ArticleLink {
-
+// 左侧栏：分组文章
+interface GroupInfo {
+  id: number;
+  groupName: string;
+  number: number;
+  expanded: boolean;
+  articles?: GroupArticle[];
 }
-const articleLinkList = ref<ArticleLink[]>([]);
+
+interface GroupArticle {
+  id: string;
+  articleName: string;
+}
+
+const articleGroups = ref<GroupInfo[]>([]);
+// 路由
 const route = useRoute();
 const isPublic = route.query.isPublic;
 
-onMounted(async () => {
-  const id = route.params.id;
-  if (id === null) {
-    alert('未传入数据，文章为空，将渲染默认文本');
+// 文章内容加载
+const loadArticle = async (id: string | string[] | undefined) => {
+  if (!id) {
     fetchDocument(1);
-  } else if (isPublic === 'private') {
+    return;
+  }
+  if (isPublic === 'private') {
     try {
       const res = await httpInstance.get<any, Response>(`/article/private/${id}`);
       if (res.code !== 200) {
@@ -151,19 +162,50 @@ onMounted(async () => {
       if (articleInfo.value && articleInfo.value.url !== '') {
         const text: string = await httpInstance.get(articleInfo.value.url);
         articleLength.value = text.length;
-        md.use(authorPlugin, { articleWriter: articleInfo.value.articleWriter, createdAt: articleInfo.value.createdAt, len: articleLength.value });
-        // 渲染文档
+        authorMeta.writer = articleInfo.value.articleWriter;
+        authorMeta.createdAt = articleInfo.value.createdAt;
+        authorMeta.len = articleLength.value;
         renderedHtml.value = md.render(text);
         extractHeadings(text);
         triggerMermaid();
       }
-
     } catch (error) {
       alert(error);
     }
   }
+};
 
-})
+// 分组加载
+const loadGroups = async () => {
+  const articleId = route.params.id;
+  if (articleId) {
+    try {
+      const res = await httpInstance.get<any, Response>(`/article/group/public/group_info/${articleId}`);
+      if (res.code === 200 && res.data) {
+        articleGroups.value = res.data.map((g: any) => ({ ...g, expanded: false }));
+      }
+    } catch (e) {
+      console.error('Failed to load groups', e);
+    }
+  }
+};
+
+onMounted(async () => {
+  await loadArticle(route.params.id);
+  await loadGroups();
+});
+
+watch(() => route.params.id, async (newId) => {
+  if (!newId) return;
+  articleGroups.value = [];
+  await loadArticle(newId);
+  await loadGroups();
+});
+
+// 导航到分组文章
+const goAndReRenderArticle = (id: string) => {
+  router.push({ name: 'markdown', params: { id }, query: { isPublic: 'public' } });
+};
 
 // --- 逻辑：获取数据并解析 ---
 const fetchDocument = async (id: number) => {
@@ -200,7 +242,7 @@ const extractHeadings = (content: string) => {
   // 匹配 ```...``` 之间的所有内容，替换为空格
   const cleanContent = content.replace(/```[\s\S]*?```/g, '');
 
-  // 2. 使用增强后的正则：确保标题必须在行首，且前面没有被代码块干扰
+  // 匹配行首 # 标题
   const headingRegex = /^(#{1,6})\s+(.*)$/gm;
   const list: Heading[] = [];
   let match: any;
@@ -216,13 +258,12 @@ const extractHeadings = (content: string) => {
   allHeadings.value = list;
 };
 
-// --- 计算属性：过滤出末级标题 ---
-// 简单高效：直接过滤出所有 H2 标题作为“本页重点”
+// 右侧栏：过滤出 H2 作为"本页重点"
 const leafHeadings = computed(() => {
   return allHeadings.value.filter(h => h.level === 2);
 });
 
-// 丝滑滚动
+// 平滑滚动到锚点
 const scrollTo = (id: string) => {
   const el = document.getElementById(id);
   if (el) {
@@ -231,10 +272,33 @@ const scrollTo = (id: string) => {
   }
 };
 
+// 左侧栏：展开/收起分组，首次展开时懒加载文章列表
+const toggleGroup = async (groupId: number) => {
+  const group = articleGroups.value.find(g => g.id === groupId);
+  if (!group) return;
+  group.expanded = !group.expanded;
+  if (group.expanded && !group.articles) {
+    try {
+      const res = await httpInstance.get<any, Response>(`/article/group/public/${groupId}`);
+      if (res.code === 200) {
+        const currentId = route.params.id;
+        group.articles = (res.data || []).filter(
+          (a: any) => String(a.id) !== String(currentId)
+        );
+      }
+    } catch (e) {
+      console.error('Failed to load group articles', e);
+    }
+  }
+};
+
+
+// 跳转首页
 const goToHome = () => {
   router.push({ name: 'home' });
 }
 
+// 点击外部关闭弹出层
 const handleClickOutside = (e: Event) => {
   if (showAboutPopup.value) {
     showAboutPopup.value = false;
@@ -269,14 +333,28 @@ onUnmounted(() => {
     </nav>
 
     <div class="vp-body">
-      <!-- 2. 左侧栏：完整目录树 -->
+      <!-- 2. 左侧栏：关联分组文章 -->
       <aside class="vp-sidebar-left">
         <div class="sidebar-content">
           <div class="sidebar-title">同分类文章</div>
-          <ul class="toc-tree">
-            <li v-for="item in articleLinkList" class="">
+          <ul v-if="articleGroups.length > 0" class="toc-tree">
+            <li v-for="group in articleGroups" :key="group.id" class="group-item">
+              <div class="group-header" @click="toggleGroup(group.id)">
+                <span class="group-name">{{ group.groupName }}</span>
+                <span class="group-meta">
+                  <span class="group-arrow" :class="{ expanded: group.expanded }">▸</span>
+                </span>
+              </div>
+              <transition name="expand">
+                <ul v-if="group.expanded" class="group-articles">
+                  <li v-for="article in group.articles" :key="article.id" class="article-item">
+                    <div class="article-link" @click="goAndReRenderArticle(article.id)">{{ article.articleName }}</div>
+                  </li>
+                </ul>
+              </transition>
             </li>
           </ul>
+          <div v-else class="sidebar-empty">暂无关联分组</div>
         </div>
       </aside>
 
@@ -395,12 +473,103 @@ onUnmounted(() => {
   font-weight: 700;
   color: #94a3b8;
   text-transform: uppercase;
-  margin-bottom: 16px;
+  margin: 12px 0;
 }
 
 .toc-tree {
   list-style: none;
   padding: 0;
+}
+
+.group-item {
+  margin-bottom: 2px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.group-header:hover {
+  background: #eef2f6;
+}
+
+.group-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.group-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.group-arrow {
+  font-size: 15px;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+  display: inline-block;
+  line-height: 1;
+}
+
+.group-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.group-articles {
+  list-style: none;
+  padding: 2px 0 4px 0;
+  margin: 0;
+}
+
+.article-item {
+  padding: 0;
+}
+
+.article-link {
+  display: block;
+  padding: 6px 10px 6px 24px;
+  font-size: 14px;
+  color: #64748b;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  cursor: pointer;
+}
+
+.article-link:hover {
+  color: #3b82f6;
+  background: #eef2f6;
+}
+
+.sidebar-empty {
+  font-size: 13px;
+  color: #94a3b8;
+  padding: 16px 10px;
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+}
+
+.expand-enter-from {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.expand-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .depth-2 {

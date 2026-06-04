@@ -183,7 +183,7 @@ const groupArticles = ref<Article[]>([]);
 
 const getGroupArticles = async (groupId: number) => {
   try {
-    const res = await httpInstance.get<any, Response>(`/article/group/${groupId}`);
+    const res = await httpInstance.get<any, Response>(`/article/group/public/${groupId}`);
     if (res.code === 200) {
       groupArticles.value = res.data ?? [];
     }

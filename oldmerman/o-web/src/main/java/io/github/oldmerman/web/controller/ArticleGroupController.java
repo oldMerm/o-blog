@@ -22,9 +22,14 @@ public class ArticleGroupController {
         return Result.success(service.getRenderGroup());
     }
 
-    @GetMapping("/{groupId}")
+    @GetMapping("/public/{groupId}")
     public Result<List<ArticleRenderVO>> getArticleByGroup(@PathVariable Long groupId){
         return Result.success(service.getArticleByGroup(groupId));
+    }
+
+    @GetMapping("/public/group_info/{articleId}")
+    public Result<List<ArticleGroupRenderVO>> getGroupByArticle(@PathVariable Long articleId){
+        return Result.success(service.getGroupArticle(articleId));
     }
 
     @PostMapping

@@ -21,5 +21,23 @@
         ORDER BY created_at
         DESC LIMIT 1
     </select>
+
+    <select id="page" resultType="io.github.oldmerman.model.vo.ArticlePageDetailVO">
+        SELECT
+            oa.id,
+            oa.article_name,
+            oa.article_decr,
+            oag.group_name,
+            oa.article_type
+        FROM o_blog.o_article oa
+                 LEFT JOIN o_blog.o_article_group_link oagl
+                           ON oa.id = oagl.article_id
+                 LEFT JOIN o_blog.o_article_group oag
+                           ON oagl.group_id = oag.id
+        WHERE oa.article_status = 3
+        AND oa.article_type = #{articleType}
+        ORDER BY oa.id
+        LIMIT #{offset}, #{size};
+    </select>
 </mapper>
 

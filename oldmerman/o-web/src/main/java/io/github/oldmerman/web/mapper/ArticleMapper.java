@@ -3,6 +3,7 @@ package io.github.oldmerman.web.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import io.github.oldmerman.model.dto.ArticlePriDTO;
 import io.github.oldmerman.model.po.Article;
+import io.github.oldmerman.model.vo.ArticlePageDetailVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -33,4 +34,10 @@ public interface ArticleMapper extends BaseMapper<Article> {
 
     @Select("SELECT EXISTS(SELECT 1 FROM o_blog.o_article WHERE article_name = #{articleName})")
     int exist(String articleName);
+
+    @Select("SELECT COUNT(*) FROM o_blog.o_article WHERE article_type = #{articleType} AND article_status = 3")
+    Long selectTypeCount(Byte articleType);
+
+    List<ArticlePageDetailVO> page(Long offset, Long size, Byte articleType);
+
 }

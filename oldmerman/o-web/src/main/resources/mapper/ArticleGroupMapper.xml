@@ -4,7 +4,8 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.github.oldmerman.web.mapper.ArticleGroupMapper">
 
-    <select id="selectGroupRenderList" resultType="io.github.oldmerman.model.vo.ArticleGroupRenderVO">
+    <select id="selectGroupRenderList"
+            resultType="io.github.oldmerman.model.vo.ArticleGroupRenderVO">
         SELECT
             oa.id,
             oa.group_name,
@@ -16,6 +17,20 @@
         WHERE oa.user_id = #{userId}
         GROUP BY
             oa.id
+    </select>
+    <select id="selectGroupRenderListByArticleId"
+            resultType="io.github.oldmerman.model.vo.ArticleGroupRenderVO">
+        SELECT
+            oag.id,
+            oag.group_name,
+            oag.created_at,
+            COUNT(ogl.article_id) AS number
+        FROM o_blog.o_article_group_link ogl
+                 LEFT JOIN o_blog.o_article_group oag
+                           ON ogl.group_id = oag.id
+        WHERE ogl.article_id = #{articleId}
+        GROUP BY oag.id
+
     </select>
 </mapper>
 

@@ -31,6 +31,14 @@ public interface ArticleGroupService {
     List<ArticleRenderVO> getArticleByGroup(Long groupId);
 
     /**
+     * 根据文章id获取其所在的分组集合
+     *
+     * @param articleId 文章id
+     * @return 已关联该文章分组的集合
+     */
+    List<ArticleGroupRenderVO> getGroupArticle(Long articleId);
+
+    /**
      * 新增文章分组
      *
      * @param groupName 分组名称

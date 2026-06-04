@@ -1,9 +1,11 @@
 package io.github.oldmerman.web.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
 import io.github.oldmerman.model.vo.ArticleInfoVO;
+import io.github.oldmerman.model.vo.ArticlePageDetailVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.util.UserContext;
@@ -25,6 +27,13 @@ public class ArticleController {
     @GetMapping("/info")
     public Result<List<ArticleRenderVO>> info(){
         return Result.success(articleService.info());
+    }
+
+    @GetMapping("/public/page")
+    public Result<PageResult<ArticlePageDetailVO>> page(@RequestParam(name = "current", defaultValue = "1") Long current,
+                                                        @RequestParam(name = "size", defaultValue = "6") Long size,
+                                                        @RequestParam(name = "type", defaultValue = "1") Byte articleType){
+        return Result.success(articleService.page(current, size, articleType));
     }
 
     @GetMapping("/public/info")

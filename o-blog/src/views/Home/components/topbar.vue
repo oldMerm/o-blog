@@ -35,7 +35,6 @@
 .lt {
     width: 55%;
     font-size: larger;
-    cursor: pointer
 }
 
 .rb {

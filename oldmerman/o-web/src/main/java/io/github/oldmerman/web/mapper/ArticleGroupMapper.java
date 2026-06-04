@@ -9,4 +9,6 @@ import java.util.List;
 public interface ArticleGroupMapper extends BaseMapper<ArticleGroup> {
 
     List<ArticleGroupRenderVO> selectGroupRenderList(Long userId);
+
+    List<ArticleGroupRenderVO> selectGroupRenderListByArticleId(Long articleId);
 }

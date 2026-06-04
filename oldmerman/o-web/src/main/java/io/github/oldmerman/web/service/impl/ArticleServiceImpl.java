@@ -1,6 +1,7 @@
 package io.github.oldmerman.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +9,7 @@ import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.exception.BusinessException;
+import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
@@ -16,6 +18,8 @@ import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.po.ArticleHistory;
 import io.github.oldmerman.model.po.ArticleImage;
 import io.github.oldmerman.model.vo.ArticleInfoVO;
+import io.github.oldmerman.model.vo.ArticlePageDetailVO;
+import io.github.oldmerman.model.vo.ArticlePageVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.*;
@@ -81,6 +85,19 @@ public class ArticleServiceImpl implements ArticleService {
                     vo.setCreatedAt(item.getCreatedAt().format(formatter));
                     return vo;
                 }).toList();
+    }
+
+    @Override
+    public PageResult<ArticlePageDetailVO> page(Long current, Long size, Byte articleType) {
+        Long offset = (current - 1) * size;
+        List<ArticlePageDetailVO> articlePages = articleMapper.page(offset, size, articleType);
+        Long total = articleMapper.selectTypeCount(articleType);
+        return PageResult.of(
+                current,
+                size,
+                total,
+                articlePages
+        );
     }
 
     @Override

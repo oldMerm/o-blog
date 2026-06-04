@@ -1,8 +1,10 @@
 package io.github.oldmerman.web.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
 import io.github.oldmerman.model.vo.ArticleInfoVO;
+import io.github.oldmerman.model.vo.ArticlePageDetailVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,6 +23,15 @@ public interface ArticleService {
      * @return 封装List
      */
     List<ArticleRenderVO> info();
+
+    /**
+     * 分页查询文章
+     *
+     * @param current 起始页条目
+     * @param size 每页条数
+     * @return 分页后的对象
+     */
+    PageResult<ArticlePageDetailVO> page(Long current, Long size, Byte articleType);
 
     /**
      * 根据文章类型获取需要渲染的文章
@@ -71,4 +82,6 @@ public interface ArticleService {
      * @param userId      用户唯一id
      */
     void removeArticle(Long articleId, Long userId) throws JsonProcessingException;
+
+
 }

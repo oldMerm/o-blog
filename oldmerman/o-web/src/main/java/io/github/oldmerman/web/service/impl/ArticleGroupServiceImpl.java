@@ -1,5 +1,7 @@
 package io.github.oldmerman.web.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.model.dto.ArticleGroupCreateDTO;
@@ -52,9 +54,17 @@ public class ArticleGroupServiceImpl implements ArticleGroupService {
     }
 
     @Override
+    public List<ArticleGroupRenderVO> getGroupArticle(Long articleId) {
+        if(articleId == null){
+            throw new BusinessException(BusErrorCode.ARTICLE_OPRE_FAILED);
+        }
+        return mapper.selectGroupRenderListByArticleId(articleId);
+    }
+
+    @Override
     public void insertArticleGroup(String groupName, String groupDesc) {
         if (groupName == null || groupDesc == null) {
-            throw new BusinessException(ResultCode.FAIL);
+            throw new BusinessException(BusErrorCode.ARTICLE_OPRE_FAILED);
         }
         ArticleGroup po = new ArticleGroup();
         po.setUserId(UserContext.getUserId());
@@ -77,7 +87,7 @@ public class ArticleGroupServiceImpl implements ArticleGroupService {
         Long groupId = dto.getGroupId();
         List<Long> articleIds = dto.getArticleIds();
         if(groupId == null || CollectionUtils.isEmpty(articleIds)){
-            throw new BusinessException(ResultCode.FAIL);
+            throw new BusinessException(BusErrorCode.ARTICLE_OPRE_FAILED);
         }
         log.info("批量插入文章数据至集合: {}", groupId);
         linkMapper.insertBatch(groupId, articleIds);
@@ -86,7 +96,7 @@ public class ArticleGroupServiceImpl implements ArticleGroupService {
     @Override
     public void unlinkArticleInGroup(Long articleId, Long groupId) {
         if (articleId == null || groupId == null) {
-            throw new BusinessException(ResultCode.FAIL);
+            throw new BusinessException(BusErrorCode.ARTICLE_OPRE_FAILED);
         }
         linkMapper.unlink(articleId, groupId);
     }
