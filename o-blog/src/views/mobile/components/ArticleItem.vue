@@ -1,13 +1,20 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import type { ArticlePageDetailVO } from './types'
 
-defineProps<{
+const props = defineProps<{
   article: ArticlePageDetailVO
 }>()
+
+const router = useRouter()
+
+const goToArticle = () => {
+  router.push({ name: 'mobile_markdown', params: { id: props.article.id } })
+}
 </script>
 
 <template>
-  <article class="article-item">
+  <article class="article-item" @click="goToArticle">
     <h3 class="title">{{ article.articleName }}</h3>
     <p class="desc">{{ article.articleDecr }}</p>
     <span v-if="article.groupName" class="group-tag">{{ article.groupName }}</span>
