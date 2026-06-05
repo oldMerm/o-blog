@@ -40,7 +40,7 @@ const githubUrl = 'https://github.com/oldMerm'
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  background: rgb(235, 235, 235);
+  background: rgba(235, 235, 235, 0.75);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 

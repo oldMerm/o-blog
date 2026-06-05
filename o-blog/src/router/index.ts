@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home/index.vue'
 import Article from '@/views/Article/components/MarkdownViewer.vue'
+import MobileArticle from '@/views/Article/components/MobileMarkdownViewer.vue'
 import Login from '@/views/Login/index.vue'
 import Manage from '@/views/Manage/index.vue'
 import MobileHome  from '@/views/mobile/index.vue'
@@ -67,6 +68,11 @@ const router = createRouter({
       name: 'moblie_home',
       path: '/mobile-home',
       component: MobileHome
+    },
+    {
+      name: 'mobile_markdown',
+      path: '/mobile/markdown/:id',
+      component: MobileArticle
     }
     // {
     //   name: 'text',
