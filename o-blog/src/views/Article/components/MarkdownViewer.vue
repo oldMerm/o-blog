@@ -267,9 +267,36 @@ const leafHeadings = computed(() => {
 const scrollTo = (id: string) => {
   const el = document.getElementById(id);
   if (el) {
-    const y = el.getBoundingClientRect().top + window.pageYOffset - 80; // 80 是导航栏高度 + 一点余量
+    const y = el.getBoundingClientRect().top + window.pageYOffset - 80;
     window.scrollTo({ top: y, behavior: 'smooth' });
   }
+};
+
+const scrollProgress = ref(0);
+const isNearBottom = ref(false);
+
+const R = 18;
+const CIRCUMFERENCE = 2 * Math.PI * R;
+
+const dashOffset = computed(() => {
+  return CIRCUMFERENCE * (1 - scrollProgress.value);
+});
+
+const handleScroll = () => {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  if (docHeight <= 0) {
+    scrollProgress.value = 0;
+    isNearBottom.value = false;
+    return;
+  }
+  const progress = Math.min(Math.max(scrollTop / docHeight, 0), 1);
+  scrollProgress.value = progress;
+  isNearBottom.value = progress > 0.92;
+};
+
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 // 左侧栏：展开/收起分组，首次展开时懒加载文章列表
@@ -307,10 +334,13 @@ const handleClickOutside = (e: Event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  handleScroll();
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('scroll', handleScroll);
 });
 
 </script>
@@ -377,6 +407,25 @@ onUnmounted(() => {
             </li>
           </ul>
         </div>
+        <div
+          class="scroll-top-btn"
+          :class="{ 'near-bottom': isNearBottom }"
+          @click="scrollToTop"
+          role="button"
+          tabindex="0"
+          aria-label="回到顶部"
+        >
+          <svg viewBox="0 0 44 44" class="progress-ring">
+            <circle class="ring-bg" cx="22" cy="22" :r="R" />
+            <circle
+              class="ring-fg"
+              cx="22" cy="22" :r="R"
+              :stroke-dasharray="CIRCUMFERENCE"
+              :stroke-dashoffset="dashOffset"
+            />
+          </svg>
+          <span class="arrow-up">↑</span>
+        </div>
       </aside>
     </div>
   </div>
@@ -394,9 +443,6 @@ onUnmounted(() => {
 }
 
 .vp-wrapper {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
   background-color: #fff;
   color: #3c3c43;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
@@ -408,8 +454,10 @@ onUnmounted(() => {
   border-bottom: 1px solid #f1f1f1;
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(8px);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
 }
 
@@ -427,8 +475,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 500;
   color: #3b82f6;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
 .nav-links {
@@ -449,11 +499,9 @@ onUnmounted(() => {
 
 /* 🗂 布局 */
 .vp-body {
-  display: flex;
-  flex: 1;
   max-width: 1440px;
   margin: 0 auto;
-  width: 100%;
+  padding-top: 64px;
 }
 
 /* 📂 左侧栏 */
@@ -462,9 +510,10 @@ onUnmounted(() => {
   border-right: 1px solid #f1f1f1;
   padding: 16px 12px;
   background: #fcfdfe;
-  height: calc(100vh - 64px);
-  position: sticky;
+  position: fixed;
   top: 64px;
+  left: max(calc((100vw - 1440px) / 2), 0px);
+  height: calc(100vh - 64px);
   overflow-y: auto;
 }
 
@@ -583,9 +632,9 @@ onUnmounted(() => {
 
 /* 📝 内容区 */
 .vp-content {
-  flex: 1;
   padding: 48px 64px;
-  min-width: 0;
+  padding-left: calc(64px + 280px);
+  padding-right: calc(64px + 240px);
 }
 
 .vp-doc-container {
@@ -596,10 +645,18 @@ onUnmounted(() => {
 /* 📍 右侧栏 */
 .vp-sidebar-right {
   width: 240px;
-  padding: 32px 24px;
-  height: calc(100vh - 64px);
-  position: sticky;
+  padding: 32px 24px 24px;
+  background: #fcfdfe;
+  position: fixed;
   top: 64px;
+  right: max(calc((100vw - 1440px) / 2), 0px);
+  height: calc(100vh - 64px);
+}
+
+.aside-content {
+  height: 100%;
+  overflow-y: auto;
+  padding-bottom: 72px;
 }
 
 .aside-title {
@@ -627,6 +684,58 @@ onUnmounted(() => {
 
 .leaf-list a:hover {
   color: #3b82f6;
+}
+
+/* 回到顶部按钮 */
+.scroll-top-btn {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+.scroll-top-btn.near-bottom {
+  opacity: 0.3;
+}
+
+.scroll-top-btn:active {
+  transform: scale(0.92);
+}
+
+.progress-ring {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: #e2e8f0;
+  stroke-width: 3.5;
+}
+
+.ring-fg {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.08s linear;
+}
+
+.arrow-up {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  font-weight: 700;
+  color: #3b82f6;
+  line-height: 1;
+  pointer-events: none;
 }
 
 /* author介绍 */

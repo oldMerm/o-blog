@@ -102,8 +102,11 @@ public class LoginServiceImpl implements LoginService {
         String token = sign.substring(WebEnum.AUTH_PREFIX.getValue().length());
         Claims claims = jwtUtil.parseToken(token);
         String refreshSign = claims.getSubject();
-        redisTemplate.opsForValue().set(RedisPrefix.BLACK_TOKEN + token, "1",
-                claims.getExpiration().getTime(), TimeUnit.MILLISECONDS);
+        long expireTime;
+        if ((expireTime = claims.getExpiration().getTime() - System.currentTimeMillis()) > 0) {
+            redisTemplate.opsForValue().set(RedisPrefix.BLACK_TOKEN + token, "1",
+                    expireTime, TimeUnit.MILLISECONDS);
+        }
         redisTemplate.delete(RedisPrefix.REFRESH_TOKEN + refreshSign);
     }
 
