@@ -16,6 +16,12 @@ public interface ArticleHistoryService {
      *
      * @return 浏览历史
      */
-    List<ArticleHistoryVO> getArticleHistory();
+    List<ArticleHistoryVO> getArticleHistory(Long userId);
 
+    /**
+     * 删除文章浏览历史
+     *
+     * @param userId 用户唯一标识
+     */
+    void removeArticleHistory(Long userId);
 }

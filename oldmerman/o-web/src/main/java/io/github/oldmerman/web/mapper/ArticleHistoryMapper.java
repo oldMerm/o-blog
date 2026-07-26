@@ -18,4 +18,7 @@ public interface ArticleHistoryMapper extends BaseMapper<ArticleHistory> {
 
     @Delete("DELETE FROM o_blog.o_article_history WHERE article_id = #{articleId}")
     void deleteByArticleId(Long articleId);
+
+    @Delete("DELETE FROM o_blog.o_article_history WHERE user_id = #{userId}")
+    void deleteArticleHistory(Long userId);
 }
