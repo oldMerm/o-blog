@@ -9,6 +9,8 @@ import router from '@/router/index.ts'
 import { useRoute } from 'vue-router'
 import { httpInstance, type Response } from '@/utils/http';
 import mermaid from 'mermaid';
+import { useAiSummary } from '@/composables/useAiSummary';
+import Toast from '@/utils/toast/Toast.vue';
 
 interface Heading {
   id: string;
@@ -32,11 +34,13 @@ const authorPlugin = (md: any) => {
     if (h1Index === -1) return
     const h1CloseIndex = state.tokens.findIndex((t: any, i: any) => i > h1Index && t.type === 'heading_close');
     const authorInfoHtml = `
-      <div class="author-info">
+      <div class="author-info" data-author-info>
         <span class="author-info-span"> ${authorMeta.writer}</span>
         <span class="author-info-span"> 约${authorMeta.len}字</span>
         <span class="author-info-span"> ${authorMeta.createdAt.substring(0, 10)}</span>
+        <button type="button" class="ai-summary-trigger">生成摘要</button>
       </div>
+      <div class="ai-summary-slot"></div>
     `
     state.tokens.splice(h1CloseIndex + 1, 0, {
       type: 'html_block',
@@ -101,6 +105,7 @@ const articleInfo = ref<ArticleInfo>({
 });
 
 const articleLength = ref(0);
+const rawMarkdown = ref('');
 const route = useRoute();
 
 const loadArticle = async (id: string | string[] | undefined) => {
@@ -115,6 +120,7 @@ const loadArticle = async (id: string | string[] | undefined) => {
     articleInfo.value = res.data;
     if (articleInfo.value && articleInfo.value.url !== '') {
       const text: string = await httpInstance.get(articleInfo.value.url);
+      rawMarkdown.value = text;
       articleLength.value = text.length;
       authorMeta.writer = articleInfo.value.articleWriter;
       authorMeta.createdAt = articleInfo.value.createdAt;
@@ -174,8 +180,65 @@ const goToHome = () => {
   router.push({ name: 'moblie_home' });
 };
 
+// --- AI 智能摘要 ---
+const {
+  text: summaryText,
+  generating: summaryGenerating,
+  finished: summaryFinished,
+  error: summaryError,
+  generate: generateSummaryStream,
+  stop: stopSummaryStream,
+  reset: resetSummary,
+} = useAiSummary();
+const summarySlot = ref<HTMLElement | null>(null);
+const summaryOpen = ref(false);
+const toastRef = ref<InstanceType<typeof Toast> | null>(null);
+const toastMsg = ref('');
+const toastType = ref<'success' | 'error'>('success');
+
+const showToast = (type: 'success' | 'error', message: string) => {
+  toastType.value = type;
+  toastMsg.value = message;
+  toastRef.value?.show();
+};
+
+const syncSummarySlot = async () => {
+  await nextTick();
+  summarySlot.value = document.querySelector('.ai-summary-slot') as HTMLElement | null;
+};
+
+const openSummary = async () => {
+  if (summaryOpen.value && summaryGenerating.value) return;
+  summaryOpen.value = true;
+  if (!rawMarkdown.value) {
+    showToast('error', '文章内容为空，无法生成摘要');
+    return;
+  }
+  await generateSummaryStream({
+    articleId: String(route.params.id ?? ''),
+    articleName: (articleInfo.value as any)?.articleName ?? '',
+    content: rawMarkdown.value,
+  });
+  if (summaryError.value) {
+    showToast('error', summaryError.value);
+  }
+};
+
+const closeSummary = () => {
+  summaryOpen.value = false;
+  stopSummaryStream();
+};
+
+const onDocClick = (e: Event) => {
+  const target = (e.target as HTMLElement).closest('.ai-summary-trigger');
+  if (target) {
+    openSummary();
+  }
+};
+
 onMounted(async () => {
   await loadArticle(route.params.id);
+  await syncSummarySlot();
   window.addEventListener('scroll', handleScroll, { passive: true });
   handleScroll();
 });
@@ -183,7 +246,11 @@ onMounted(async () => {
 watch(() => route.params.id, async (newId) => {
   if (!newId) return;
   window.scrollTo(0, 0);
+  summaryOpen.value = false;
+  resetSummary();
+  rawMarkdown.value = '';
   await loadArticle(newId);
+  await syncSummarySlot();
 });
 
 onUnmounted(() => {
@@ -206,8 +273,25 @@ onUnmounted(() => {
           <span v-for="i in 3" :key="i" class="ldot" :style="{ animationDelay: `${i * 0.2}s` }" />
         </div>
       </div>
-      <article v-else class="mob-doc" v-html="renderedHtml" />
+      <article v-else class="mob-doc" v-html="renderedHtml" @click="onDocClick" />
+
+      <Teleport :to="summarySlot" :disabled="!summarySlot">
+        <div v-if="summaryOpen" class="ai-panel">
+          <div class="ai-panel-head">
+            <span class="ai-panel-title">AI 智能摘要</span>
+            <button class="ai-panel-close" type="button" @click="closeSummary">×</button>
+          </div>
+          <div class="ai-panel-body">
+            <template v-if="summaryText">{{ summaryText }}<span v-if="summaryGenerating" class="ai-caret" /></template>
+            <div v-else-if="summaryGenerating" class="ai-panel-tip">正在理解文章内容…<span class="ai-caret" /></div>
+            <div v-else class="ai-panel-tip">点击上方"生成摘要"获取由老鱼人智能体撰写的文章摘要</div>
+          </div>
+          <div class="ai-panel-foot">生成自老鱼人智能体，仅供参考</div>
+        </div>
+      </Teleport>
     </main>
+
+    <Toast ref="toastRef" :message="toastMsg" :type="toastType" />
 
     <div
       class="scroll-btn"
@@ -524,11 +608,38 @@ html, body {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 8px;
+  position: relative;
 }
 
 .mob-doc :deep(.author-info-span) {
   margin-right: 6px;
   font-style: italic;
+}
+
+.mob-doc :deep(.ai-summary-trigger) {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  border: none;
+  background: #f5f7fa;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.mob-doc :deep(.ai-summary-trigger:active) {
+  background: #eff6ff;
+}
+
+.mob-doc :deep(.ai-summary-slot) {
+  margin-bottom: 14px;
 }
 
 .mob-doc :deep(.custom-block) {
@@ -613,6 +724,84 @@ html, body {
   color: #3b82f6;
   line-height: 1;
   pointer-events: none;
+}
+
+/* AI 摘要面板 */
+.ai-panel {
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid #d8e6f6;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.08);
+}
+
+.ai-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ai-panel-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.ai-panel-close {
+  border: none;
+  background: #f1f5f9;
+  color: #334155;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-panel-body {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 52vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ai-panel-tip {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.ai-panel-foot {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #dbe7f5;
+  font-size: 11px;
+  color: #7f9dbd;
+  text-align: right;
+}
+
+.ai-caret {
+  display: inline-block;
+  width: 7px;
+  height: 14px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: #2563eb;
+  animation: aiCaret 0.9s step-end infinite;
+}
+
+@keyframes aiCaret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 </style>

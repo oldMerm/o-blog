@@ -9,6 +9,8 @@ import router from '@/router/index.ts'
 import { useRoute } from 'vue-router'
 import { httpInstance, type Response } from '@/utils/http';
 import mermaid from 'mermaid';
+import { useAiSummary } from '@/composables/useAiSummary';
+import Toast from '@/utils/toast/Toast.vue';
 
 // --- 类型定义 ---
 interface Heading {
@@ -109,6 +111,7 @@ const articleInfo = ref<ArticleInfo>(
 );
 
 const articleLength = ref<number>(0);
+const rawMarkdown = ref('');
 
 // 左侧栏：分组文章
 interface GroupInfo {
@@ -144,6 +147,7 @@ const loadArticle = async (id: string | string[] | undefined) => {
         return;
       }
       const text: string = await httpInstance.get(res.data);
+      rawMarkdown.value = text;
       renderedHtml.value = md.render(text);
       extractHeadings(text);
       triggerMermaid();
@@ -161,6 +165,7 @@ const loadArticle = async (id: string | string[] | undefined) => {
       articleInfo.value = res.data;
       if (articleInfo.value && articleInfo.value.url !== '') {
         const text: string = await httpInstance.get(articleInfo.value.url);
+        rawMarkdown.value = text;
         articleLength.value = text.length;
         authorMeta.writer = articleInfo.value.articleWriter;
         authorMeta.createdAt = articleInfo.value.createdAt;
@@ -197,6 +202,7 @@ onMounted(async () => {
 
 watch(() => route.params.id, async (newId) => {
   if (!newId) return;
+  resetSummary();
   articleGroups.value = [];
   await loadArticle(newId);
   await loadGroups();
@@ -234,6 +240,7 @@ const fetchDocument = async (id: number) => {
   `;
 
   renderedHtml.value = md.render(mockMd);
+  rawMarkdown.value = mockMd;
   extractHeadings(mockMd);
 };
 
@@ -325,6 +332,46 @@ const goToHome = () => {
   router.push({ name: 'home' });
 }
 
+// --- AI 智能摘要 ---
+const {
+  text: summaryText,
+  generating: summaryGenerating,
+  finished: summaryFinished,
+  error: summaryError,
+  generate: generateSummaryStream,
+  stop: stopSummaryStream,
+  reset: resetSummary,
+} = useAiSummary();
+const toastRef = ref<InstanceType<typeof Toast> | null>(null);
+const toastMsg = ref('');
+const toastType = ref<'success' | 'error'>('success');
+
+const showToast = (type: 'success' | 'error', message: string) => {
+  toastType.value = type;
+  toastMsg.value = message;
+  toastRef.value?.show();
+};
+
+const generateSummary = async () => {
+  if (summaryGenerating.value) return;
+  if (!rawMarkdown.value) {
+    showToast('error', '文章内容为空，无法生成摘要');
+    return;
+  }
+  await generateSummaryStream({
+    articleId: String(route.params.id ?? ''),
+    articleName: (articleInfo.value as any)?.articleName ?? '',
+    content: rawMarkdown.value,
+  });
+  if (summaryError.value) {
+    showToast('error', summaryError.value);
+  }
+};
+
+const stopSummary = () => {
+  stopSummaryStream();
+};
+
 // 点击外部关闭弹出层
 const handleClickOutside = (e: Event) => {
   if (showAboutPopup.value) {
@@ -385,6 +432,21 @@ onUnmounted(() => {
             </li>
           </ul>
           <div v-else class="sidebar-empty">暂无关联分组</div>
+
+          <div class="ai-summary-card">
+            <div class="ai-summary-head">
+              <span class="ai-summary-title">AI 智能摘要</span>
+              <button
+                class="ai-summary-btn"
+                :disabled="summaryGenerating"
+                @click="summaryGenerating ? stopSummary() : generateSummary()"
+              >{{ summaryGenerating ? '停止' : '生成摘要' }}</button>
+            </div>
+            <div v-if="summaryText" class="ai-summary-body">{{ summaryText }}<span v-if="summaryGenerating" class="ai-caret" /></div>
+            <div v-else-if="summaryGenerating" class="ai-summary-body ai-summary-wait">正在理解文章内容…<span class="ai-caret" /></div>
+            <div v-else class="ai-summary-body ai-summary-empty">点击"生成摘要"，获取由老鱼人智能体撰写的文章摘要</div>
+            <div class="ai-summary-foot">生成自老鱼人智能体，仅供参考</div>
+          </div>
         </div>
       </aside>
 
@@ -428,6 +490,8 @@ onUnmounted(() => {
         </div>
       </aside>
     </div>
+
+    <Toast ref="toastRef" :message="toastMsg" :type="toastType" />
   </div>
 </template>
 
@@ -603,6 +667,115 @@ onUnmounted(() => {
   font-size: 13px;
   color: #94a3b8;
   padding: 16px 10px;
+}
+
+/* AI 智能摘要卡片 */
+.ai-summary-card {
+  position: absolute;
+  left: 12px;
+  right: 28px;
+  bottom: 16px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  max-height: 40%;
+  padding: 14px;
+  border: 1px solid #d8e6f6;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f4f9ff, #fbfdff);
+}
+
+.ai-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ai-summary-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2563eb;
+  letter-spacing: 0.02em;
+}
+
+.ai-summary-btn {
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.ai-summary-btn:hover {
+  background: #1d4ed8;
+}
+
+.ai-summary-btn:active {
+  transform: scale(0.95);
+}
+
+.ai-summary-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ai-summary-body {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 2px;
+}
+
+.ai-summary-body::-webkit-scrollbar {
+  width: 2px;
+}
+
+.ai-summary-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ai-summary-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.ai-summary-wait,
+.ai-summary-empty {
+  color: #94a3b8;
+}
+
+.ai-caret {
+  display: inline-block;
+  width: 7px;
+  height: 14px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: #2563eb;
+  animation: aiCaret 0.9s step-end infinite;
+}
+
+@keyframes aiCaret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.ai-summary-foot {
+  margin-top: 10px;
+  padding-top: 8px;
+  font-size: 11px;
+  color: #7f9dbd;
+  text-align: right;
 }
 
 .expand-enter-active,
