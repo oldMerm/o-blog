@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue';
 import router from '@/router';
 import { httpInstance, type Response } from '@/utils/http';
 import { goToArticle } from '@/views/public/Article';
+import Dialog from '@/utils/dia/Dialog.vue';
 
 const time = new Date();
 const day = `${time.getFullYear()}年${time.getMonth() + 1}月${time.getDate()}日`;
@@ -103,6 +104,7 @@ interface ArticleHistory {
     updatedAt: string;
 }
 const showHistory = ref(false);
+const showClearDialog = ref(false);
 const articleHistoryList = ref<ArticleHistory[]>([]);
 const hasHistory = ref(false);
 onMounted(async() => {
@@ -114,6 +116,14 @@ onMounted(async() => {
     articleHistoryList.value = res.data;
     hasHistory.value = articleHistoryList.value.length !== 0;
 })
+
+const clearHistory = async () => {
+    const res = await httpInstance.delete<any, Response>('/article/history');
+    if (res.code === 200) {
+        articleHistoryList.value = [];
+        hasHistory.value = false;
+    }
+}
 
 
 </script>
@@ -159,6 +169,15 @@ onMounted(async() => {
                     <div v-if="showHistory" class="history-popover">
                     <div class="popover-title">
                         文章浏览历史
+                        <span class="clear-btn" @click.stop="showClearDialog = true" title="清空浏览历史">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                <path d="M10 11v6"></path>
+                                <path d="M14 11v6"></path>
+                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                            </svg>
+                        </span>
                         <span class="popover-close" @click="showHistory = false">&times;</span>
                     </div>
                     <div class="popover-content">
@@ -172,6 +191,7 @@ onMounted(async() => {
                     </div>
                     </div>
                 </Transition>
+                <Dialog v-model="showClearDialog" title="清空浏览历史" content="确定要清空所有浏览历史吗？" @confirm="clearHistory" />
             </div>
 
         </div>
@@ -329,10 +349,10 @@ onMounted(async() => {
     /* 适中的宽度 */
     max-height: 300px;
     min-height: 100px;
-    background-color: #ffffff;
-    border: 1px solid #d9ecff;
+    background-color: #f5faff;
+    border: 1px solid #b3d8ff;
     /* 浅蓝边框 */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.12);
     border-radius: 4px;
     z-index: 9999;
     display: flex;
@@ -346,11 +366,10 @@ onMounted(async() => {
 
 .popover-title {
     padding: 8px 12px;
-    background-color: #ecf5ff;
-    /* 极浅的蓝色背景 */
-    color: #409EFF;
+    background-color: #d9ecff;
+    color: #2d8cf0;
     font-weight: bold;
-    border-bottom: 1px solid #d9ecff;
+    border-bottom: 1px solid #b3d8ff;
 }
 
 .popover-content {
@@ -397,7 +416,22 @@ onMounted(async() => {
 }
 
 .history-item:hover {
-    background-color: #fafafa;
+    background-color: #e6f7ff;
+}
+
+.clear-btn {
+    position: absolute;
+    right: 40px;
+    top: 10px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+    z-index: 10;
+}
+
+.clear-btn:hover {
+    color: #409eff;
 }
 
 .popover-close {

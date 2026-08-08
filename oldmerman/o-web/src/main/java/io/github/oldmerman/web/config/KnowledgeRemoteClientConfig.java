@@ -1,5 +1,7 @@
 package io.github.oldmerman.web.config;
 
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -10,11 +12,15 @@ import reactor.netty.resources.ConnectionProvider;
 import java.time.Duration;
 
 @Configuration
-public class WebClientConfig {
+@Getter
+public class KnowledgeRemoteClientConfig {
+
+    @Value("${app.oldmerman-knowledge-api-key}")
+    private String key;
 
     @Bean
     public WebClient webClient() {
-        ConnectionProvider connectionProvider = ConnectionProvider.builder("oldmerman-agent")
+        ConnectionProvider connectionProvider = ConnectionProvider.builder("oldmerman-knowledge")
                 .maxConnections(100)
                 .pendingAcquireTimeout(Duration.ofSeconds(60))
                 .build();
@@ -23,7 +29,8 @@ public class WebClientConfig {
                 .responseTimeout(Duration.ofSeconds(30));
 
         return WebClient.builder()
-                .baseUrl("http://localhost:8000")
+                .baseUrl("http://8.138.109.30/api")
+                .defaultHeader("api-key", key)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
                 .build();

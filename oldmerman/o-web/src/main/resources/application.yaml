@@ -51,3 +51,4 @@ mybatis-plus:
       column-format: "`%s`"
 app:
   host: ${oldmerman.host}
+  oldmerman-knowledge-api-key: ${KNOWLEDGE_API_KEY}
