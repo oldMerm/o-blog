@@ -37,33 +37,74 @@ export function useAiSummary() {
   const finished = ref(false);
   const error = ref('');
   let ctrl: AbortController | null = null;
+  let streamTimer: ReturnType<typeof setInterval> | null = null;
+  let streamLen = 0;
+
+  const clearStreamTimer = () => {
+    if (streamTimer !== null) {
+      clearInterval(streamTimer);
+      streamTimer = null;
+    }
+  };
+
+  // 缓存命中时一次性返回全文，用“打字机”效果模拟流式展示
+  const simulateStream = (content: string) => {
+    clearStreamTimer();
+    text.value = '';
+    streamLen = content.length;
+    if (streamLen === 0) {
+      finished.value = true;
+      return;
+    }
+    generating.value = true;
+    finished.value = false;
+    let idx = 0;
+    const totalTicks = Math.min(Math.max(Math.round(streamLen / 5), 50), 120);
+    const step = Math.max(1, Math.ceil(streamLen / totalTicks));
+    streamTimer = setInterval(() => {
+      if (error.value) {
+        clearStreamTimer();
+        return;
+      }
+      idx = Math.min(idx + step, streamLen);
+      text.value = content.slice(0, idx);
+      if (idx >= streamLen) {
+        clearStreamTimer();
+        finished.value = true;
+        generating.value = false;
+      }
+    }, 35);
+  };
 
   const handleBlock = (block: string) => {
     if (finished.value || error.value) return;
     const evt = parseEvent(block);
     if (!evt) return;
     if (typeof evt.code === 'number' && evt.code !== 200) {
+      clearStreamTimer();
       error.value = evt.message || '摘要生成失败';
       finished.value = true;
       return;
     }
     if (evt.type === 'content' && typeof evt.chunk === 'string') {
+      if (streamTimer !== null) return;
       text.value += evt.chunk;
       return;
     }
     if (evt.type === 'end') {
+      if (streamTimer !== null) return;
       finished.value = true;
       return;
     }
     if (evt.data && typeof evt.data.content === 'string') {
-      text.value = evt.data.content;
-      finished.value = true;
+      simulateStream(evt.data.content);
     }
   };
 
   const generate = async (payload: AiSummaryPayload) => {
     if (generating.value) return;
     ctrl?.abort();
+    clearStreamTimer();
     ctrl = new AbortController();
     text.value = '';
     error.value = '';
@@ -97,7 +138,9 @@ export function useAiSummary() {
         consume(res);
       }
       if (!finished.value && !error.value) {
-        if (text.value) {
+        if (streamTimer !== null) {
+          // 缓存命中，模拟流式渲染进行中，等待 simulateStream 收尾
+        } else if (text.value) {
           finished.value = true;
         } else {
           error.value = '摘要生成失败，请稍后重试';
@@ -109,12 +152,15 @@ export function useAiSummary() {
         error.value = err?.message || '摘要生成失败';
       }
     } finally {
-      generating.value = false;
+      if (streamTimer === null) {
+        generating.value = false;
+      }
     }
   };
 
   const stop = () => {
     ctrl?.abort();
+    clearStreamTimer();
     generating.value = false;
     if (!finished.value && !error.value && text.value) {
       finished.value = true;
@@ -123,6 +169,7 @@ export function useAiSummary() {
 
   const reset = () => {
     ctrl?.abort();
+    clearStreamTimer();
     ctrl = null;
     text.value = '';
     generating.value = false;
@@ -132,6 +179,7 @@ export function useAiSummary() {
 
   onUnmounted(() => {
     ctrl?.abort();
+    clearStreamTimer();
     ctrl = null;
   });
 

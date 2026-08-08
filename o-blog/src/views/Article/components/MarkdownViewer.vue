@@ -437,8 +437,8 @@ onUnmounted(() => {
             <div class="ai-summary-head">
               <span class="ai-summary-title">AI 智能摘要</span>
               <button
+                v-if="!summaryText || summaryGenerating"
                 class="ai-summary-btn"
-                :disabled="summaryGenerating"
                 @click="summaryGenerating ? stopSummary() : generateSummary()"
               >{{ summaryGenerating ? '停止' : '生成摘要' }}</button>
             </div>
