@@ -18,6 +18,9 @@ public class KnowledgeRemoteClientConfig {
     @Value("${app.oldmerman-knowledge-api-key}")
     private String key;
 
+    @Value("${app.oldmerman-knowledge-base-url}")
+    private String baseUrl;
+
     @Bean
     public WebClient webClient() {
         ConnectionProvider connectionProvider = ConnectionProvider.builder("oldmerman-knowledge")
@@ -29,7 +32,7 @@ public class KnowledgeRemoteClientConfig {
                 .responseTimeout(Duration.ofSeconds(30));
 
         return WebClient.builder()
-                .baseUrl("http://8.138.109.30/api")
+                .baseUrl(baseUrl)
                 .defaultHeader("api-key", key)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))

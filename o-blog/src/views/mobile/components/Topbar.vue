@@ -46,11 +46,8 @@ const githubUrl = 'https://github.com/oldMerm'
 
 .brand {
   font-size: 1.25rem;
-  font-weight: 700;
   color: rgb(46, 46, 46);
   letter-spacing: 0.04em;
-  font-family: 'Playfair Display', 'Times New Roman', serif;
-  font-style: italic;
 }
 
 .github-link {

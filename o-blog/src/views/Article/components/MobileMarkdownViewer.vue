@@ -152,6 +152,12 @@ const extractHeadings = (content: string) => {
   allHeadings.value = list;
 };
 
+const extractArticleName = (content: string): string => {
+  const cleanContent = content.replace(/```[\s\S]*?```/g, '');
+  const match = /^#\s+(.*)$/m.exec(cleanContent);
+  return match?.[1]?.trim() ?? '';
+};
+
 const R = 18;
 const CIRCUMFERENCE = 2 * Math.PI * R;
 
@@ -216,7 +222,7 @@ const openSummary = async () => {
   }
   await generateSummaryStream({
     articleId: String(route.params.id ?? ''),
-    articleName: (articleInfo.value as any)?.articleName ?? '',
+    articleName: extractArticleName(rawMarkdown.value),
     content: rawMarkdown.value,
   });
   if (summaryError.value) {

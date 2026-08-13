@@ -265,6 +265,12 @@ const extractHeadings = (content: string) => {
   allHeadings.value = list;
 };
 
+const extractArticleName = (content: string): string => {
+  const cleanContent = content.replace(/```[\s\S]*?```/g, '');
+  const match = /^#\s+(.*)$/m.exec(cleanContent);
+  return match?.[1]?.trim() ?? '';
+};
+
 // 右侧栏：过滤出 H2 作为"本页重点"
 const leafHeadings = computed(() => {
   return allHeadings.value.filter(h => h.level === 2);
@@ -360,7 +366,7 @@ const generateSummary = async () => {
   }
   await generateSummaryStream({
     articleId: String(route.params.id ?? ''),
-    articleName: (articleInfo.value as any)?.articleName ?? '',
+    articleName: extractArticleName(rawMarkdown.value),
     content: rawMarkdown.value,
   });
   if (summaryError.value) {
@@ -433,7 +439,7 @@ onUnmounted(() => {
           </ul>
           <div v-else class="sidebar-empty">暂无关联分组</div>
 
-          <div class="ai-summary-card">
+          <div class="ai-summary-card" v-if="isPublic === 'public'">
             <div class="ai-summary-head">
               <span class="ai-summary-title">AI 智能摘要</span>
               <button
@@ -1073,5 +1079,9 @@ onUnmounted(() => {
   border-radius: 8px;
   font-weight: 300;
   margin: 0 5px;
+}
+
+:deep(ol) {
+  margin-left: 2.1%;
 }
 </style>

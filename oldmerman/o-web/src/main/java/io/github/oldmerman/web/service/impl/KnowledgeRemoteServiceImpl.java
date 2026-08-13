@@ -45,6 +45,8 @@ public class KnowledgeRemoteServiceImpl implements KnowledgeRemoteService {
                 .bodyValue(JSONUtil.toJsonStr(dto))
                 .exchangeToFlux(response -> response.bodyToFlux(String.class))
                 .map(line -> line)
-                .doOnError(error -> log.error("SSE传输出错, {}", error.getMessage()));
+                .doOnError(error -> {
+                    throw new BusinessException(ResultCode.FAIL);
+                });
     }
 }
