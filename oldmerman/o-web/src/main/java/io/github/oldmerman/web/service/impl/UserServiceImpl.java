@@ -36,8 +36,8 @@ public class UserServiceImpl implements UserService {
     private final UserConverter converter;
 
     @Override
-    public UserInfoVO getUsrInfo(Long userId) {
-        User user = userMapper.selectSimUsrInfo(userId);
+    public UserInfoVO getUserInfo(Long userId) {
+        User user = userMapper.selectSimUserInfo(userId);
         if (user.getIsDelete() != 1) {
             throw new BusinessException(ResultCode.USERNAME_OR_PASSWORD_ERROR);
         }
@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateUsrInfo(UserManageDTO dto) {
+    public void updateUserInfo(UserManageDTO dto) {
         if (ObjectUtil.isEmpty(dto)) {
             throw new BusinessException(ResultCode.DATA_NOT_EXIST);
         }
@@ -71,22 +71,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateUsrArticle(Long userId, Integer number, Boolean isAdd) {
+    public void updateUserArticle(Long userId, Integer number) {
         User user = userMapper.selectUserById(userId);
-        Integer articleNumber = user.getArticle();
-        if(Boolean.TRUE.equals(isAdd)){
-            articleNumber += number;
-        }else{
-            if (articleNumber - number < 0){
-                throw new BusinessException(BusErrorCode.ARTICLE_NUM_INVALID);
-            }
-            articleNumber -= number;
+        Integer articleNum = user.getArticle();
+        if (articleNum == null || (articleNum + number) < 0){
+            throw new BusinessException(BusErrorCode.ARTICLE_NUM_INVALID);
         }
-        userMapper.updateUserArticleNum(articleNumber, userId);
+        userMapper.updateUserArticleNum(number, userId);
     }
 
     @Override
-    public void deleteUsr(Long userId, String token) {
+    public void deleteUser(Long userId, String token) {
         userMapper.logicDeleteUser(userId);
         // 成功后删除缓存，几乎等价于用户登出
         loginService.logout(token);

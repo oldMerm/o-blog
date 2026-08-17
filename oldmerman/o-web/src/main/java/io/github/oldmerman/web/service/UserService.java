@@ -19,7 +19,7 @@ public interface UserService {
      * @param userId 用户id
      * @return 用户封装vo
      */
-    UserInfoVO getUsrInfo(Long userId);
+    UserInfoVO getUserInfo(Long userId);
 
     /**
      * 获取用户月数据
@@ -33,22 +33,21 @@ public interface UserService {
      *
      * @param dto 封装dto
      */
-    void updateUsrInfo(UserManageDTO dto);
+    void updateUserInfo(UserManageDTO dto);
 
     /**
      * 更新用户文章数量接口
      *
      * @param userId 用户id
      * @param number 数目
-     * @param isAdd true -> 新增，反之
      */
-    void updateUsrArticle(Long userId, Integer number, Boolean isAdd);
+    void updateUserArticle(Long userId, Integer number);
 
     /**
      * 注销用户接口
      *
      * @param userId 注销用户的id
      */
-    void deleteUsr(Long userId, String token);
+    void deleteUser(Long userId, String token);
 
 }

@@ -9,7 +9,7 @@ import rateLimit from 'axios-rate-limit';
 
 // http://localhost:8080 in dev,
 // /oldmerman/ in prod
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = '/oldmerman/';
 
 // 创建带类型的 axios 实例
 const httpInstance: AxiosInstance = rateLimit(axios.create({

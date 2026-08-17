@@ -1,7 +1,6 @@
 package io.github.oldmerman.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,7 +18,6 @@ import io.github.oldmerman.model.po.ArticleHistory;
 import io.github.oldmerman.model.po.ArticleImage;
 import io.github.oldmerman.model.vo.ArticleInfoVO;
 import io.github.oldmerman.model.vo.ArticlePageDetailVO;
-import io.github.oldmerman.model.vo.ArticlePageVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.*;
@@ -200,7 +198,7 @@ public class ArticleServiceImpl implements ArticleService {
         po.setId(articleId);
         po.setWriterId(userId);
         po.setArticleStatus(Article.ArticleStatus.UNDER_REVIEW);
-        po.setArticleWriter(userService.getUsrInfo(userId).getUsername());
+        po.setArticleWriter(userService.getUserInfo(userId).getUsername());
         po.setKey(mdKey);
         // 3.构建图片对象
         List<String> attrs = dto.getAttrs();
@@ -219,7 +217,7 @@ public class ArticleServiceImpl implements ArticleService {
         }
         // 4.插入数据库并更新用户文章信息
         articleMapper.insertPO(po);
-        userService.updateUsrArticle(userId, 1, Boolean.TRUE);
+        userService.updateUserArticle(userId, 1);
         // 5.用户提交加入缓存
         String submitKey = RedisPrefix.ARTICLE_SUBMIT + userId;
         Long count = redisTemplate.opsForValue().increment(submitKey);

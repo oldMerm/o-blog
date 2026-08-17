@@ -25,7 +25,7 @@ public class UserInfoSync {
 
     private final CounterMapper counterMapper;
 
-    @Scheduled(cron = "0 0 23 L * ?")
+    @Scheduled(cron = "0 0 23 * * ?")
     public void updateUserCountInfo(){
         log.info("定时任务执行，统计用户和文章总数");
         List<User> users = userMapper.selectList(null);
@@ -33,9 +33,7 @@ public class UserInfoSync {
         int articleCount = 0;
         for (User user : users) {
             int article = user.getArticle();
-            if(article != 0){
-                articleCount += article;
-            }
+            articleCount += article;
         }
         counterMapper.insert(Counter.builder().count((long)userCount).countType(Counter.Type.USER).build());
         counterMapper.insert(Counter.builder().count((long)articleCount).countType(Counter.Type.ARTICLE).build());

@@ -25,9 +25,9 @@ public class UserController {
     private final OssService ossService;
 
     @GetMapping("info")
-    public Result<UserInfoVO> getUsrInfo() {
+    public Result<UserInfoVO> getUserInfo() {
         Long userId = UserContext.getUserId();
-        return Result.success(userService.getUsrInfo(userId));
+        return Result.success(userService.getUserInfo(userId));
     }
 
     @GetMapping("monCount")
@@ -36,25 +36,25 @@ public class UserController {
     }
 
     @PostMapping("manage")
-    public Result<Void> updateUsrInfo(@RequestBody UserManageDTO dto) {
+    public Result<Void> updateUserInfo(@RequestBody UserManageDTO dto) {
         dto.setId(UserContext.getUserId());
         log.info("更新用户数据：{}", dto.getId());
-        userService.updateUsrInfo(dto);
+        userService.updateUserInfo(dto);
         return Result.success();
     }
 
     @PutMapping("upload")
-    public Result<String> uploadUsrImage(@RequestParam("img") MultipartFile file){
+    public Result<String> uploadUserImage(@RequestParam("img") MultipartFile file){
         Long userId = UserContext.getUserId();
         log.info("上传图片，{}",userId);
         return Result.success(ossService.uploadUsrImage(userId, file));
     }
 
     @DeleteMapping("delete")
-    public Result<Void> deleteUsr(@RequestHeader("Authorization") String token) {
+    public Result<Void> deleteUser(@RequestHeader("Authorization") String token) {
         Long userId = UserContext.getUserId();
         log.info("用户账户注销:{}", userId);
-        userService.deleteUsr(userId, token);
+        userService.deleteUser(userId, token);
         return Result.success();
     }
 

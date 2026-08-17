@@ -38,7 +38,6 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         String auth = redisTemplate.opsForValue().get(RedisPrefix.ADMIN_CACHE + userId);
         Byte i;
-
         if (!StringUtils.hasText(auth)) {
             i = userMapper.isValidAuthToken(userId);
             if (i == null || i != 1) {
