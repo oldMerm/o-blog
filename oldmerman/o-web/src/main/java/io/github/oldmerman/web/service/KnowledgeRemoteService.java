@@ -1,7 +1,12 @@
 package io.github.oldmerman.web.service;
 
-import io.github.oldmerman.model.dto.ArticleGenDTO;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.oldmerman.model.remote.ArticleGenDTO;
+import io.github.oldmerman.model.remote.LogSummaryGenDTO;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.io.IOException;
 
 /**
  * 鱼人知识库远程服务相关接口
@@ -17,10 +22,13 @@ public interface KnowledgeRemoteService {
 
     /**
      * 中转智能体服务的SSE流
-     *
      * @param dto 请求需要的参数
      * @return stream-chunk
      */
-    Flux<String> forwardStream(ArticleGenDTO dto);
+    Flux<String> forwardStream(ArticleGenDTO dto) throws JsonProcessingException;
 
+    /**
+     * AI日志报告
+     */
+    Mono<String> generateAgentLogSummary(String path) throws IOException;
 }

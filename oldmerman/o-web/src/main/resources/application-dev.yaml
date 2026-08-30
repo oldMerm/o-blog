@@ -17,3 +17,5 @@ oldmerman:
   oss:
     pri-bucket: project-oldmerman
     pub-bucket: project-oldmerman-artimg
+  log:
+    path: C:\Users\asus\Desktop

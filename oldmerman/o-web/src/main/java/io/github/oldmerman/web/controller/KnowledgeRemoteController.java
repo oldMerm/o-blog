@@ -1,7 +1,8 @@
 package io.github.oldmerman.web.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.oldmerman.common.response.Result;
-import io.github.oldmerman.model.dto.ArticleGenDTO;
+import io.github.oldmerman.model.remote.ArticleGenDTO;
 import io.github.oldmerman.web.service.KnowledgeRemoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -22,7 +23,7 @@ public class KnowledgeRemoteController {
     }
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> forwardStream(@RequestBody ArticleGenDTO dto){
+    public Flux<String> forwardStream(@RequestBody ArticleGenDTO dto) throws JsonProcessingException {
         return service.forwardStream(dto);
     }
 

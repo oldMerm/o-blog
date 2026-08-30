@@ -1,9 +1,11 @@
 package io.github.oldmerman.web.service.impl;
 
 import cn.hutool.json.JSONUtil;
+import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
-import io.github.oldmerman.model.dto.ArticleGenDTO;
+import io.github.oldmerman.web.util.CompressUtils;
+import io.github.oldmerman.model.remote.ArticleGenDTO;
 import io.github.oldmerman.web.config.KnowledgeRemoteClientConfig;
 import io.github.oldmerman.web.service.KnowledgeRemoteService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,9 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.io.IOException;
 
 @Service
 @Slf4j
@@ -36,17 +41,31 @@ public class KnowledgeRemoteServiceImpl implements KnowledgeRemoteService {
 
     @Override
     public Flux<String> forwardStream(ArticleGenDTO dto) {
-        String key = config.getKey();
         return webClient.post()
                 .uri("/v1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.TEXT_EVENT_STREAM)
-                .header("api-key", key)
+                .header("api-key", config.getKey())
                 .bodyValue(JSONUtil.toJsonStr(dto))
-                .exchangeToFlux(response -> response.bodyToFlux(String.class))
-                .map(line -> line)
+                .retrieve()
+                .bodyToFlux(String.class)
                 .doOnError(error -> {
-                    throw new BusinessException(ResultCode.FAIL);
+                    throw new BusinessException(BusErrorCode.AGENT_SERVICE_FAILED);
                 });
+    }
+
+    @Override
+    public Mono<String> generateAgentLogSummary(String path) throws IOException {
+        String logText = CompressUtils.readGzipAdaptively(path);
+        return webClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/v1/log")
+                        .queryParam("content", logText)
+                        .build())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.TEXT_HTML)
+                .header("api-key", config.getKey())
+                .retrieve()
+                .bodyToMono(String.class);
     }
 }

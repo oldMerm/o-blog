@@ -31,7 +31,9 @@ public enum BusErrorCode implements IResultCode {
     ARTICLE_SUBMIT_FREQUENT(1096, "文章上传频繁"),
     ARTICLE_NAME_EXIST(1097, "文章名已存在"),
     ARTICLE_NUM_INVALID(1098, "文章数修改出错，请联系管理员"),
-    ARTICLE_OPRE_FAILED(1099, "文章功能操作失败")
+    ARTICLE_OPRE_FAILED(1099, "文章功能操作失败"),
+
+    AGENT_SERVICE_FAILED(1150, "智能体服务出错")
     ;
 
     private final Integer code;

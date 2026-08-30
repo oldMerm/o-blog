@@ -17,3 +17,5 @@ oldmerman:
   oss:
     pri-bucket: oldmerman-prod
     pub-bucket: oldmerman-prod-pub
+  log:
+    path: /etc/oldmerman/log
