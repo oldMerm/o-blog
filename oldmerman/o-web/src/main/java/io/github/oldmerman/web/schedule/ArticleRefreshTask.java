@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class ArticleRefresher {
+public class ArticleRefreshTask {
 
     private final ArticleMapper articleMapper;
 

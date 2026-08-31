@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("article")
+@RequestMapping("/article")
 @Slf4j
 @RequiredArgsConstructor
 public class ArticleController {

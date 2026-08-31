@@ -8,6 +8,7 @@ import io.github.oldmerman.model.vo.ArticleRenderVO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -40,4 +41,6 @@ public interface ArticleMapper extends BaseMapper<Article> {
 
     List<ArticlePageDetailVO> page(Long offset, Long size, Byte articleType);
 
+    @Update("UPDATE o_blog.o_article SET `like` = `like` + 1 WHERE id = #{articleId}")
+    void incrLikeRecords(Long articleId);
 }

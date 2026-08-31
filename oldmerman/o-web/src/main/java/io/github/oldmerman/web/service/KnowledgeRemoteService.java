@@ -2,7 +2,6 @@ package io.github.oldmerman.web.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.oldmerman.model.remote.ArticleGenDTO;
-import io.github.oldmerman.model.remote.LogSummaryGenDTO;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -30,5 +29,5 @@ public interface KnowledgeRemoteService {
     /**
      * AI日志报告
      */
-    Mono<String> generateAgentLogSummary(String path) throws IOException;
+    Mono<String> generateAgentLogSummary(String logText) throws IOException;
 }

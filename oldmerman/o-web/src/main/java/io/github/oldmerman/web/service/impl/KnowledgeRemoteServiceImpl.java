@@ -4,7 +4,6 @@ import cn.hutool.json.JSONUtil;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
-import io.github.oldmerman.web.util.CompressUtils;
 import io.github.oldmerman.model.remote.ArticleGenDTO;
 import io.github.oldmerman.web.config.KnowledgeRemoteClientConfig;
 import io.github.oldmerman.web.service.KnowledgeRemoteService;
@@ -15,8 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.io.IOException;
 
 @Service
 @Slf4j
@@ -55,8 +52,7 @@ public class KnowledgeRemoteServiceImpl implements KnowledgeRemoteService {
     }
 
     @Override
-    public Mono<String> generateAgentLogSummary(String path) throws IOException {
-        String logText = CompressUtils.readGzipAdaptively(path);
+    public Mono<String> generateAgentLogSummary(String logText) {
         return webClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/v1/log")

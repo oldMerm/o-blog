@@ -124,4 +124,12 @@ public class EmailSender {
         sender.send(mail);
         return code.toString();
     }
+
+    /**
+     * 发送日志消息
+     */
+    public void sendLogSummaryEmail() {
+        String target = "oldmerman@outlook.com";
+        MimeMessage mail = sender.createMimeMessage();
+    }
 }

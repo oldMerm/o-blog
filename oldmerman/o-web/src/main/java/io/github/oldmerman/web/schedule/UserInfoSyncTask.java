@@ -19,7 +19,7 @@ import java.util.List;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class UserInfoSync {
+public class UserInfoSyncTask {
 
     private final UserMapper userMapper;
 

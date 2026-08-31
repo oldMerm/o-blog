@@ -23,6 +23,12 @@ public class CompressUtils {
     // 读取文件的阈值，10MB
     private static final long SIZE_THRESHOLD = 10 * 1024 * 1024;
 
+    /**
+     * 读取每周日志
+     *
+     * @param logPath 日志所在文件夹
+     * @return 日志汇总字符串
+     */
     public static String readLastWeekLog(String logPath) throws IOException{
         LocalDate now = LocalDate.now();
         LocalDate oneWeekAgo = now.minusDays(30);

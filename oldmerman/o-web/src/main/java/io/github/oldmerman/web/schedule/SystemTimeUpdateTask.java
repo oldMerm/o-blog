@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class SystemTimeUpdater {
+public class SystemTimeUpdateTask {
 
     private final CounterMapper counterMapper;
 
