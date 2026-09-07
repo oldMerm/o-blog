@@ -22,5 +22,5 @@ public interface ArticleLikeRecordService {
      * @param userId 用户唯一标识
      * @param articleId 文章唯一标识
      */
-    void saveLikeRecord(Long userId, Long articleId);
+    Boolean saveLikeRecord(Long userId, Long articleId);
 }

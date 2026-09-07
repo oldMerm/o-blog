@@ -28,13 +28,14 @@ public class RedisUtils {
      * @throws JsonProcessingException 序列化失败
      */
     public static void rebuildArticleRenderCache(Byte articleType, Long articleId,
-                                          StringRedisTemplate redisTemplate, ObjectMapper objectMapper) throws JsonProcessingException {
-        String data = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_RENDER + articleType);
+                                                 StringRedisTemplate redisTemplate, ObjectMapper objectMapper) throws JsonProcessingException {
+        String key = RedisPrefix.ARTICLE_RENDER + articleType;
+        String data = redisTemplate.opsForValue().get(key);
         if (!ObjectUtils.isEmpty(data)) {
             List<ArticleRenderVO> renderList = objectMapper.readValue(data, new TypeReference<>() {
             });
             renderList.removeIf(articleRenderVO -> articleRenderVO.getId().equals(articleId.toString()));
-            redisTemplate.opsForValue().set(RedisPrefix.ARTICLE_RENDER + articleType, objectMapper.writeValueAsString(renderList),
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(renderList),
                     NumEnum.ARTICLE_EXPIRE_TIME.getValue(), TimeUnit.DAYS);
         }
     }

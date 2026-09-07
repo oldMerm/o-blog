@@ -63,6 +63,7 @@ public class ArticleGroupServiceImpl implements ArticleGroupService {
 
     @Override
     public void insertArticleGroup(String groupName, String groupDesc) {
+        log.info("用户: {}, 新增文章分组: {}", UserContext.getUserId(), groupName);
         if (groupName == null || groupDesc == null) {
             throw new BusinessException(BusErrorCode.ARTICLE_OPRE_FAILED);
         }

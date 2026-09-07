@@ -100,7 +100,8 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     public List<ArticleRenderVO> getRenderArticle(Byte articleType, Long size) throws JsonProcessingException {
-        String data = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_RENDER + articleType);
+        String key = RedisPrefix.ARTICLE_RENDER + articleType;
+        String data = redisTemplate.opsForValue().get(key);
         if (!ObjectUtils.isEmpty(data)) {
             return objectMapper.readValue(data, new TypeReference<>() {
             });
@@ -111,7 +112,7 @@ public class ArticleServiceImpl implements ArticleService {
         } else {
             vo = articleMapper.selectArticle(articleType, size);
         }
-        redisTemplate.opsForValue().set(RedisPrefix.ARTICLE_RENDER + articleType, objectMapper.writeValueAsString(vo),
+        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(vo),
                 NumEnum.ARTICLE_EXPIRE_TIME.getValue(), TimeUnit.DAYS);
         return vo;
     }
@@ -169,12 +170,12 @@ public class ArticleServiceImpl implements ArticleService {
         String submitCountStr = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_SUBMIT + userId);
 
         int submitCount = 0;
-        if(StringUtils.hasText(submitCountStr)){
+        if (StringUtils.hasText(submitCountStr)) {
             submitCount = Integer.parseInt(submitCountStr);
         }
 
-        if(submitCount >= 5 && expire > 0){
-            throw new BusinessException(BusErrorCode.ARTICLE_SUBMIT_FREQUENT.getCode(), "上传过于频繁，请"+expire+"分钟后尝试");
+        if (submitCount >= 5 && expire > 0) {
+            throw new BusinessException(BusErrorCode.ARTICLE_SUBMIT_FREQUENT.getCode(), "上传过于频繁，请" + expire + "分钟后尝试");
         }
         List<String> keys = ossService.uploadBatch(userId, paths, imgList, BUCKET);
         return ossService.genPublicURL(keys, BUCKET);

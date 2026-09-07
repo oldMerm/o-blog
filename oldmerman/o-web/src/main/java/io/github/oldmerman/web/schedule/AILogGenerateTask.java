@@ -16,7 +16,7 @@ import java.io.IOException;
  * @author oldmerman
  * @date 2026-8-31
  */
-@Component
+// @Component
 @Slf4j
 @RequiredArgsConstructor
 public class AILogGenerateTask {
@@ -26,9 +26,10 @@ public class AILogGenerateTask {
     private final LogProperties properties;
 
     /**
-     * 执行时间：每周一早八点
+     * 异步请求智能体生成日志
+     * 执行时间：每周一早九点
      */
-    @Scheduled(cron = "0 0 8 ? * MON")
+    @Scheduled(cron = "0 0 9 ? * MON")
     public void generateAiLogOrSendEmail() throws IOException {
         String logText = CompressUtils.readLastWeekLog(properties.getPath() + "\\info");
         Mono<String> stringMono = remoteService.generateAgentLogSummary(logText);

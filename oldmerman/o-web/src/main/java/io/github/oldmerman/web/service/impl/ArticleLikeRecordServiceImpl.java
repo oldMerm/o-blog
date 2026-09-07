@@ -21,27 +21,22 @@ public class ArticleLikeRecordServiceImpl implements ArticleLikeRecordService {
 
     @Override
     public Boolean getLikeRecord(Long userId, Long articleId) {
-        return isExistRecord(userId, articleId);
-    }
-
-    @Override
-    @Transactional
-    public void saveLikeRecord(Long userId, Long articleId) {
-        if (isExistRecord(userId, articleId)) {
-            return; // 存在直接返回
-        }
-        // 不存在，新增点赞条目
-        ArticleLikeRecord articleLikeRecord = new ArticleLikeRecord();
-        articleLikeRecord.setUserId(userId);
-        articleLikeRecord.setArticleId(articleId);
-        mapper.insert(articleLikeRecord);
-        articleMapper.incrLikeRecords(articleId);
-    }
-
-    private boolean isExistRecord(Long userId, Long articleId) {
         LambdaQueryWrapper<ArticleLikeRecord> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(ArticleLikeRecord::getUserId, userId);
         queryWrapper.eq(ArticleLikeRecord::getArticleId, articleId);
         return mapper.exists(queryWrapper);
     }
+
+    @Override
+    @Transactional
+    public Boolean saveLikeRecord(Long userId, Long articleId) {
+        int c = mapper.insertIgnore(userId, articleId);
+        if(c > 0){
+            log.info("用户: {} 点赞文章 {}", userId, articleId);
+            articleMapper.incrLikeRecords(articleId);
+            return true;
+        }
+        return false;
+    }
+
 }

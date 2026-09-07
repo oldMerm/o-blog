@@ -20,9 +20,8 @@ public class ArticleLikeRecordController {
     }
 
     @PostMapping("{articleId}")
-    public Result<Void> saveLikeRecord(@PathVariable Long articleId){
+    public Result<Boolean> saveLikeRecord(@PathVariable Long articleId){
         Long userId = UserContext.getUserId();
-        service.saveLikeRecord(userId, articleId);
-        return Result.success();
+        return Result.success(service.saveLikeRecord(userId, articleId));
     }
 }

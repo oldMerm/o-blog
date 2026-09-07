@@ -3,7 +3,6 @@ package io.github.oldmerman.web.service.impl;
 import cn.hutool.json.JSONUtil;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
-import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.model.remote.ArticleGenDTO;
 import io.github.oldmerman.web.config.KnowledgeRemoteClientConfig;
 import io.github.oldmerman.web.service.KnowledgeRemoteService;
@@ -30,8 +29,8 @@ public class KnowledgeRemoteServiceImpl implements KnowledgeRemoteService {
                 .retrieve()
                 .bodyToMono(String.class)
                 .doOnError(error -> {
-                    log.error("[knowledge-agent]智能体服务出错, {}", error.getMessage());
-                    throw new BusinessException(ResultCode.FAIL);
+                    log.error("智能体服务出错, {}", error.getMessage());
+                    throw new BusinessException(BusErrorCode.AGENT_SERVICE_FAILED);
                 })
                 .block();
     }
@@ -47,6 +46,7 @@ public class KnowledgeRemoteServiceImpl implements KnowledgeRemoteService {
                 .retrieve()
                 .bodyToFlux(String.class)
                 .doOnError(error -> {
+                    log.error("智能体服务出错, {}", error.getMessage());
                     throw new BusinessException(BusErrorCode.AGENT_SERVICE_FAILED);
                 });
     }
@@ -62,6 +62,10 @@ public class KnowledgeRemoteServiceImpl implements KnowledgeRemoteService {
                 .accept(MediaType.TEXT_HTML)
                 .header("api-key", config.getKey())
                 .retrieve()
-                .bodyToMono(String.class);
+                .bodyToMono(String.class)
+                .doOnError(error -> {
+                    log.error("智能体智能日志生成出错, {}", error.getMessage());
+                    throw new BusinessException(BusErrorCode.AGENT_SERVICE_FAILED);
+                });
     }
 }
