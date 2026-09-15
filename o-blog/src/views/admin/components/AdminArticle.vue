@@ -161,12 +161,12 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
 
         <!-- 3. 分页栏 -->
         <div class="pagination-bar">
-            <button class="page-btn" :disabled="currentPage === 1">上一页</button>
+            <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">上一页</button>
             <div class="page-numbers">
-                <span class="page-num">1</span>/
+                <span class="page-num">{{ currentPage }}</span>/
                 <span class="page-num">{{ pages }}</span>
             </div>
-            <button class="page-btn" :disabled="currentPage >= 10">下一页</button>
+            <button class="page-btn" :disabled="currentPage >= pages" @click="currentPage++">下一页</button>
         </div>
 
     </div>

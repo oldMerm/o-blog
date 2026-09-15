@@ -6,6 +6,7 @@ import io.github.oldmerman.model.dto.ArticleCreateDTO;
 import io.github.oldmerman.model.vo.ArticleInfoVO;
 import io.github.oldmerman.model.vo.ArticlePageDetailVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
+import io.github.oldmerman.model.vo.ArticleTopVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -83,5 +84,25 @@ public interface ArticleService {
      */
     void removeArticle(Long articleId, Long userId) throws JsonProcessingException;
 
+    /**
+     * 获取置顶文章
+     *
+     * @return 置顶文章列表
+     */
+    ArticleTopVO getTopArticle() throws JsonProcessingException;
+
+    /**
+     * 移出文章置顶
+     *
+     * @param articleId 文章唯一标识
+     */
+    void removeTopArticle(Long articleId) throws JsonProcessingException;
+
+    /**
+     * 文章置顶
+     *
+     * @param articleId 文章唯一标识
+     */
+    void setTopArticle(Long articleId) throws JsonProcessingException;
 
 }

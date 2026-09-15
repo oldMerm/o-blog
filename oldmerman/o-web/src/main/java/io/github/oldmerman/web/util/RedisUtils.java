@@ -31,6 +31,7 @@ public class RedisUtils {
                                                  StringRedisTemplate redisTemplate, ObjectMapper objectMapper) throws JsonProcessingException {
         String key = RedisPrefix.ARTICLE_RENDER + articleType;
         String data = redisTemplate.opsForValue().get(key);
+        // 清楚对应文章的缓存
         if (!ObjectUtils.isEmpty(data)) {
             List<ArticleRenderVO> renderList = objectMapper.readValue(data, new TypeReference<>() {
             });
@@ -38,5 +39,8 @@ public class RedisUtils {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(renderList),
                     NumEnum.ARTICLE_EXPIRE_TIME.getValue(), TimeUnit.DAYS);
         }
+
+        String topKey = RedisPrefix.ARTICLE_TOP + articleType;
+        redisTemplate.opsForHash().delete(topKey, articleId);
     }
 }

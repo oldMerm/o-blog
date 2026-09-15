@@ -7,6 +7,7 @@ import io.github.oldmerman.model.dto.ArticleCreateDTO;
 import io.github.oldmerman.model.vo.ArticleInfoVO;
 import io.github.oldmerman.model.vo.ArticlePageDetailVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
+import io.github.oldmerman.model.vo.ArticleTopVO;
 import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.util.UserContext;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +53,7 @@ public class ArticleController {
         return Result.success(articleService.getPublicArticleById(articleId));
     }
 
-    @PostMapping("upload/img")
+    @PostMapping("/upload/img")
     public Result<List<String>> uploadImagesToOSS(@RequestParam("paths") List<String> paths,
                                                   @RequestParam("files") List<MultipartFile> files){
         Long userId = UserContext.getUserId();
@@ -60,7 +61,7 @@ public class ArticleController {
         return Result.success(articleService.uploadImagesToOSS(userId, paths, files));
     }
 
-    @PostMapping("upload")
+    @PostMapping("/upload")
     public Result<Void> upload(@RequestParam("md") MultipartFile file,
                                @RequestParam("articleName") String articleName,
                                @RequestParam("articleDecr") String articleDecr,
@@ -77,7 +78,24 @@ public class ArticleController {
         return Result.success();
     }
 
-    @DeleteMapping("remove/{articleId}")
+    @GetMapping("/top")
+    public Result<ArticleTopVO> getTopArticle() throws JsonProcessingException {
+        return Result.success(articleService.getTopArticle());
+    }
+
+    @PostMapping("/top/{articleId}")
+    public Result<Void> setTopArticle(@PathVariable Long articleId) throws JsonProcessingException {
+        articleService.setTopArticle(articleId);
+        return Result.success();
+    }
+
+    @DeleteMapping("/top/{articleId}")
+    public Result<Void> removeTopArticle(@PathVariable Long articleId) throws JsonProcessingException {
+        articleService.removeTopArticle(articleId);
+        return Result.success();
+    }
+
+    @DeleteMapping("/remove/{articleId}")
     public Result<Void> removeArticle(@PathVariable Long articleId) throws JsonProcessingException {
         Long userId = UserContext.getUserId();
         log.info("用户删除文章:{}", articleId);

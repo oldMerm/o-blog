@@ -19,6 +19,7 @@ import io.github.oldmerman.model.po.ArticleImage;
 import io.github.oldmerman.model.vo.ArticleInfoVO;
 import io.github.oldmerman.model.vo.ArticlePageDetailVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
+import io.github.oldmerman.model.vo.ArticleTopVO;
 import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.*;
 import io.github.oldmerman.web.service.ArticleService;
@@ -39,8 +40,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -224,6 +224,82 @@ public class ArticleServiceImpl implements ArticleService {
         Long count = redisTemplate.opsForValue().increment(submitKey);
         if (count == 1) {
             redisTemplate.expire(submitKey, 1440, TimeUnit.MINUTES);
+        }
+    }
+
+    @Override
+    public ArticleTopVO getTopArticle() throws JsonProcessingException {
+        String key = RedisPrefix.ARTICLE_TOP;
+        String jsonStr = redisTemplate.opsForValue().get(key);
+
+        ArticleTopVO vo = new ArticleTopVO();
+
+        if (!StringUtils.hasText(jsonStr)) {
+            vo.setNewList(Collections.emptyList());
+            vo.setTecList(Collections.emptyList());
+            vo.setDailyList(Collections.emptyList());
+            return vo;
+        }
+
+        Map<Integer, List<ArticleRenderVO>> map = objectMapper.readValue(jsonStr, new TypeReference<>(){});
+
+        vo.setNewList(map.getOrDefault(0, Collections.emptyList()));
+        vo.setTecList(map.getOrDefault(1, Collections.emptyList()));
+        vo.setDailyList(map.getOrDefault(2, Collections.emptyList()));
+        return vo;
+    }
+
+    @Override
+    public void setTopArticle(Long articleId) throws JsonProcessingException {
+        Article article = articleMapper.selectById(articleId);
+        if(article == null) {
+            throw new BusinessException(BusErrorCode.ARTICLE_WAS_REMOVED);
+        }
+        Integer articleType = article.getArticleType().intValue();
+
+        String key = RedisPrefix.ARTICLE_TOP;
+        String jsonStr = redisTemplate.opsForValue().get(key);
+
+        Map<Integer, List<ArticleRenderVO>> map;
+        if (!StringUtils.hasText(jsonStr)) {
+            map = new HashMap<>();
+        } else {
+            map = objectMapper.readValue(jsonStr, new TypeReference<>(){});
+        }
+
+        List<ArticleRenderVO> toplist = map.computeIfAbsent(articleType, k -> new ArrayList<>());
+
+        boolean exists = toplist.stream().anyMatch(value -> articleId.equals(Long.parseLong(value.getId())));
+        if(exists){
+            return;
+        }
+
+        if (toplist.size() >= 3) {
+            throw new BusinessException(BusErrorCode.ARTICLE_TOP_EXCEED);
+        }
+
+        toplist.add(converter.poToRenderVO(article));
+        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(map));
+    }
+
+    @Override
+    public void removeTopArticle(Long articleId) throws JsonProcessingException {
+        String key = RedisPrefix.ARTICLE_TOP;
+        String jsonStr = redisTemplate.opsForValue().get(key);
+        if (!StringUtils.hasText(jsonStr)) {
+            return;
+        }
+
+        Map<Integer, List<ArticleRenderVO>> map = objectMapper.readValue(jsonStr,new TypeReference<>(){});
+
+        boolean changed = false;
+        for (List<ArticleRenderVO> list : map.values()) {
+            if (list.removeIf(value -> articleId.equals(Long.parseLong(value.getId())))){
+                changed = true;
+            }
+        }
+        if (changed) {
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(map));
         }
     }
 
