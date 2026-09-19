@@ -3,6 +3,7 @@ import router from '@/router/index.ts';
 export interface Article {
   id: string;
   articleName: string;
+  articleDecr?: string;
   articleStatus: number;
   like: number;
   createdAt: string;

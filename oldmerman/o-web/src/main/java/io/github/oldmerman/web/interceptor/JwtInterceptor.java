@@ -34,6 +34,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/counter/newArt", "/counter/health",
             "/version", "/version/*",
             "/article/group/public/**",
+            "/article/top",
             "/knowledge-agent"
     );
 

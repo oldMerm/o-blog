@@ -28,7 +28,7 @@ public interface ArticleMapper extends BaseMapper<Article> {
 
     List<ArticleRenderVO> selectArticle(@Param("type") Byte articleType, Long size);
 
-    @Select("SELECT id, article_name, article_status, `like`, created_at FROM o_blog.o_article WHERE article_type = 0")
+    @Select("SELECT id, article_name, article_status, article_decr,`like`, created_at FROM o_blog.o_article WHERE article_type = 0")
     List<ArticleRenderVO> selectNotice();
 
     ArticleRenderVO getNewMessage();
@@ -41,6 +41,6 @@ public interface ArticleMapper extends BaseMapper<Article> {
 
     List<ArticlePageDetailVO> page(Long offset, Long size, Byte articleType);
 
-    @Update("UPDATE o_blog.o_article SET `like` = `like` + 1 WHERE id = #{articleId}")
-    void incrLikeRecords(Long articleId);
+    @Update("UPDATE o_blog.o_article SET `like` = `like` + #{like} WHERE id = #{articleId}")
+    void incrLikeRecords(Long articleId, int like);
 }

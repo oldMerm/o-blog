@@ -11,6 +11,7 @@ import { httpInstance, type Response } from '@/utils/http';
 import mermaid from 'mermaid';
 import { useAiSummary } from '@/composables/useAiSummary';
 import Toast from '@/utils/toast/Toast.vue';
+import LikeButton from './LikeButton.vue';
 
 interface Heading {
   id: string;
@@ -94,6 +95,7 @@ interface ArticleInfo {
   url: string;
   articleWriter: string;
   articleDecr: string;
+  like: number;
   createdAt: string;
 }
 
@@ -101,6 +103,7 @@ const articleInfo = ref<ArticleInfo>({
   url: '',
   articleWriter: 'oldmerman',
   articleDecr: '无',
+  like: 0,
   createdAt: '2026-1-1'
 });
 
@@ -280,6 +283,12 @@ onUnmounted(() => {
         </div>
       </div>
       <article v-else class="mob-doc" v-html="renderedHtml" @click="onDocClick" />
+
+      <LikeButton
+        v-if="!loading"
+        :article-id="String(route.params.id ?? '')"
+        :count="articleInfo.like ?? 0"
+      />
 
       <Teleport :to="summarySlot" :disabled="!summarySlot">
         <div v-if="summaryOpen" class="ai-panel">

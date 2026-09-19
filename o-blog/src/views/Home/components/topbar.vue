@@ -1,5 +1,7 @@
 <script setup lang="ts">
-
+const emit = defineEmits<{
+    (e: 'toggle-style'): void;
+}>();
 </script>
 
 <template>
@@ -9,6 +11,11 @@
         </div>
         <div class="rb">
             <ul>
+                <li>
+                    <button class="style-btn" title="切换到像素风格(测试)" @click="emit('toggle-style')">
+                        <img src="../../../static/样式.svg" alt="">
+                    </button>
+                </li>
                 <li>
                     <a href="https://github.com/oldMerm">
                         <img src="../../../static/github.svg" width="32" height="32" alt="GitHub">
@@ -51,5 +58,21 @@
 .rb li {
     margin-left: 1.5rem;
     width: 5rem;
+}
+
+.style-btn {
+    width: 5rem;
+    height: 2rem;
+    border: none;
+    background-color: transparent;
+    color: rgb(46, 46, 46);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.style-btn:hover {
+    color: #409eff;
+    border-color: #409eff;
 }
 </style>

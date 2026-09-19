@@ -29,11 +29,23 @@ public class ArticleLikeRecordServiceImpl implements ArticleLikeRecordService {
 
     @Override
     @Transactional
-    public Boolean saveLikeRecord(Long userId, Long articleId) {
+    public Boolean like(Long userId, Long articleId) {
         int c = mapper.insertIgnore(userId, articleId);
         if(c > 0){
             log.info("用户: {} 点赞文章 {}", userId, articleId);
-            articleMapper.incrLikeRecords(articleId);
+            articleMapper.incrLikeRecords(articleId, 1);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    @Transactional
+    public Boolean unlike(Long userId, Long articleId){
+        int c = mapper.deleteByUserAndArticle(userId, articleId);
+        if(c > 0){
+            log.info("用户: {} 取消点赞文章 {}", userId, articleId);
+            articleMapper.incrLikeRecords(articleId, -1);
             return true;
         }
         return false;

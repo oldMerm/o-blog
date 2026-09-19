@@ -40,7 +40,5 @@ public class RedisUtils {
                     NumEnum.ARTICLE_EXPIRE_TIME.getValue(), TimeUnit.DAYS);
         }
 
-        String topKey = RedisPrefix.ARTICLE_TOP + articleType;
-        redisTemplate.opsForHash().delete(topKey, articleId);
     }
 }

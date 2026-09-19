@@ -11,5 +11,7 @@ public class ArticleInfoVO {
 
     private String articleDecr;
 
+    private Integer like;
+
     private String createdAt;
 }

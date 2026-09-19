@@ -19,9 +19,15 @@ public class ArticleLikeRecordController {
         return Result.success(service.getLikeRecord(userId, articleId));
     }
 
-    @PostMapping("{articleId}")
-    public Result<Boolean> saveLikeRecord(@PathVariable Long articleId){
+    @PostMapping("/save/{articleId}")
+    public Result<Boolean> like(@PathVariable Long articleId){
         Long userId = UserContext.getUserId();
-        return Result.success(service.saveLikeRecord(userId, articleId));
+        return Result.success(service.like(userId, articleId));
+    }
+
+    @DeleteMapping("/save/{articleId}")
+    public Result<Boolean> unlike(@PathVariable Long articleId){
+        Long userId = UserContext.getUserId();
+        return Result.success(service.unlike(userId, articleId));
     }
 }

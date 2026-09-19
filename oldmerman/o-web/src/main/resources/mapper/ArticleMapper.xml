@@ -5,7 +5,7 @@
 <mapper namespace="io.github.oldmerman.web.mapper.ArticleMapper">
 
     <select id="selectArticle" resultType="io.github.oldmerman.model.vo.ArticleRenderVO">
-        SELECT id, article_name, article_status, `like`, created_at
+        SELECT id, article_name, article_status, article_decr,`like`, created_at
         FROM o_blog.o_article
         WHERE article_type = #{type}
           AND article_status = 3

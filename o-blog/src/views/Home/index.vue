@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import topbar from './components/topbar.vue';
 import ontice from './components/onotice.vue';
 import mcontent from './components/mcontent.vue';
@@ -8,11 +9,22 @@ import utitle from './components/utitle.vue';
 import utitle2 from './components/utitle2.vue';
 import bcontent from './components/bcontent.vue';
 import chatCard from './components/chatCard.vue';
+import PixelHome from './style/index.vue';
+
+const STORAGE_KEY = 'home_style';
+const isPixel = ref(localStorage.getItem(STORAGE_KEY) === 'pixel');
+
+const setPixel = (value: boolean) => {
+    isPixel.value = value;
+    localStorage.setItem(STORAGE_KEY, value ? 'pixel' : 'normal');
+};
 </script>
 
 <template>
-    <div class="main">
-        <topbar />
+    <PixelHome v-if="isPixel" @switch-style="setPixel(false)" />
+
+    <div v-else class="main">
+        <topbar @toggle-style="setPixel(true)" />
         <div class="c">
             <ontice />
             <utitle2 />

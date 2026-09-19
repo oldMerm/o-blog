@@ -22,5 +22,12 @@ public interface ArticleLikeRecordService {
      * @param userId 用户唯一标识
      * @param articleId 文章唯一标识
      */
-    Boolean saveLikeRecord(Long userId, Long articleId);
+    Boolean like(Long userId, Long articleId);
+
+    /**
+     * 取消点赞
+     * @param userId 用户唯一标识
+     * @param articleId 文章唯一标识
+     */
+    Boolean unlike(Long userId, Long articleId);
 }

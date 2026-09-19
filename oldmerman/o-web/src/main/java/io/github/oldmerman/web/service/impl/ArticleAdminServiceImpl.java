@@ -13,6 +13,7 @@ import io.github.oldmerman.model.vo.ArticlePageVO;
 import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.service.ArticleAdminService;
+import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.util.RedisUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -25,6 +26,8 @@ import java.util.List;
 public class ArticleAdminServiceImpl implements ArticleAdminService {
 
     private final ArticleMapper articleMapper;
+
+    private final ArticleService articleService;
 
     private final ArticleConverter converter;
 
@@ -57,6 +60,7 @@ public class ArticleAdminServiceImpl implements ArticleAdminService {
         wrapper.eq(Article::getId, id).set(Article::getArticleStatus, dto.getStatus());
         articleMapper.update(wrapper);
         RedisUtils.rebuildArticleRenderCache(article.getArticleType(), id, redisTemplate, objectMapper);
+        articleService.removeTopArticle(id);
     }
 
 

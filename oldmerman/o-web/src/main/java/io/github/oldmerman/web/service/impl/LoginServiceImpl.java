@@ -155,8 +155,10 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public CaptchaVO generateCaptcha() {
         CircleCaptcha circleCaptcha = CaptchaUtil.createCircleCaptcha(200, 100);
+        String code = circleCaptcha.getCode();
+        log.info("生成验证码: {}", code);
         String uuid = UUID.randomUUID().toString();
-        redisTemplate.opsForValue().set(RedisPrefix.CAPTCHA_CHECK + uuid, circleCaptcha.getCode(), 10, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(RedisPrefix.CAPTCHA_CHECK + uuid, code, 10, TimeUnit.MINUTES);
         CaptchaVO vo = new CaptchaVO();
         vo.setCaptcha(WebEnum.BASE64_IMAGE_PREFIX.getValue() + circleCaptcha.getImageBase64());
         vo.setUuid(uuid);
