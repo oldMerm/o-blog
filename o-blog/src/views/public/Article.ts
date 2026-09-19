@@ -7,6 +7,7 @@ export interface Article {
   articleStatus: number;
   like: number;
   createdAt: string;
+  isTop?: boolean;
 }
 
 // 访问文章功能，根据文章id渲染并跳转

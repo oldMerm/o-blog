@@ -22,6 +22,7 @@ const label = computed(() => labelMap[props.variant]);
         <div>
             <div class="px-article-meta">
                 <span>{{ date }}</span>
+                <span v-if="article.isTop" class="px-pin"> TOP </span>
             </div>
             <h4 class="px-article-title">{{ article.articleName }}</h4>
             <p v-if="article.articleDecr" class="px-article-desc">{{ article.articleDecr }}</p>

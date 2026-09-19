@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
 import { type Article, articleType, goToArticle } from '@/views/public/Article';
+import { usePinnedStore } from '@/stores/articleTop';
 
+const pinnedStore = usePinnedStore();
 let articleList = ref<Article[]>([]);
+
+// 置顶项置顶并在原列表中按 id 去重
+const mergedList = computed<Article[]>(() => {
+  const pinned = pinnedStore.news.map((item) => ({ ...item, isTop: true }));
+  const pinnedIds = new Set(pinned.map((item) => item.id));
+  return [...pinned, ...articleList.value.filter((item) => !pinnedIds.has(item.id))];
+});
 const getNotice = async () => {
   try {
     const res = await httpInstance.get<any, Response>('/article/public/info',{
@@ -32,12 +41,12 @@ onMounted(() => {
     <!-- 内容滚动区 -->
     <div class="content-scroll">
       <div 
-        v-for="item in articleList" 
+        v-for="item in mergedList" 
         :key="item.id" 
         class="list-item"
         @click="goToArticle(item.id)"
       >
-        {{ item.articleName }}
+        {{ item.isTop ? '[置顶]' : '' }}{{ item.articleName }}
       </div>
     </div>
   </div>

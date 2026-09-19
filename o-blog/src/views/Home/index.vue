@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import topbar from './components/topbar.vue';
 import ontice from './components/onotice.vue';
 import mcontent from './components/mcontent.vue';
@@ -10,14 +10,25 @@ import utitle2 from './components/utitle2.vue';
 import bcontent from './components/bcontent.vue';
 import chatCard from './components/chatCard.vue';
 import PixelHome from './style/index.vue';
+import { usePinnedStore } from '@/stores/articleTop.ts';
 
 const STORAGE_KEY = 'home_style';
-const isPixel = ref(localStorage.getItem(STORAGE_KEY) === 'pixel');
+const storedStyle = localStorage.getItem(STORAGE_KEY);
+// 首次访问（无本地记录）默认使用像素风格
+const isPixel = ref(storedStyle ? storedStyle === 'pixel' : true);
 
 const setPixel = (value: boolean) => {
     isPixel.value = value;
     localStorage.setItem(STORAGE_KEY, value ? 'pixel' : 'normal');
 };
+
+// 初始化置顶状态
+const store = usePinnedStore();
+
+onMounted(() => {
+    console.log("index mounted");
+    store.load()
+});
 </script>
 
 <template>

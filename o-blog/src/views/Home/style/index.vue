@@ -8,16 +8,32 @@ import PlayerCard from './component/PlayerCard.vue';
 import PixelSteve from './component/PixelSteve.vue';
 import PixelFooter from './component/PixelFooter.vue';
 import PixelToast from './component/PixelToast.vue';
+import { usePinnedStore } from '@/stores/articleTop';
 import './pixel.css';
 
 const emit = defineEmits<{
     (e: 'switch-style'): void;
 }>();
 
-const notices = ref<Article[]>([]);
-const techs = ref<Article[]>([]);
-const lives = ref<Article[]>([]);
+const rawNotices = ref<Article[]>([]);
+const rawTechs = ref<Article[]>([]);
+const rawLives = ref<Article[]>([]);
 const versionId = ref('');
+
+const pinnedStore = usePinnedStore();
+
+// 置顶项置顶并在原列表中按 id 去重
+const mergePinned = (list: Article[], pinned: Article[]): Article[] => {
+    const pinnedIds = new Set(pinned.map((item) => item.id));
+    return [
+        ...pinned.map((item) => ({ ...item, isTop: true })),
+        ...list.filter((item) => !pinnedIds.has(item.id))
+    ];
+};
+
+const notices = computed(() => mergePinned(rawNotices.value, pinnedStore.news));
+const techs = computed(() => mergePinned(rawTechs.value, pinnedStore.tech));
+const lives = computed(() => mergePinned(rawLives.value, pinnedStore.daily));
 
 const totalModules = computed(() => notices.value.length + techs.value.length + lives.value.length);
 
@@ -99,9 +115,9 @@ onMounted(async () => {
         fetchList(articleType.TECNO, 11),
         fetchList(articleType.LIFE)
     ]);
-    notices.value = n;
-    techs.value = t;
-    lives.value = l;
+    rawNotices.value = n;
+    rawTechs.value = t;
+    rawLives.value = l;
 
     try {
         const res = await httpInstance.get<any, Response>('/version');

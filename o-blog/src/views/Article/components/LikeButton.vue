@@ -59,14 +59,12 @@ const getLikeRecord = async () => {
   if (!props.articleId) return;
   try {
     const res = await httpInstance.get<any, Response>(`/article/like/${props.articleId}`);
-    if (handleUnauthorized(res)) return;
     if (res.code === 200) {
       isLiked.value = res.data === true;
     }
   } catch (error) {
-    if (isAuthError(error)) {
-      showLoginToast();
-    } else {
+    // 未登录时查询点赞记录属于正常情况，静默跳过，不提示登录
+    if (!isAuthError(error)) {
       console.error('Failed to fetch like record', error);
     }
   }

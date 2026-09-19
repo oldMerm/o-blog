@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { httpInstance, type Response } from '@/utils/http';
-import { ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import ArticleCheckDialog from '../utils/ArticleCheckDialog.vue';
 import UploadModal from '@/views/Manage/utils/ContentDialog.vue';
-import { goToArticle } from '@/views/public/Article';
+import { goToArticle, type Article } from '@/views/public/Article';
+import { usePinnedStore } from '@/stores/articleTop';
 
 // --- 状态映射 (用于显示中文) ---
 const statusIdMap: Record<number, string> = {
@@ -38,6 +39,9 @@ interface ArticlePageVO {
     createdAt: string;
     visable: boolean;
 }
+interface ArticleRowVO extends ArticlePageVO {
+    isTop?: boolean;
+}
 const articleList = ref<ArticlePageVO[]>([]);
 watch(
     currentPage,
@@ -65,6 +69,61 @@ watch(
         }
     }, { immediate: true });
 
+// --- 置顶逻辑 ---
+const pinnedStore = usePinnedStore();
+
+const statusName = (status: number | string) => statusIdMap[Number(status)] ?? String(status);
+
+// 将 store 中三类置顶集合拍平，类型分别对应 0/1/2
+const pinnedList = computed<ArticleRowVO[]>(() => {
+    const top = pinnedStore.articleTopList;
+    if (!top) return [];
+    const buckets: Array<[number, Article[]]> = [
+        [0, top.newList],
+        [1, top.tecList],
+        [2, top.dailyList]
+    ];
+    return buckets.flatMap(([articleType, list]) =>
+        (list ?? []).map((item) => ({
+            id: String(item.id),
+            articleName: item.articleName,
+            articleWriter: '—',
+            articleType,
+            articleStatus: statusName(item.articleStatus),
+            createdAt: item.createdAt,
+            visable: false,
+            isTop: true
+        }))
+    );
+});
+
+const pinnedIds = computed(() => new Set(pinnedList.value.map((item) => item.id)));
+
+// 置顶项排在最前，分页中重复的 id 剔除；若置顶项同时存在于当前页，则补齐作者等信息
+const mergedList = computed<ArticleRowVO[]>(() => {
+    const pageMap = new Map(articleList.value.map((item) => [item.id, item]));
+    const pinned = pinnedList.value.map((item) => {
+        const matched = pageMap.get(item.id);
+        return matched
+            ? {
+                  ...item,
+                  articleWriter: matched.articleWriter,
+                  articleType: matched.articleType,
+                  articleStatus: matched.articleStatus
+              }
+            : item;
+    });
+    const rest = articleList.value.filter((item) => !pinnedIds.value.has(item.id));
+    return [...pinned, ...rest];
+});
+
+const refreshPinned = async () => {
+    pinnedStore.reset();
+    await pinnedStore.load();
+};
+
+onMounted(refreshPinned);
+
 const uploadModalRef = ref<InstanceType<typeof UploadModal> | null>(null);
 
 const openModal = () => {
@@ -81,6 +140,43 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
         if(res.code === 200){
             alert("文章状态修改成功！");
             item.articleStatus = type;
+            const pageRow = articleList.value.find((row) => row.id === item.id);
+            if (pageRow) pageRow.articleStatus = type;
+            const top = pinnedStore.articleTopList;
+            if (top) {
+                [top.newList, top.tecList, top.dailyList].forEach((list) => {
+                    const topRow = list?.find((a) => String(a.id) === item.id);
+                    if (topRow) topRow.articleStatus = type === 'publish' ? 3 : 4;
+                });
+            }
+        }
+    } catch (error) {
+        alert(`系统错误:${error}`);
+    }
+}
+
+const setTopArticle = async(articleId: string) => {
+    try {
+        const res = await httpInstance.post<any, Response>(`/article/top/${articleId}`);
+        if(res.code === 200){
+            alert(`文章置顶成功: ${articleId}`);
+            await refreshPinned();
+        } else {
+            alert(res.message || '文章置顶失败');
+        }
+    } catch (error) {
+        alert(`系统错误:${error}`);
+    }
+}
+
+const removeTopArticle = async(articleId: string) => {
+    try {
+        const res = await httpInstance.delete<any, Response>(`/article/top/${articleId}`);
+        if(res.code === 200){
+            alert(`文章取消置顶成功: ${articleId}`);
+            await refreshPinned();
+        } else {
+            alert(res.message || '文章取消置顶失败');
         }
     } catch (error) {
         alert(`系统错误:${error}`);
@@ -120,9 +216,10 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="item in articleList">
+                    <tr v-for="item in mergedList" :key="item.id" :class="{ 'is-top': item.isTop }">
                         <td class="col-id">{{ item.id.slice(0, 12) }}...</td>
                         <td class="col-title">
+                            <span v-if="item.isTop" class="top-badge">置顶</span>
                             <span class="title-text">{{ item.articleName }}</span>
                         </td>
                         <td>
@@ -150,6 +247,12 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
                             <ArticleCheckDialog v-model:visible="item.visable" :onConfirm="handleCheckAction" :extraParam="item" />
 
                             <span class="divider">|</span>
+                            <button v-if="!item.isTop" class="btn-text" @click="setTopArticle(item.id)">
+                                文章置顶
+                            </button>
+                            <button v-else class="btn-text" @click="removeTopArticle(item.id)">
+                                取消置顶
+                            </button>
                             <button class="btn-text" @click="goToArticle(item.id, true, 'private')">
                                 查看详细
                             </button>
@@ -262,6 +365,26 @@ const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePage
 .title-text {
     font-weight: 500;
     color: #1f2937;
+}
+
+/* 置顶行 */
+.data-table tr.is-top td {
+    background-color: #fffbeb;
+}
+
+.data-table tr.is-top:hover td {
+    background-color: #fef3c7;
+}
+
+.top-badge {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background-color: #f59e0b;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .author-info {

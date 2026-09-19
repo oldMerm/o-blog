@@ -34,7 +34,6 @@ public class CounterController {
 
     @GetMapping("/newArt")
     public Result<ArticleRenderVO> getArticleUpdateInfo(){
-        log.info("获取老鱼人最新文章");
         return Result.success(counterService.getArticleUpdateInfo());
     }
 

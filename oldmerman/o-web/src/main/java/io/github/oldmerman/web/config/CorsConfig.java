@@ -56,7 +56,10 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addInterceptor(jwtInterceptor).order(1)
                 .addPathPatterns("/**");
         registry.addInterceptor(authInterceptor).order(2)
-                .addPathPatterns(List.of("/admin/**","/version/admin/**"))
+                .addPathPatterns(List.of(
+                        "/admin/**",
+                        "/version/admin/**",
+                        "/top/**"))
                 .excludePathPatterns(List.of("/admin/usr/isAdmin"));
     }
 }

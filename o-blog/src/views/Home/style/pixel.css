@@ -671,6 +671,35 @@
     margin-bottom: 8px;
 }
 
+.pixel-home .px-article-meta .px-pin {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 1px;
+    color: #4a2c00;
+    background: linear-gradient(180deg, #ffe9a3 0%, #ffcf4d 48%, #f2a900 100%);
+    border: 2px solid var(--px-borderDark);
+    box-shadow: 2px 2px 0 0 var(--px-borderDark);
+    padding: 3px 6px;
+}
+
+/* 像素图钉头部 */
+.pixel-home .px-article-meta .px-pin::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    flex-shrink: 0;
+    background-color: var(--px-borderDark);
+    box-shadow:
+        4px 0 0 0 var(--px-borderDark),
+        0 4px 0 0 var(--px-borderDark),
+        4px 4px 0 0 var(--px-borderDark);
+}
+
 .pixel-home .px-article-title {
     font-family: var(--font-pixel);
     font-size: 14px;

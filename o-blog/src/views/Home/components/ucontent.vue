@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
 import { type Article, articleType, goToArticle } from '@/views/public/Article';
+import { usePinnedStore } from '@/stores/articleTop';
 
+const pinnedStore = usePinnedStore();
 let articleList = ref<Article[]>([]);
+
+// 置顶项置顶并在原列表中按 id 去重
+const mergedList = computed<Article[]>(() => {
+  const pinned = pinnedStore.daily.map((item) => ({ ...item, isTop: true }));
+  const pinnedIds = new Set(pinned.map((item) => item.id));
+  return [...pinned, ...articleList.value.filter((item) => !pinnedIds.has(item.id))];
+});
 const getNotice = async () => {
   try {
     const res = await httpInstance.get<any, Response>('/article/public/info', {
@@ -32,10 +41,10 @@ onMounted(() => {
 
     <!-- 标题列表区域 -->
     <div class="title-list">
-      <div v-for="(item, index) in articleList" :key="index" class="article-item">
+      <div v-for="(item, index) in mergedList" :key="index" class="article-item">
 
         <!-- 左侧：标题 (自动截断) -->
-        <span class="title-text" @click="goToArticle(item.id)">{{ item.articleName }}</span>
+        <span class="title-text" @click="goToArticle(item.id)">{{ item.isTop ? '[置顶]' : '' }}{{ item.articleName }}</span>
 
         <!-- 右侧：数据 (固定不换行) -->
         <p class="stats-info">
