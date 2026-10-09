@@ -35,6 +35,54 @@ const notices = computed(() => mergePinned(rawNotices.value, pinnedStore.news));
 const techs = computed(() => mergePinned(rawTechs.value, pinnedStore.tech));
 const lives = computed(() => mergePinned(rawLives.value, pinnedStore.daily));
 
+type PixelVariant = 'notice' | 'tech' | 'daily';
+interface PixelCard {
+    article: Article;
+    variant: PixelVariant;
+}
+
+const toCards = (articles: Article[], variant: PixelVariant): PixelCard[] =>
+    articles.map((article) => ({ article, variant }));
+
+// 将三类文章按总数三等分，超出目标数量的卡片均摊到较短的列，避免某列过长
+const balanceColumns = (groups: Record<PixelVariant, Article[]>): Record<PixelVariant, PixelCard[]> => {
+    const keys = ['notice', 'tech', 'daily'] as const;
+    const total = keys.reduce((sum, key) => sum + groups[key].length, 0);
+    const target = Math.ceil(total / keys.length);
+
+    const columns: Record<PixelVariant, PixelCard[]> = { notice: [], tech: [], daily: [] };
+    const overflow: PixelCard[] = [];
+
+    keys.forEach((key) => {
+        // 置顶文章固定保留在本列，不参与均摊
+        const pinned = groups[key].filter((item) => item.isTop);
+        const movable = groups[key].filter((item) => !item.isTop);
+        const capacity = Math.max(0, target - pinned.length);
+        const keep = movable.slice(0, capacity);
+
+        columns[key] = [...toCards(pinned, key), ...toCards(keep, key)];
+        overflow.push(...toCards(movable.slice(capacity), key));
+    });
+
+    overflow.forEach((card) => {
+        const shortest = keys.reduce(
+            (min, key) => (columns[key].length < columns[min].length ? key : min),
+            keys[0]
+        );
+        columns[shortest].push(card);
+    });
+
+    return columns;
+};
+
+const columnLayout = computed(() =>
+    balanceColumns({
+        notice: notices.value,
+        tech: techs.value,
+        daily: lives.value
+    })
+);
+
 const totalModules = computed(() => notices.value.length + techs.value.length + lives.value.length);
 
 const toastRef = ref<InstanceType<typeof PixelToast> | null>(null);
@@ -212,17 +260,17 @@ onUnmounted(removeFonts);
                 <div class="px-grid">
                     <!-- 公告 -->
                     <div class="px-col">
-                        <PixelColumn index="01." icon="📜" title="公告 (NOTICES)" variant="notice" :articles="notices" />
+                        <PixelColumn index="01." icon="📜" title="公告 (NOTICES)" variant="notice" :items="columnLayout.notice" />
                         <div ref="playerRef">
                             <PlayerCard @toast="showToast" />
                         </div>
                     </div>
 
                     <!-- 技术 -->
-                    <PixelColumn index="02." icon="⚡" title="技术 (TECH)" variant="tech" :articles="techs" />
+                    <PixelColumn index="02." icon="⚡" title="技术 (TECH)" variant="tech" :items="columnLayout.tech" />
 
                     <!-- 日常 -->
-                    <PixelColumn index="03." icon="☕" title="日常 (DAILY)" variant="daily" :articles="lives" />
+                    <PixelColumn index="03." icon="☕" title="日常 (DAILY)" variant="daily" :items="columnLayout.daily" />
                 </div>
             </section>
         </main>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { httpInstance, type Response } from '@/utils/http';
-import Dialog from '@/text/dia/Dialog.vue';
+import Dialog from '@/views/Manage/utils/ContentDialog.vue';
 
 // --- 1. TS 接口定义 (Interface) ---
 interface User {

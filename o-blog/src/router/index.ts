@@ -5,6 +5,7 @@ import MobileArticle from '@/views/Article/components/MobileMarkdownViewer.vue'
 import Login from '@/views/Login/index.vue'
 import Manage from '@/views/Manage/index.vue'
 import MobileHome  from '@/views/mobile/index.vue'
+import NotFound from '@/views/NotFound/index.vue'
 
 import Admin from '@/views/admin/index.vue'
 import AdminDashboard from '@/views/admin/components/AdminDashboard.vue'
@@ -73,12 +74,13 @@ const router = createRouter({
       name: 'mobile_markdown',
       path: '/mobile/markdown/:id',
       component: MobileArticle
-    }
-    // {
-    //   name: 'text',
-    //   path: '/text',
-    //   component: JumpingTextDemo
-    // }
+    },
+    {
+      // 兜底路由：访问不存在的地址时展示 404 页面
+      name: 'not-found',
+      path: '/:pathMatch(.*)*',
+      component: NotFound
+    },
   ],
 })
 
