@@ -4,7 +4,8 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.model.DeleteObjectsRequest;
-import com.aliyun.oss.model.DeleteObjectsResult;
+import com.aliyun.oss.model.GetObjectRequest;
+import com.aliyun.oss.model.OSSObject;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.enums.NumEnum;
 import io.github.oldmerman.common.enums.WebEnum;
@@ -20,7 +21,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -78,6 +81,22 @@ public class OssServiceImpl implements OssService {
         }
         URL url = ossClient.generatePresignedUrl(newBucket, key, expires);
         return url.toString();
+    }
+
+    @Override
+    public String getArticleContent(String key, String bucket) {
+        String newBucket = bucket == null ? BUCKET : bucket;
+        GetObjectRequest request = new GetObjectRequest(newBucket, key);
+        try (OSSObject ossObject = ossClient.getObject(request);
+             InputStream inputStream = ossObject.getObjectContent()) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.error("读取 OSS 文件失败, bucket={}, key={}", newBucket, key, e);
+            return null;
+        } catch (Exception e) {
+            log.error("OSS 异常, bucket={}, key={}", newBucket, key, e);
+            return null;
+        }
     }
 
     @Override

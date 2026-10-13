@@ -84,7 +84,6 @@ subprojects {
             testImplementation 'org.springframework.boot:spring-boot-starter-test'
             testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
             implementation 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.15'
-            implementation 'org.springframework.boot:spring-boot-starter-webflux'
             implementation 'com.baomidou:mybatis-plus-jsqlparser:3.5.15'
             runtimeOnly 'com.mysql:mysql-connector-j:9.0.0'
             // mapstruct相关依赖
@@ -101,7 +100,8 @@ subprojects {
             implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.3'
             // 系统数据获取
             implementation 'com.github.oshi:oshi-core:6.9.3'
-
+            // oldmerman-deepseek
+            implementation 'io.github.oldmerman:oldmerman-deepseek-core:1.0.1-SNAPSHOT'
             // 业务模块通常依赖这些基础模块
             implementation project(':common-config')
             implementation project(':merman-model')

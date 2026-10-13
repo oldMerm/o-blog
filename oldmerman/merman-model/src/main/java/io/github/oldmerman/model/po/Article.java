@@ -38,8 +38,9 @@ public class Article implements Serializable {
     private LocalDateTime updatedAt;
 
     public static class ArticleType {
-        public static byte TECHNOLOGY = 1;
-        public static byte DAILY = 2;
+        public static final byte NEWS = 0;
+        public static final byte TECHNOLOGY = 1;
+        public static final byte DAILY = 2;
     }
 
     public static class ArticleStatus {
@@ -47,5 +48,19 @@ public class Article implements Serializable {
         public static byte REVIEWED = 2;
         public static byte PUBLISHED = 3;
         public static byte REMOVED = 4;
+    }
+
+    public String articleType() {
+        if (articleType == null) {
+            return "未知";
+        }
+        if (articleType == ArticleType.NEWS) {
+            return "公告";
+        } else if (articleType == ArticleType.TECHNOLOGY) {
+            return "技术";
+        } else if (articleType == ArticleType.DAILY) {
+            return "日常";
+        }
+        return "未知";
     }
 }

@@ -28,6 +28,15 @@ public interface OssService {
     String genPreviewURL(String key, String bucket);
 
     /**
+     * 获取文章内容
+     *
+     * @param key 文章唯一key
+     * @param bucket 所属bucket
+     * @return 文章内容
+     */
+    String getArticleContent(String key, String bucket);
+
+    /**
      * 生成公共url，只生产一次
      *
      * @param keys   文件路径

@@ -35,7 +35,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/version", "/version/*",
             "/article/group/public/**",
             "/article/top",
-            "/knowledge-agent"
+            "/chat/completion/*/digest"
     );
 
     // 公共路径：未登录可访问，有 token 则解析并设置上下文

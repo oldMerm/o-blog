@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
 
-/**
- * 404 页面 —— 由 D:\SecondCode\qianduan\404.html 移植为 Vue3 + TS 组件。
- * 原页面使用 Tailwind CDN 与全局 html/body 样式，这里全部改写为 scoped CSS，
- * 并以 position: fixed 铺满视口，避免与本项目全局样式（body min-width、滚动条）互相影响。
- */
-
 interface Bubble {
     id: number;
     left: number;

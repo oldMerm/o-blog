@@ -51,5 +51,5 @@ mybatis-plus:
       column-format: "`%s`"
 app:
   host: ${oldmerman.host}
-  oldmerman-knowledge-api-key: ${KNOWLEDGE_API_KEY}
-  oldmerman-knowledge-base-url: http://8.138.109.30/api
+  oldmerman-api-key: ${DEEPSEEK_API_KEY}
+
