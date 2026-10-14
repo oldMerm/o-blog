@@ -155,12 +155,6 @@ const extractHeadings = (content: string) => {
   allHeadings.value = list;
 };
 
-const extractArticleName = (content: string): string => {
-  const cleanContent = content.replace(/```[\s\S]*?```/g, '');
-  const match = /^#\s+(.*)$/m.exec(cleanContent);
-  return match?.[1]?.trim() ?? '';
-};
-
 const R = 18;
 const CIRCUMFERENCE = 2 * Math.PI * R;
 
@@ -199,6 +193,10 @@ const {
   stop: stopSummaryStream,
   reset: resetSummary,
 } = useAiSummary();
+
+const summaryMd = new MarkdownIt({ html: false, linkify: true, breaks: true });
+const summaryHtml = computed(() => summaryMd.render(summaryText.value));
+
 const summarySlot = ref<HTMLElement | null>(null);
 const summaryOpen = ref(false);
 const toastRef = ref<InstanceType<typeof Toast> | null>(null);
@@ -223,11 +221,7 @@ const openSummary = async () => {
     showToast('error', '文章内容为空，无法生成摘要');
     return;
   }
-  await generateSummaryStream({
-    articleId: String(route.params.id ?? ''),
-    articleName: extractArticleName(rawMarkdown.value),
-    content: rawMarkdown.value,
-  });
+  await generateSummaryStream(String(route.params.id ?? ''));
   if (summaryError.value) {
     showToast('error', summaryError.value);
   }
@@ -297,7 +291,10 @@ onUnmounted(() => {
             <button class="ai-panel-close" type="button" @click="closeSummary">×</button>
           </div>
           <div class="ai-panel-body">
-            <template v-if="summaryText">{{ summaryText }}<span v-if="summaryGenerating" class="ai-caret" /></template>
+            <template v-if="summaryText">
+              <div class="ai-summary-md" v-html="summaryHtml"></div>
+              <span v-if="summaryGenerating" class="ai-caret" />
+            </template>
             <div v-else-if="summaryGenerating" class="ai-panel-tip">正在理解文章内容…<span class="ai-caret" /></div>
             <div v-else class="ai-panel-tip">点击上方"生成摘要"获取由老鱼人智能体撰写的文章摘要</div>
           </div>
@@ -495,12 +492,17 @@ html, body {
 .mob-doc :deep(a) {
   color: #2563eb;
   text-decoration: none;
-  border-bottom: 1px solid #93c5fd;
-  transition: border-color 0.2s;
+  background-color: rgba(37, 99, 235, 0.08);
+  padding: 1px 5px;
+  margin: 0 1px;
+  border-radius: 5px;
+  font-weight: 500;
+  transition: color 0.2s, background-color 0.2s;
 }
 
 .mob-doc :deep(a:active) {
-  border-bottom-color: #2563eb;
+  color: #1d4ed8;
+  background-color: rgba(37, 99, 235, 0.16);
 }
 
 .mob-doc :deep(img) {
@@ -735,7 +737,7 @@ html, body {
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 500;
   color: #3b82f6;
   line-height: 1;
   pointer-events: none;
@@ -793,6 +795,66 @@ html, body {
 .ai-panel-tip {
   color: #94a3b8;
   font-size: 13px;
+}
+
+.ai-summary-md {
+  white-space: normal;
+}
+
+.ai-summary-md :deep(p) {
+  margin: 0 0 8px;
+}
+
+.ai-summary-md :deep(ul),
+.ai-summary-md :deep(ol) {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+
+.ai-summary-md :deep(li) {
+  margin: 3px 0;
+}
+
+.ai-summary-md :deep(h1),
+.ai-summary-md :deep(h2),
+.ai-summary-md :deep(h3),
+.ai-summary-md :deep(h4),
+.ai-summary-md :deep(h5) {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 8px 0 5px;
+  color: #1e293b;
+}
+
+.ai-summary-md :deep(code) {
+  background: #eef2f7;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.ai-summary-md :deep(pre) {
+  background: #f1f5f9;
+  padding: 10px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.ai-summary-md :deep(pre code) {
+  background: transparent;
+  padding: 0;
+}
+
+.ai-summary-md :deep(blockquote) {
+  margin: 8px 0;
+  padding-left: 10px;
+  border-left: 3px solid #cbd5e1;
+  color: #64748b;
+}
+
+.ai-summary-md :deep(a) {
+  color: #2563eb;
 }
 
 .ai-panel-foot {

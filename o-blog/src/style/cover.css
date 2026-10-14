@@ -5,9 +5,38 @@
     text-decoration: none;
 }
 
+:root {
+  /* 正文：Inter（与 JetBrains Mono 同源的气质，中性现代），中文回退系统字体 */
+  --font-sans: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC',
+    'Helvetica Neue', Arial, sans-serif;
+  /* 等宽：JetBrains Mono */
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', 'PingFang SC', 'Microsoft YaHei', monospace;
+}
+
 body {
   overflow-x: auto; /* 需要时显示横向滚动条 */
   min-width: 1200px; /* 设置最小宽度，小于这个值就出现滚动条 */
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 表单控件默认不继承字体，统一为全站字体 */
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
 }
 
 html {

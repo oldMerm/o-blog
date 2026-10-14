@@ -1,34 +1,25 @@
 import { ref, onUnmounted } from 'vue';
 import { httpInstance } from '@/utils/http';
 
-export interface AiSummaryPayload {
-  articleId: string;
-  articleName: string;
-  content: string;
+interface SseBlock {
+  event: string;
+  data: string;
 }
 
-interface SseEvent {
-  chunk?: string;
-  call_id?: number;
-  type?: string;
-  code?: number;
-  message?: string;
-  data?: { id?: string; content?: string };
-}
-
-const parseEvent = (block: string): SseEvent | null => {
+const parseSseBlock = (block: string): SseBlock | null => {
+  let event = 'message';
   const dataLines: string[] = [];
-  block.split('\n').forEach((line) => {
-    if (line.startsWith('data:')) {
-      dataLines.push(line.slice(5).trimStart());
+  for (const line of block.split('\n')) {
+    if (line.startsWith('event:')) {
+      event = line.slice(6).trim();
+    } else if (line.startsWith('data:')) {
+      let value = line.slice(5);
+      if (value.startsWith(' ')) value = value.slice(1);
+      dataLines.push(value);
     }
-  });
-  if (dataLines.length === 0) return null;
-  try {
-    return JSON.parse(dataLines.join('\n'));
-  } catch {
-    return null;
   }
+  if (dataLines.length === 0 && event === 'message') return null;
+  return { event, data: dataLines.join('\n') };
 };
 
 export function useAiSummary() {
@@ -36,78 +27,74 @@ export function useAiSummary() {
   const generating = ref(false);
   const finished = ref(false);
   const error = ref('');
-  let ctrl: AbortController | null = null;
-  let streamTimer: ReturnType<typeof setInterval> | null = null;
-  let streamLen = 0;
 
-  const clearStreamTimer = () => {
-    if (streamTimer !== null) {
-      clearInterval(streamTimer);
-      streamTimer = null;
+  let ctrl: AbortController | null = null;
+  let drainTimer: ReturnType<typeof setInterval> | null = null;
+  let pending = '';
+  let doneReceived = false;
+
+  const TICK_MS = 16;
+
+  const clearDrainTimer = () => {
+    if (drainTimer !== null) {
+      clearInterval(drainTimer);
+      drainTimer = null;
     }
   };
 
-  // 缓存命中时一次性返回全文，用“打字机”效果模拟流式展示
-  const simulateStream = (content: string) => {
-    clearStreamTimer();
-    text.value = '';
-    streamLen = content.length;
-    if (streamLen === 0) {
-      finished.value = true;
+  // 统一「打字机」队列：流式分片与缓存全文都经此按稳定速度渲染
+  const drainTick = () => {
+    if (error.value) {
+      clearDrainTimer();
       return;
     }
-    generating.value = true;
-    finished.value = false;
-    let idx = 0;
-    const totalTicks = Math.min(Math.max(Math.round(streamLen / 5), 50), 120);
-    const step = Math.max(1, Math.ceil(streamLen / totalTicks));
-    streamTimer = setInterval(() => {
-      if (error.value) {
-        clearStreamTimer();
-        return;
-      }
-      idx = Math.min(idx + step, streamLen);
-      text.value = content.slice(0, idx);
-      if (idx >= streamLen) {
-        clearStreamTimer();
-        finished.value = true;
-        generating.value = false;
-      }
-    }, 35);
+    if (pending.length > 0) {
+      const step = Math.max(1, Math.ceil(pending.length / 12));
+      text.value += pending.slice(0, step);
+      pending = pending.slice(step);
+    }
+    if (pending.length === 0 && doneReceived) {
+      clearDrainTimer();
+      finished.value = true;
+      generating.value = false;
+    }
+  };
+
+  const ensureDrainTimer = () => {
+    if (drainTimer === null) {
+      drainTimer = setInterval(drainTick, TICK_MS);
+    }
   };
 
   const handleBlock = (block: string) => {
     if (finished.value || error.value) return;
-    const evt = parseEvent(block);
+    const evt = parseSseBlock(block);
     if (!evt) return;
-    if (typeof evt.code === 'number' && evt.code !== 200) {
-      clearStreamTimer();
-      error.value = evt.message || '摘要生成失败';
-      finished.value = true;
+    if (evt.event === 'content') {
+      if (evt.data) pending += evt.data;
+      ensureDrainTimer();
       return;
     }
-    if (evt.type === 'content' && typeof evt.chunk === 'string') {
-      if (streamTimer !== null) return;
-      text.value += evt.chunk;
+    if (evt.event === 'done' || evt.data === '[DONE]') {
+      doneReceived = true;
+      if (pending.length === 0) {
+        clearDrainTimer();
+        finished.value = true;
+        generating.value = false;
+      }
       return;
-    }
-    if (evt.type === 'end') {
-      if (streamTimer !== null) return;
-      finished.value = true;
-      return;
-    }
-    if (evt.data && typeof evt.data.content === 'string') {
-      simulateStream(evt.data.content);
     }
   };
 
-  const generate = async (payload: AiSummaryPayload) => {
+  const generate = async (articleId: string) => {
     if (generating.value) return;
     ctrl?.abort();
-    clearStreamTimer();
+    clearDrainTimer();
     ctrl = new AbortController();
     text.value = '';
     error.value = '';
+    pending = '';
+    doneReceived = false;
     generating.value = true;
     finished.value = false;
 
@@ -125,25 +112,30 @@ export function useAiSummary() {
     };
 
     try {
-      const res: any = await httpInstance.post('/knowledge-agent', payload, {
-        responseType: 'text',
-        timeout: 0,
-        signal: ctrl.signal,
-        onDownloadProgress: (e: any) => {
-          const raw = e?.event?.target?.responseText;
-          if (typeof raw === 'string') consume(raw);
-        },
-      });
+      const res: any = await httpInstance.post(
+        `/chat/completion/${articleId}/digest`,
+        null,
+        {
+          responseType: 'text',
+          timeout: 0,
+          signal: ctrl.signal,
+          onDownloadProgress: (e: any) => {
+            const raw = e?.event?.target?.responseText;
+            if (typeof raw === 'string') consume(raw);
+          },
+        }
+      );
       if (!finished.value && !error.value && typeof res === 'string') {
         consume(res);
       }
       if (!finished.value && !error.value) {
-        if (streamTimer !== null) {
-          // 缓存命中，模拟流式渲染进行中，等待 simulateStream 收尾
-        } else if (text.value) {
-          finished.value = true;
-        } else {
+        if (!doneReceived && (pending.length > 0 || text.value)) {
+          // 响应结束但未收到显式 done，视为已完成并排空剩余内容
+          doneReceived = true;
+          ensureDrainTimer();
+        } else if (!doneReceived) {
           error.value = '摘要生成失败，请稍后重试';
+          generating.value = false;
         }
       }
     } catch (err: any) {
@@ -151,16 +143,14 @@ export function useAiSummary() {
       if (!canceled) {
         error.value = err?.message || '摘要生成失败';
       }
-    } finally {
-      if (streamTimer === null) {
-        generating.value = false;
-      }
+      clearDrainTimer();
+      generating.value = false;
     }
   };
 
   const stop = () => {
     ctrl?.abort();
-    clearStreamTimer();
+    clearDrainTimer();
     generating.value = false;
     if (!finished.value && !error.value && text.value) {
       finished.value = true;
@@ -169,8 +159,10 @@ export function useAiSummary() {
 
   const reset = () => {
     ctrl?.abort();
-    clearStreamTimer();
+    clearDrainTimer();
     ctrl = null;
+    pending = '';
+    doneReceived = false;
     text.value = '';
     generating.value = false;
     finished.value = false;
@@ -179,7 +171,7 @@ export function useAiSummary() {
 
   onUnmounted(() => {
     ctrl?.abort();
-    clearStreamTimer();
+    clearDrainTimer();
     ctrl = null;
   });
 

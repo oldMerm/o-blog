@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public Result<?> handleBusinessException(BusinessException e, HttpServletRequest request) {
-        log.error("业务异常：{}", e.getMessage());
+        if(e.getCode() != 401) log.error("业务异常：{}", e.getMessage());
         return Result.fail(e.getCode(), e.getMessage())
                 .setPath(request.getRequestURI());
     }

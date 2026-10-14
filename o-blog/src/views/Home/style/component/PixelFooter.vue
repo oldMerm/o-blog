@@ -15,9 +15,6 @@ const props = defineProps<{
     versionId?: string;
 }>();
 
-const emit = defineEmits<{
-    (e: 'toast', msg: string, icon?: string): void;
-}>();
 
 /* ---- 版本弹框：与 bcontent 保持一致的显隐逻辑 ---- */
 const VERSION_NEWS_KEY = 'version_news';
@@ -55,7 +52,6 @@ onMounted(async () => {
 
 const showVersion = () => {
     isModalVisible.value = true;
-    emit('toast', `当前版本：${displayVersion.value || '获取中...'}`, '📦');
 };
 </script>
 

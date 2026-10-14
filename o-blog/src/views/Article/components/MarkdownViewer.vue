@@ -12,6 +12,7 @@ import mermaid from 'mermaid';
 import { useAiSummary } from '@/composables/useAiSummary';
 import Toast from '@/utils/toast/Toast.vue';
 import LikeButton from './LikeButton.vue';
+import githubIcon from '@/static/github.svg';
 
 // --- 类型定义 ---
 interface Heading {
@@ -25,8 +26,19 @@ const renderedHtml = ref('');
 const allHeadings = ref<Heading[]>([]);
 const showAboutPopup = ref(false);
 
-// Mermaid 初始化
-mermaid.initialize({ startOnLoad: false, theme: 'default' });
+// --- 主题（亮/暗）---
+const THEME_STORAGE_KEY = 'markdown-viewer-theme';
+const theme = ref<'light' | 'dark'>(
+  localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'
+);
+
+const toggleTheme = () => {
+  theme.value = theme.value === 'dark' ? 'light' : 'dark';
+};
+
+// Mermaid 初始化（主题随亮/暗切换）
+const mermaidSources = new WeakMap<HTMLElement, string>();
+const mermaidTheme = () => (theme.value === 'dark' ? 'dark' : 'default');
 // 作者信息数据（在渲染前更新）
 const authorMeta = { writer: '', createdAt: '', len: 0 };
 
@@ -85,14 +97,34 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
   return defaultRender!(tokens, idx, options, env, self);
 };
 // --- Mermaid 渲染触发函数 ---
+// 首次渲染：记录图表源码，并按当前主题绘制
 const triggerMermaid = async () => {
   await nextTick();
-  // 渲染所有 .mermaid 元素
-  const elements = document.querySelectorAll('.mermaid');
-  if (elements.length > 0) {
-    await mermaid.run({ nodes: elements as any });
-  }
+  const elements = Array.from(document.querySelectorAll<HTMLElement>('.mermaid'));
+  if (elements.length === 0) return;
+  mermaid.initialize({ startOnLoad: false, theme: mermaidTheme() });
+  elements.forEach((el) => mermaidSources.set(el, el.textContent ?? ''));
+  await mermaid.run({ nodes: elements as any });
 };
+
+// 主题切换后重绘制：还原源码再按新主题重新渲染
+const rerenderMermaid = async () => {
+  const elements = Array.from(document.querySelectorAll<HTMLElement>('.mermaid'));
+  if (elements.length === 0) return;
+  mermaid.initialize({ startOnLoad: false, theme: mermaidTheme() });
+  elements.forEach((el) => {
+    const source = mermaidSources.get(el);
+    if (source === undefined) return;
+    el.removeAttribute('data-processed');
+    el.textContent = source;
+  });
+  await mermaid.run({ nodes: elements as any });
+};
+
+watch(theme, (value) => {
+  localStorage.setItem(THEME_STORAGE_KEY, value);
+  rerenderMermaid();
+});
 
 // 文章信息
 interface ArticleInfo {
@@ -268,12 +300,6 @@ const extractHeadings = (content: string) => {
   allHeadings.value = list;
 };
 
-const extractArticleName = (content: string): string => {
-  const cleanContent = content.replace(/```[\s\S]*?```/g, '');
-  const match = /^#\s+(.*)$/m.exec(cleanContent);
-  return match?.[1]?.trim() ?? '';
-};
-
 // 右侧栏：过滤出 H2 作为"本页重点"
 const leafHeadings = computed(() => {
   return allHeadings.value.filter(h => h.level === 2);
@@ -351,6 +377,10 @@ const {
   stop: stopSummaryStream,
   reset: resetSummary,
 } = useAiSummary();
+
+const summaryMd = new MarkdownIt({ html: false, linkify: true, breaks: true });
+const summaryHtml = computed(() => summaryMd.render(summaryText.value));
+
 const toastRef = ref<InstanceType<typeof Toast> | null>(null);
 const toastMsg = ref('');
 const toastType = ref<'success' | 'error'>('success');
@@ -367,11 +397,7 @@ const generateSummary = async () => {
     showToast('error', '文章内容为空，无法生成摘要');
     return;
   }
-  await generateSummaryStream({
-    articleId: String(route.params.id ?? ''),
-    articleName: extractArticleName(rawMarkdown.value),
-    content: rawMarkdown.value,
-  });
+  await generateSummaryStream(String(route.params.id ?? ''));
   if (summaryError.value) {
     showToast('error', summaryError.value);
   }
@@ -402,7 +428,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="vp-wrapper">
+  <div class="vp-wrapper" :data-theme="theme">
     <!-- 1. 顶部栏 (VitePress 风格) -->
     <nav class="vp-nav">
       <div class="nav-layout">
@@ -412,8 +438,38 @@ onUnmounted(() => {
         </div>
 
         <div class="nav-links">
-          <div><a @click="goToHome" style="cursor: pointer;">主页</a></div>
-          <div><a href="https://github.com" target="_blank">GitHub</a></div>
+          <button
+            class="theme-toggle"
+            type="button"
+            @click="toggleTheme"
+            :aria-label="theme === 'dark' ? '切换到亮色风格' : '切换到暗色风格'"
+            :title="theme === 'dark' ? '切换到亮色风格' : '切换到暗色风格'"
+          >
+            <svg v-if="theme === 'dark'" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+            <svg v-else viewBox="0 0 24 24">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+          </button>
+          <a
+            class="nav-github"
+            href="https://github.com/oldMerm/o-blog"
+            target="_blank"
+            rel="noopener"
+            aria-label="GitHub"
+          >
+            <img class="github-icon" :src="githubIcon" alt="GitHub" />
+          </a>
+          <a class="nav-home" @click="goToHome" style="cursor: pointer;">主页</a>
         </div>
       </div>
     </nav>
@@ -451,7 +507,10 @@ onUnmounted(() => {
                 @click="summaryGenerating ? stopSummary() : generateSummary()"
               >{{ summaryGenerating ? '停止' : '生成摘要' }}</button>
             </div>
-            <div v-if="summaryText" class="ai-summary-body">{{ summaryText }}<span v-if="summaryGenerating" class="ai-caret" /></div>
+            <div v-if="summaryText" class="ai-summary-body">
+              <div class="ai-summary-md" v-html="summaryHtml"></div>
+              <span v-if="summaryGenerating" class="ai-caret" />
+            </div>
             <div v-else-if="summaryGenerating" class="ai-summary-body ai-summary-wait">正在理解文章内容…<span class="ai-caret" /></div>
             <div v-else class="ai-summary-body ai-summary-empty">点击"生成摘要"，获取由老鱼人智能体撰写的文章摘要</div>
             <div class="ai-summary-foot">生成自老鱼人智能体，仅供参考</div>
@@ -522,7 +581,8 @@ onUnmounted(() => {
 .vp-wrapper {
   background-color: #fff;
   color: #3c3c43;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  font-family: var(--font-sans);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* 🏗 顶部导航 */
@@ -555,23 +615,63 @@ onUnmounted(() => {
   font-size: 20px;
   font-weight: 500;
   color: #3b82f6;
-  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-family: var(--font-sans);
 }
 
 .nav-links {
   display: flex;
-
+  align-items: center;
+  gap: 36px;
 }
 
 .nav-links a {
-  margin-left: 35px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
   text-decoration: none;
   color: #4b5563;
-  font-size: 14px;
+  font-size: 17px;
 }
 
 .nav-links a:hover {
   color: #3b82f6;
+}
+
+.nav-links .github-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+/* 主题切换按钮 */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: #4b5563;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.theme-toggle:hover {
+  background: transparent;
+  color: #3b82f6;
+}
+
+.theme-toggle svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* 🗂 布局 */
@@ -763,6 +863,67 @@ onUnmounted(() => {
   border-radius: 2px;
 }
 
+.ai-summary-md {
+  white-space: normal;
+}
+
+.ai-summary-md :deep(p) {
+  margin: 0 0 6px;
+}
+
+.ai-summary-md :deep(ul),
+.ai-summary-md :deep(ol) {
+  margin: 4px 0 6px;
+  padding-left: 18px;
+}
+
+.ai-summary-md :deep(li) {
+  margin: 2px 0;
+}
+
+.ai-summary-md :deep(h1),
+.ai-summary-md :deep(h2),
+.ai-summary-md :deep(h3),
+.ai-summary-md :deep(h4),
+.ai-summary-md :deep(h5) {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 6px 0 4px;
+  color: #1e293b;
+}
+
+.ai-summary-md :deep(code) {
+  background: #eef2f7;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.ai-summary-md :deep(pre) {
+  background: #f1f5f9;
+  padding: 8px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+
+.ai-summary-md :deep(pre code) {
+  background: transparent;
+  padding: 0;
+}
+
+.ai-summary-md :deep(blockquote) {
+  margin: 6px 0;
+  padding-left: 8px;
+  border-left: 2px solid #cbd5e1;
+  color: #64748b;
+}
+
+.ai-summary-md :deep(a) {
+  color: #2563eb;
+}
+
 .ai-summary-wait,
 .ai-summary-empty {
   color: #94a3b8;
@@ -917,8 +1078,8 @@ onUnmounted(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 500;
   color: #3b82f6;
   line-height: 1;
   pointer-events: none;
@@ -1005,11 +1166,16 @@ onUnmounted(() => {
   overflow-x: auto;
   border: 1px solid #e2e8f0;
   margin-bottom: 20px;
+  font-family: var(--font-mono);
 }
 
 :deep(pre>code) {
   color: #363636 !important;
   font-weight: 300;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.7;
+  letter-spacing: -0.01em;
 }
 
 :deep(p) {
@@ -1064,31 +1230,394 @@ onUnmounted(() => {
   height: auto;
 }
 
-/* 超链接渲染 */
-:deep(p>a) {
-  color: rgb(0, 0, 0);
-  background-color: rgb(246, 246, 247);
-  padding: 3px;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  border-bottom: 1px solid black;
-  box-shadow: #1e293b;
-  transition: all 0.2s ease;
+/* 超链接渲染：移除下划线，改为柔和高亮胶囊 */
+:deep(.vp-doc a:not(.header-anchor)) {
+  color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.08);
+  padding: 1px 5px;
+  margin: 0 1px;
+  border-radius: 5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-:deep(p>a:hover) {
-  box-shadow: 0 1px black;
+:deep(.vp-doc a:not(.header-anchor):hover) {
+  color: #1d4ed8;
+  background-color: rgba(37, 99, 235, 0.16);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
 }
+
+/* 标题锚点保持轻量，不套用胶囊背景 */
+:deep(.header-anchor) {
+  display: none;
+  /* color: #949495;
+  text-decoration: none; */
+}
+/* 
+:deep(.header-anchor:hover) {
+  color: #3b82f6;
+} */
 
 :deep(p>code) {
   background-color: rgb(246, 246, 247);
   padding: 5px 5px;
   border-radius: 8px;
   font-weight: 300;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
   margin: 0 5px;
 }
 
 :deep(ol) {
   margin-left: 2.1%;
+}
+
+/* ============================================================
+   🌙 暗色风格
+   仅在 [data-theme="dark"] 下覆盖颜色，布局 / 字体 / 亮色风格不变
+   ============================================================ */
+.vp-wrapper[data-theme="dark"] {
+  background-color: #16181d;
+  color: #d5d8de;
+}
+
+/* 顶部导航 */
+.vp-wrapper[data-theme="dark"] .vp-nav {
+  border-bottom-color: #2a2d34;
+  background: rgba(22, 24, 29, 0.85);
+}
+
+.vp-wrapper[data-theme="dark"] .brand {
+  color: #60a5fa;
+}
+
+.vp-wrapper[data-theme="dark"] .nav-links a {
+  color: #b6bcc6;
+}
+
+.vp-wrapper[data-theme="dark"] .nav-links a:hover {
+  color: #60a5fa;
+}
+
+/* 主题切换按钮 / GitHub 图标 */
+.vp-wrapper[data-theme="dark"] .theme-toggle {
+  color: #b6bcc6;
+}
+
+.vp-wrapper[data-theme="dark"] .theme-toggle:hover {
+  color: #60a5fa;
+}
+
+.vp-wrapper[data-theme="dark"] .github-icon {
+  filter: invert(0.85);
+}
+
+/* 左侧栏 */
+.vp-wrapper[data-theme="dark"] .vp-sidebar-left {
+  border-right-color: #2a2d34;
+  background: #1a1c22;
+}
+
+.vp-wrapper[data-theme="dark"] .sidebar-title {
+  color: #7d8590;
+}
+
+.vp-wrapper[data-theme="dark"] .group-header:hover {
+  background: #24272e;
+}
+
+.vp-wrapper[data-theme="dark"] .group-name {
+  color: #d5d8de;
+}
+
+.vp-wrapper[data-theme="dark"] .group-arrow {
+  color: #7d8590;
+}
+
+.vp-wrapper[data-theme="dark"] .article-link {
+  color: #9aa4b2;
+}
+
+.vp-wrapper[data-theme="dark"] .article-link:hover {
+  color: #60a5fa;
+  background: #24272e;
+}
+
+.vp-wrapper[data-theme="dark"] .sidebar-empty {
+  color: #7d8590;
+}
+
+/* AI 摘要卡片 */
+.vp-wrapper[data-theme="dark"] .ai-summary-card {
+  border-color: #2b3a52;
+  background: linear-gradient(180deg, #1b2333, #1a1f2b);
+}
+
+.vp-wrapper[data-theme="dark"] .ai-summary-title {
+  color: #60a5fa;
+}
+
+.vp-wrapper[data-theme="dark"] .ai-summary-body {
+  color: #c3cad6;
+}
+
+.vp-wrapper[data-theme="dark"] .ai-summary-body::-webkit-scrollbar-thumb {
+  background: #3a3f47;
+}
+
+.vp-wrapper[data-theme="dark"] .ai-summary-md :deep(h1),
+.vp-wrapper[data-theme="dark"] .ai-summary-md :deep(h2),
+.vp-wrapper[data-theme="dark"] .ai-summary-md :deep(h3),
+.vp-wrapper[data-theme="dark"] .ai-summary-md :deep(h4),
+.vp-wrapper[data-theme="dark"] .ai-summary-md :deep(h5) {
+  color: #e6e9ef;
+}
+
+.vp-wrapper[data-theme="dark"] .ai-summary-md :deep(code) {
+  background: #24272e;
+}
+
+.vp-wrapper[data-theme="dark"] .ai-summary-md :deep(pre) {
+  background: #1e2128;
+}
+
+.vp-wrapper[data-theme="dark"] .ai-summary-md :deep(blockquote) {
+  border-left-color: #3a3f47;
+  color: #8b949e;
+}
+
+.vp-wrapper[data-theme="dark"] .ai-summary-md :deep(a) {
+  color: #60a5fa;
+}
+
+.vp-wrapper[data-theme="dark"] .ai-summary-wait,
+.vp-wrapper[data-theme="dark"] .ai-summary-empty {
+  color: #7d8590;
+}
+
+.vp-wrapper[data-theme="dark"] .ai-caret {
+  background: #60a5fa;
+}
+
+.vp-wrapper[data-theme="dark"] .ai-summary-foot {
+  color: #6b7f99;
+}
+
+/* 右侧栏 */
+.vp-wrapper[data-theme="dark"] .vp-sidebar-right {
+  background: #1a1c22;
+}
+
+.vp-wrapper[data-theme="dark"] .leaf-list {
+  border-left-color: #2a2d34;
+}
+
+.vp-wrapper[data-theme="dark"] .leaf-list a {
+  color: #9aa4b2;
+}
+
+.vp-wrapper[data-theme="dark"] .leaf-list a:hover {
+  color: #60a5fa;
+}
+
+/* 回到顶部 */
+.vp-wrapper[data-theme="dark"] .ring-bg {
+  stroke: #2a2d34;
+}
+
+.vp-wrapper[data-theme="dark"] .arrow-up {
+  color: #60a5fa;
+}
+
+/* 文章内容 */
+.vp-wrapper[data-theme="dark"] :deep(.author-info) {
+  border-bottom-color: #3a3f47;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc) {
+  color: #d5d8de;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc h1),
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc h2),
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc h3),
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc h4),
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc h5) {
+  color: #e6e9ef;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc h2) {
+  border-bottom-color: #2a2d34;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.custom-block.tip) {
+  background-color: #0c2a3a;
+  border-color: #14425a;
+  color: #7dd3fc;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.custom-block.warning) {
+  background-color: #3a2f12;
+  border-color: #5a4716;
+  color: #fcd34d;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(p) {
+  color: #d5d8de;
+}
+
+/* 代码块 */
+.vp-wrapper[data-theme="dark"] :deep(pre) {
+  background-color: #0d1117;
+  border-color: #30363d;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(pre>code) {
+  color: #c9d1d9 !important;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(p>code) {
+  background-color: #24272e;
+  color: #e6b673;
+}
+
+/* 表格 */
+.vp-wrapper[data-theme="dark"] :deep(table) {
+  background: #1a1c22;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.vp-wrapper[data-theme="dark"] :deep(th) {
+  background: #22252c;
+  color: #e6e9ef;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(td) {
+  border-bottom-color: #2a2d34;
+  color: #c3cad6;
+}
+
+/* 超链接 */
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc a:not(.header-anchor)) {
+  color: #60a5fa;
+  background-color: rgba(96, 165, 250, 0.12);
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc a:not(.header-anchor):hover) {
+  color: #93c5fd;
+  background-color: rgba(96, 165, 250, 0.22);
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.3);
+}
+
+/* 点赞按钮（子组件 LikeButton） */
+.vp-wrapper[data-theme="dark"] :deep(.like-btn) {
+  background: #1a1c22;
+  color: #9aa4b2;
+  border-color: #2a2d34;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.like-btn:hover) {
+  background: #24272e;
+  color: #60a5fa;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.like-btn.liked) {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+/* 代码高亮：GitHub Dark（对齐 highlight.js/styles/github-dark.css） */
+.vp-wrapper[data-theme="dark"] :deep(.hljs) {
+  color: #c9d1d9;
+  background: #0d1117;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-doctag),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-keyword),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-meta .hljs-keyword),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-template-tag),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-template-variable),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-type),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-variable.language_) {
+  color: #ff7b72;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-title),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-title.class_),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-title.class_.inherited__),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-title.function_) {
+  color: #d2a8ff;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-attr),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-attribute),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-literal),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-meta),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-number),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-operator),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-variable),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-selector-attr),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-selector-class),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-selector-id) {
+  color: #79c0ff;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-regexp),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-string),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-meta .hljs-string) {
+  color: #a5d6ff;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-built_in),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-symbol) {
+  color: #ffa657;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-comment),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-code),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-formula) {
+  color: #8b949e;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-name),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-quote),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-selector-tag),
+.vp-wrapper[data-theme="dark"] :deep(.hljs-selector-pseudo) {
+  color: #7ee787;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-subst) {
+  color: #c9d1d9;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-section) {
+  color: #1f6feb;
+  font-weight: bold;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-bullet) {
+  color: #f2cc60;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-emphasis) {
+  color: #c9d1d9;
+  font-style: italic;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-strong) {
+  color: #c9d1d9;
+  font-weight: bold;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-addition) {
+  color: #aff5b4;
+  background-color: #033a16;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.hljs-deletion) {
+  color: #ffdcd7;
+  background-color: #67060c;
 }
 </style>
