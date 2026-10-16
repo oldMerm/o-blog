@@ -6,14 +6,16 @@ oldmerman:
     port: 3306
     database: o_blog
     username: root
-    password: 123456
+    password: ${MYSQL_PASSWORD}
   redis:
     host: localhost
     port: 6379
     database: 0
+    password: ${REDIS_PASSWORD}
   mail:
     username: oldmerman@qq.com
     password: ${EMAIL_PASSWORD}
   oss:
     pri-bucket: oldmerman-prod
     pub-bucket: oldmerman-prod-pub
+  jwt: ${JWT_SECRET}

@@ -162,13 +162,13 @@ watch(
 .like-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 6px;
+  padding: 6px 13px;
   border: 1px solid var(--vp-c-border, #e2e8f0);
   border-radius: 999px;
   background: #fcfdfe;
   color: #64748b;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.15s, border-color 0.15s;
@@ -200,8 +200,8 @@ watch(
 }
 
 .hand-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   fill: currentColor;
 }
 

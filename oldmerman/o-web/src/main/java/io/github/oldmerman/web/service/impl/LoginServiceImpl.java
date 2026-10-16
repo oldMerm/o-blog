@@ -114,8 +114,8 @@ public class LoginServiceImpl implements LoginService {
     public void register(UserCreatedDTO dto) {
         checkCreateDTO(dto);
         String code = redisTemplate.opsForValue().get(RedisPrefix.EMAIL_CHECK + dto.getEmail());
-        if (!code.equals(dto.getCode())) {
-            throw new BusinessException(BusErrorCode.ERROR_EMAIL_CODE);
+        if (!StringUtils.hasText(code) || !code.equals(dto.getCode())) {
+            throw new BusinessException(BusErrorCode.ERROR_VERIFY_CODE);
         }
         User po = converter.createToUserPO(dto);
         po.setId(IdGenerator.nextId());
@@ -183,7 +183,7 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public void isValidAuthToken(Long userId) {
         if (userMapper.isValidAuthToken(userId) != 1) {
-            throw new BusinessException(BusErrorCode.ILLEGAL_TOKEN);
+            throw new BusinessException(ResultCode.FORBIDDEN);
         }
     }
 

@@ -9,6 +9,7 @@ import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.model.po.Feedback;
+import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.model.vo.FeedbackVO;
 import io.github.oldmerman.web.converter.FeedbackConverter;
 import io.github.oldmerman.web.mapper.FeedbackMapper;
@@ -19,7 +20,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -55,10 +58,24 @@ public class FeedbackServiceImpl implements FeedbackService {
         LambdaQueryWrapper<Feedback> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByDesc(Feedback::getCreatedAt);
         IPage<Feedback> iPage = feedbackMapper.selectPage(page, wrapper);
-        List<FeedbackVO> voList = iPage.getRecords().stream()
+
+        List<Feedback> records = iPage.getRecords();
+        if (records.isEmpty()){
+            return null;
+        }
+        List<Long> userIds = iPage.getRecords().stream().map(Feedback::getUserId).toList();
+        LambdaQueryWrapper<User> userWrapper = new LambdaQueryWrapper<>();
+        userWrapper.in(User::getId, userIds);
+        List<User> users = userMapper.selectList(userWrapper);
+
+        Map<Long, String> map = new HashMap<>(users.size());
+        for (User user : users) {
+            map.put(user.getId(), user.getUsername());
+        }
+        List<FeedbackVO> voList = records.stream()
                 .map(i -> {
                     FeedbackVO feedbackVO = converter.poToVo(i);
-                    feedbackVO.setUsername(userMapper.selectNameById(i.getUserId()));
+                    feedbackVO.setUsername(map.get(i.getUserId()));
                     return feedbackVO;
                 })
                 .toList();

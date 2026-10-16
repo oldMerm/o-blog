@@ -1,6 +1,7 @@
 package io.github.oldmerman.web.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.oldmerman.common.annotation.RequireAdmin;
 import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
@@ -83,12 +84,14 @@ public class ArticleController {
         return Result.success(articleService.getTopArticle());
     }
 
+    @RequireAdmin
     @PostMapping("/top/{articleId}")
     public Result<Void> setTopArticle(@PathVariable Long articleId) throws JsonProcessingException {
         articleService.setTopArticle(articleId);
         return Result.success();
     }
 
+    @RequireAdmin
     @DeleteMapping("/top/{articleId}")
     public Result<Void> removeTopArticle(@PathVariable Long articleId) throws JsonProcessingException {
         articleService.removeTopArticle(articleId);

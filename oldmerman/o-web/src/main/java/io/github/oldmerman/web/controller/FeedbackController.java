@@ -1,5 +1,6 @@
 package io.github.oldmerman.web.controller;
 
+import io.github.oldmerman.common.annotation.RequireAdmin;
 import io.github.oldmerman.common.response.PageResult;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.dto.FeedbackCreateDTO;
@@ -35,6 +36,7 @@ public class FeedbackController {
     }
 
     @GetMapping("page")
+    @RequireAdmin
     public Result<PageResult<FeedbackVO>> page(@RequestParam(value = "current", defaultValue = "1") Long current,
                                                @RequestParam(value = "size", defaultValue = "7") Long size){
         log.info("分页查询反馈信息");

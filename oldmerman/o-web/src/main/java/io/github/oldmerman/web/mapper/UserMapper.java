@@ -41,4 +41,5 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Update("UPDATE o_blog.o_user SET article = article + #{articleNumber} WHERE id = #{userId}")
     void updateUserArticleNum(Integer articleNumber, Long userId);
+
 }

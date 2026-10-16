@@ -8,11 +8,11 @@ onMounted(async () => {
   if(token === null){
     router.push({name:'home'});
   }else{
-    isVaildToken(token);
+    await isVaildToken();
   }
 })
 
-const isVaildToken = async(token:string) => {
+const isVaildToken = async() => {
   try {
     const res = await httpInstance.get<any, Response>('/auth/authToken');
     if(res.code !== 200){

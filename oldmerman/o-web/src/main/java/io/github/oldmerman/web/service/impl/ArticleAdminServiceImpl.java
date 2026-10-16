@@ -6,7 +6,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.PageResult;
+import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.model.dto.ArticleAdminUpdateDTO;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.vo.ArticlePageVO;
@@ -18,6 +20,7 @@ import io.github.oldmerman.web.util.RedisUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -53,14 +56,18 @@ public class ArticleAdminServiceImpl implements ArticleAdminService {
     }
 
     @Override
+    @Transactional
     public void updateArticleStatus(ArticleAdminUpdateDTO dto) throws JsonProcessingException {
         Long id = dto.getId();
         Article article = articleMapper.selectById(id);
+        if (article == null) {
+            throw new BusinessException(ResultCode.FAIL);
+        }
         LambdaUpdateWrapper<Article> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(Article::getId, id).set(Article::getArticleStatus, dto.getStatus());
         articleMapper.update(wrapper);
-        RedisUtils.rebuildArticleRenderCache(article.getArticleType(), id, redisTemplate, objectMapper);
         articleService.removeTopArticle(id);
+        RedisUtils.rebuildArticleRenderCache(article.getArticleType(), id, redisTemplate, objectMapper);
     }
 
 

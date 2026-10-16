@@ -17,4 +17,5 @@ oldmerman:
   oss:
     pri-bucket: project-oldmerman
     pub-bucket: project-oldmerman-artimg
+  jwt: oldmerman20051223secret111111111
 

@@ -12,6 +12,7 @@ import mermaid from 'mermaid';
 import { useAiSummary } from '@/composables/useAiSummary';
 import Toast from '@/utils/toast/Toast.vue';
 import LikeButton from './LikeButton.vue';
+import ShareButton from './ShareButton.vue';
 import githubIcon from '@/static/github.svg';
 
 // --- 类型定义 ---
@@ -305,6 +306,12 @@ const leafHeadings = computed(() => {
   return allHeadings.value.filter(h => h.level === 2);
 });
 
+// 文章名：取首个一级标题作为转发文案中的文章名
+const articleName = computed(() => {
+  const h1 = allHeadings.value.find(h => h.level === 1);
+  return h1?.text ?? '';
+});
+
 // 平滑滚动到锚点
 const scrollTo = (id: string) => {
   const el = document.getElementById(id);
@@ -462,6 +469,7 @@ onUnmounted(() => {
           </button>
           <a
             class="nav-github"
+            title="Github"
             href="https://github.com/oldMerm/o-blog"
             target="_blank"
             rel="noopener"
@@ -469,7 +477,12 @@ onUnmounted(() => {
           >
             <img class="github-icon" :src="githubIcon" alt="GitHub" />
           </a>
-          <a class="nav-home" @click="goToHome" style="cursor: pointer;">主页</a>
+          <a class="nav-home" @click="goToHome" aria-label="主页" title="主页" style="cursor: pointer;">
+            <svg class="home-icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+              <path d="M485.289626 241.519089 261.986808 421.942035c0 0.204677 0 0.511693 0 0.71637l0 332.60044c0 5.11693 4.093544 9.210474 9.210474 9.210474l96.198281 0c5.11693 0 9.210474-4.093544 9.210474-9.210474L376.606036 603.797721c0-29.88287 24.356586-54.239456 54.239456-54.239456l111.549071 0c29.88287 0 54.239456 24.356586 54.239456 54.239456l0 151.461123c0 5.11693 4.093544 9.210474 9.210474 9.210474l93.128123 0c5.11693 0 9.210474-4.093544 9.210474-9.210474L708.18309 422.658405c0-0.71637 0-1.330402 0.102339-1.944433L497.058565 241.723766C493.681391 238.858285 488.6668 238.755946 485.289626 241.519089z" />
+              <path d="M817.787727 454.38337l-291.665001-247.045373c-19.853688-16.78353-48.917849-17.192884-69.180891-0.818709L165.788527 441.795723c-9.722167 7.777733-11.154907 22.002798-3.377174 31.622626 7.777733 9.722167 22.002798 11.154907 31.622626 3.377174l22.923846-18.523286L216.957825 755.258845c0 29.88287 24.356586 54.239456 54.239456 54.239456l96.198281 0c29.88287 0 54.239456-24.356586 54.239456-54.239456L421.635019 603.797721c0-5.11693 4.093544-9.210474 9.210474-9.210474l111.549071 0c5.11693 0 9.210474 4.093544 9.210474 9.210474l0 151.461123c0 29.88287 24.356586 54.239456 54.239456 54.239456l93.128123 0c29.88287 0 54.239456-24.356586 54.239456-54.239456L753.212073 458.78393l35.409155 29.985209c4.195882 3.581851 9.415151 5.321607 14.532081 5.321607 6.344993 0 12.689986-2.660804 17.192884-7.982411C828.430941 476.693184 827.202878 462.468119 817.787727 454.38337z" />
+            </svg>
+          </a>
         </div>
       </div>
     </nav>
@@ -522,10 +535,13 @@ onUnmounted(() => {
       <main class="vp-content">
         <div class="vp-doc-container">
           <article class="vp-doc" v-html="renderedHtml"></article>
-          <LikeButton
-            :article-id="String(route.params.id ?? '')"
-            :count="articleInfo.like ?? 0"
-          />
+          <div class="article-actions">
+            <LikeButton
+              :article-id="String(route.params.id ?? '')"
+              :count="articleInfo.like ?? 0"
+            />
+            <ShareButton :article-name="articleName" />
+          </div>
         </div>
       </main>
 
@@ -621,7 +637,7 @@ onUnmounted(() => {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 36px;
+  gap: 48px;
 }
 
 .nav-links a {
@@ -641,6 +657,13 @@ onUnmounted(() => {
   width: 24px;
   height: 24px;
   display: block;
+}
+
+.nav-links .home-icon {
+  width: 32px;
+  height: 32px;
+  display: block;
+  fill: currentColor;
 }
 
 /* 主题切换按钮 */
@@ -987,6 +1010,21 @@ onUnmounted(() => {
 .vp-doc-container {
   max-width: 768px;
   margin: 0 auto;
+}
+
+/* 文章底部操作区：点赞 + 转发 */
+.article-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 48px;
+  padding-bottom: 16px;
+}
+
+.article-actions :deep(.like-wrap) {
+  margin-top: 0;
+  padding-bottom: 0;
 }
 
 /* 📍 右侧栏 */
@@ -1526,6 +1564,18 @@ onUnmounted(() => {
   background: #3b82f6;
   color: #ffffff;
   border-color: #3b82f6;
+}
+
+/* 转发按钮（子组件 ShareButton） */
+.vp-wrapper[data-theme="dark"] :deep(.share-btn) {
+  background: #1a1c22;
+  color: #9aa4b2;
+  border-color: #2a2d34;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.share-btn:hover) {
+  background: #24272e;
+  color: #60a5fa;
 }
 
 /* 代码高亮：GitHub Dark（对齐 highlight.js/styles/github-dark.css） */

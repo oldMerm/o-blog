@@ -12,6 +12,7 @@ import mermaid from 'mermaid';
 import { useAiSummary } from '@/composables/useAiSummary';
 import Toast from '@/utils/toast/Toast.vue';
 import LikeButton from './LikeButton.vue';
+import ShareButton from './ShareButton.vue';
 
 interface Heading {
   id: string;
@@ -155,6 +156,12 @@ const extractHeadings = (content: string) => {
   allHeadings.value = list;
 };
 
+// 文章名：取首个一级标题作为转发文案中的文章名
+const articleName = computed(() => {
+  const h1 = allHeadings.value.find(h => h.level === 1);
+  return h1?.text ?? '';
+});
+
 const R = 18;
 const CIRCUMFERENCE = 2 * Math.PI * R;
 
@@ -278,11 +285,13 @@ onUnmounted(() => {
       </div>
       <article v-else class="mob-doc" v-html="renderedHtml" @click="onDocClick" />
 
-      <LikeButton
-        v-if="!loading"
-        :article-id="String(route.params.id ?? '')"
-        :count="articleInfo.like ?? 0"
-      />
+      <div class="mob-actions" v-if="!loading">
+        <LikeButton
+          :article-id="String(route.params.id ?? '')"
+          :count="articleInfo.like ?? 0"
+        />
+        <ShareButton :article-name="articleName" />
+      </div>
 
       <Teleport :to="summarySlot" :disabled="!summarySlot">
         <div v-if="summaryOpen" class="ai-panel">
@@ -689,6 +698,21 @@ html, body {
   padding: 60px 20px;
   color: #94a3b8;
   font-size: 15px;
+}
+
+/* 文章底部操作区：点赞 + 转发 */
+.mob-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 32px;
+  padding-bottom: 16px;
+}
+
+.mob-actions :deep(.like-wrap) {
+  margin-top: 0;
+  padding-bottom: 0;
 }
 
 .scroll-btn {
