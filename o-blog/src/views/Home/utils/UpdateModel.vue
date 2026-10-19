@@ -21,6 +21,8 @@
           <div class="modal-body">
             <!-- pre-wrap 可以完美保留传入字符串中的换行符 -->
             <p class="modal-content">{{ content }}</p>
+            <!-- 版本信息结束后换行，靠右展示发布人及日期（yyyy-MM-dd） -->
+            <p v-if="formattedTime" class="modal-time">oldmerman于{{ formattedTime }}</p>
           </div>
 
           <!-- 底部：靠右的按钮 -->
@@ -37,18 +39,25 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
 // 定义传入的 Props
 interface Props {
   modelValue: boolean; // 控制弹窗显隐
   title?: string;      // 标题
   content?: string;    // 正文
+  time?: string;       // 发布时间（后端 createdAt，格式 yyyy-MM-dd HH:mm:ss）
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
   title: '系统更新通知',
-  content: '这里是更新内容...'
+  content: '这里是更新内容...',
+  time: ''
 });
+
+// 时间字段只保留日期部分：'2026-10-17 12:30:00' => '2026-10-17'
+const formattedTime = computed(() => (props.time || '').slice(0, 10));
 
 // 定义向外抛出的事件
 const emit = defineEmits<{
@@ -92,7 +101,7 @@ const handleClose = () => {
 /* ================= 弹窗样式 ================= */
 .modal-container {
   width: 90%;
-  max-width: 480px;
+  max-width: 420px;
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
@@ -137,6 +146,14 @@ const handleClose = () => {
   line-height: 1.6;
   color: #4b5563;
   white-space: pre-wrap; /* 识别字符串中的 \n 换行符 */
+}
+
+/* 发布信息：换行后靠右显示 */
+.modal-time {
+  margin: 12px 0 0;
+  text-align: right;
+  font-size: 15px; /* 与正文 .modal-content 保持一致 */
+  color: #9ca3af;
 }
 
 /* 底部 */

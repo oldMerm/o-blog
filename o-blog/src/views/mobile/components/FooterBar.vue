@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { httpInstance, type Response } from '@/utils/http'
 import UpdateModel from '@/views/Home/utils/UpdateModel.vue';
 
-const versionData = ref<{ versionId: string; versionContent: string } | null>(null)
+const versionData = ref<{ versionId: string; versionContent: string; createdAt: string } | null>(null)
 
 onMounted(() => {
   fetchVersion()
@@ -33,7 +33,8 @@ const fetchVersion = async () => {
 </script>
 
 <template>
-  <UpdateModel v-model="isModalVisible" :title="versionData?.versionId" :content="versionData?.versionContent" />
+  <UpdateModel v-model="isModalVisible" :title="versionData?.versionId" :content="versionData?.versionContent"
+    :time="versionData?.createdAt" />
   <footer class="footer-bar">
     <div class="footer-inner">
       <span class="version-line" @click="isModalVisible = true">

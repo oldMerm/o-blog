@@ -37,7 +37,8 @@ onMounted(async () => {
 </script>
 
 <template>
-    <UpdateModel v-model="isModalVisible" :title="versionData?.versionId" :content="versionData?.versionContent" />
+    <UpdateModel v-model="isModalVisible" :title="versionData?.versionId" :content="versionData?.versionContent"
+        :time="versionData?.createdAt" />
 
     <div class="bc">
         该网页不获取任何个人信息，请注意甄别！

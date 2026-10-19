@@ -376,6 +376,8 @@ h3 {
   width: 33rem;
   display: flex;
   flex-wrap: wrap;
+  /* 作为 .submit 绝对定位的参照，使其固定在信息反馈区域右下角 */
+  position: relative;
 }
 
 .add {
@@ -428,7 +430,7 @@ h3 {
 }
 
 .feedback-textarea {
-  width: 15rem;
+  width: 13rem;
   height: 7rem;
   padding: 5px;
   resize: none;

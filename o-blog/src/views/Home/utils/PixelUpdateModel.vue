@@ -19,6 +19,8 @@
           <!-- 正文内容 (pre-wrap 完整保留字符串中的换行符) -->
           <div class="px-modal-body">
             <p class="px-modal-content">{{ content }}</p>
+            <!-- 版本信息结束后换行，靠右展示发布人及日期（yyyy-MM-dd） -->
+            <p v-if="formattedTime" class="px-modal-time">oldmerman于{{ formattedTime }}</p>
           </div>
 
           <!-- 底部：靠右的像素确认按钮 -->
@@ -35,18 +37,25 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
 // 定义传入的 Props
 interface Props {
   modelValue?: boolean; // 控制弹窗显隐
   title?: string;       // 标题（版本号）
   content?: string;     // 正文（版本内容）
+  time?: string;        // 发布时间（后端 createdAt，格式 yyyy-MM-dd HH:mm:ss）
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
   title: '系统更新通知',
-  content: '这里是更新内容...'
+  content: '这里是更新内容...',
+  time: ''
 });
+
+// 时间字段只保留日期部分：'2026-10-17 12:30:00' => '2026-10-17'
+const formattedTime = computed(() => (props.time || '').slice(0, 10));
 
 // 定义向外抛出的事件
 const emit = defineEmits<{
@@ -101,7 +110,7 @@ const handleClose = () => {
 /* ================= 弹窗容器：4px 实体描边 + 6px 实体像素投影 ================= */
 .px-modal-container {
   width: 90%;
-  max-width: 500px;
+  max-width: 440px;
   background: #ffffff;
   border: 4px solid var(--px-borderDark);
   border-radius: 0; /* 像素风格直角 */
@@ -135,7 +144,7 @@ const handleClose = () => {
 .px-modal-title {
   margin: 0;
   font-family: var(--font-pixel);
-  font-size: 13px;
+  font-size: 18px;
   letter-spacing: 1px;
   color: var(--px-borderDark);
   word-break: break-all;
@@ -165,10 +174,18 @@ const handleClose = () => {
 
 .px-modal-content {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 15px;
+  line-height: 1.6;
   color: #334155;
   white-space: pre-wrap;
+}
+
+/* 发布信息：换行后靠右显示 */
+.px-modal-time {
+  margin: 12px 0 0;
+  text-align: right;
+  font-size: 15px; /* 与正文 .px-modal-content 保持一致 */
+  color: #64748b;
 }
 
 /* 底部按钮栏 */
@@ -189,7 +206,7 @@ const handleClose = () => {
   border-radius: 0;
   padding: 8px 18px;
   font-family: var(--font-pixel);
-  font-size: 11px;
+  font-size: 14px;
   cursor: pointer;
   user-select: none;
   transition: all 0.1s ease;

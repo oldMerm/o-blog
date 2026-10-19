@@ -154,7 +154,7 @@ const handleDelete = async (id: number) => {
                                 查看详细
                             </button>
                             <UpdateModel v-model="item.visable" :title="item.versionId"
-                                :content="item.versionContent" />
+                                :content="item.versionContent" :time="item.createdAt" />
                             <span class="divider">|</span>
                             <button class="btn-text" @click="item.dvisable = true">
                                 删除公告

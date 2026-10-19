@@ -61,6 +61,7 @@ const showVersion = () => {
         v-model="isModalVisible"
         :title="versionData?.versionId || 'WORLD PATCH'"
         :content="versionData?.versionContent"
+        :time="versionData?.createdAt"
     />
 
     <footer class="px-footer">

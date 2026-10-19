@@ -1,5 +1,6 @@
 package io.github.oldmerman.web.config;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -28,5 +29,12 @@ public class JacksonConfig {
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         
         return mapper;
+    }
+
+    @Bean("ignoreNullMapper")
+    public ObjectMapper ignoreNullMapper(ObjectMapper base){
+        ObjectMapper o = base.copy();
+        o.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        return o;
     }
 }
