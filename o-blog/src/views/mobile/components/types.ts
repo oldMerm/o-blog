@@ -2,8 +2,15 @@ export interface ArticlePageDetailVO {
   id: string
   articleName: string
   articleDecr: string
+  groupNameList?: string[] | null
+  isTop?: boolean
+}
+
+export interface ArticleGroupRenderVO {
+  id: number
   groupName: string
-  articleType: number
+  createdAt?: string
+  number?: number
 }
 
 export interface PageResult<T> {

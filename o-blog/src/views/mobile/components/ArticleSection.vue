@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { httpInstance, type Response } from '@/utils/http'
-import { articleType } from '@/views/public/Article'
-import type { ArticlePageDetailVO, PageResult } from './types'
+import { articleType, type Article } from '@/views/public/Article'
+import { usePinnedStore } from '@/stores/articleTop'
+import type { ArticleGroupRenderVO, ArticlePageDetailVO, PageResult } from './types'
 import ArticleItem from './ArticleItem.vue'
 import FooterBar from './FooterBar.vue'
 
@@ -27,6 +28,53 @@ const isSwiping = ref(false)
 const totalPages = computed(() => pageResult.value?.pages || 1)
 const hasNext = computed(() => currentPage.value < totalPages.value)
 const hasPrev = computed(() => currentPage.value > 1)
+
+const pinnedStore = usePinnedStore()
+// 置顶文章由 /article/top 返回，不包含集合信息，需要按文章 id 单独查询
+const pinnedGroups = ref<Record<string, string[]>>({})
+
+const pinnedArticles = computed<Article[]>(() => {
+  if (currentTab.value === articleType.Notice) return pinnedStore.news
+  if (currentTab.value === articleType.TECNO) return pinnedStore.tech
+  return pinnedStore.daily
+})
+
+// 置顶文章与原列表按 id 去重后合并，置顶仅在第一页展示
+const displayArticles = computed<ArticlePageDetailVO[]>(() => {
+  const pinned = currentPage.value === 1 ? pinnedArticles.value : []
+  const pinnedIds = new Set(pinned.map((item) => item.id))
+  return [
+    ...pinned.map((item) => ({
+      id: item.id,
+      articleName: item.articleName,
+      articleDecr: item.articleDecr ?? '',
+      groupNameList: pinnedGroups.value[item.id] ?? [],
+      isTop: true
+    })),
+    ...articles.value.filter((item) => !pinnedIds.has(item.id))
+  ]
+})
+
+const fetchPinnedGroups = async () => {
+  const allPinned = [...pinnedStore.news, ...pinnedStore.tech, ...pinnedStore.daily]
+  const ids = [...new Set(allPinned.map((item) => item.id))]
+  await Promise.all(
+    ids.map(async (id) => {
+      try {
+        const res = await httpInstance.get<any, Response>(
+          `/article/group/public/group_info/${id}`
+        )
+        pinnedGroups.value[id] =
+          res.code === 200 && Array.isArray(res.data)
+            ? (res.data as ArticleGroupRenderVO[]).map((group) => group.groupName)
+            : []
+      } catch (e) {
+        console.error(`获取文章 ${id} 的集合失败:`, e)
+        pinnedGroups.value[id] = []
+      }
+    })
+  )
+}
 
 const fetchArticles = async (page: number, type: number) => {
   loading.value = true
@@ -94,8 +142,10 @@ const handleTouchEnd = (e: TouchEvent) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   fetchArticles(1, articleType.Notice)
+  await pinnedStore.load()
+  fetchPinnedGroups()
 })
 </script>
 
@@ -124,9 +174,9 @@ onMounted(() => {
               <span v-for="i in 3" :key="i" class="dot" :style="{ animationDelay: `${i * 0.15}s` }" />
             </div>
           </div>
-          <template v-else-if="articles.length > 0">
+          <template v-else-if="displayArticles.length > 0">
             <ArticleItem
-              v-for="(article, i) in articles"
+              v-for="(article, i) in displayArticles"
               :key="article.id"
               :article="article"
               :style="{ animationDelay: `${i * 0.07}s` }"

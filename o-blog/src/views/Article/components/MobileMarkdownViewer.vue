@@ -305,9 +305,9 @@ onUnmounted(() => {
               <span v-if="summaryGenerating" class="ai-caret" />
             </template>
             <div v-else-if="summaryGenerating" class="ai-panel-tip">正在理解文章内容…<span class="ai-caret" /></div>
-            <div v-else class="ai-panel-tip">点击上方"生成摘要"获取由老鱼人智能体撰写的文章摘要</div>
+            <div v-else class="ai-panel-tip">点击上方"生成摘要"获取由小鱼智能体撰写的文章摘要</div>
           </div>
-          <div class="ai-panel-foot">生成自老鱼人智能体，仅供参考</div>
+          <div class="ai-panel-foot">生成自小鱼智能体，仅供参考</div>
         </div>
       </Teleport>
     </main>

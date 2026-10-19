@@ -525,8 +525,8 @@ onUnmounted(() => {
               <span v-if="summaryGenerating" class="ai-caret" />
             </div>
             <div v-else-if="summaryGenerating" class="ai-summary-body ai-summary-wait">正在理解文章内容…<span class="ai-caret" /></div>
-            <div v-else class="ai-summary-body ai-summary-empty">点击"生成摘要"，获取由老鱼人智能体撰写的文章摘要</div>
-            <div class="ai-summary-foot">生成自老鱼人智能体，仅供参考</div>
+            <div v-else class="ai-summary-body ai-summary-empty">点击"生成摘要"，获取由小鱼智能体撰写的文章摘要</div>
+            <div class="ai-summary-foot">生成自小鱼智能体，仅供参考</div>
           </div>
         </div>
       </aside>
