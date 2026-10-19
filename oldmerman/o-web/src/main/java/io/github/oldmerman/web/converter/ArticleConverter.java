@@ -3,6 +3,7 @@ package io.github.oldmerman.web.converter;
 import io.github.oldmerman.model.dto.ArticleCreateDTO;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.vo.ArticleInfoVO;
+import io.github.oldmerman.model.vo.ArticlePageDetailVO;
 import io.github.oldmerman.model.vo.ArticlePageVO;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import org.mapstruct.Mapper;
@@ -17,4 +18,6 @@ public interface ArticleConverter {
     ArticlePageVO poToPageVO(Article article);
 
     ArticleInfoVO poToInfoVO(Article article);
+
+    ArticlePageDetailVO renderToPageDetailVO(ArticleRenderVO renderVO);
 }

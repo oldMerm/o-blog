@@ -2,6 +2,8 @@ package io.github.oldmerman.model.vo;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class ArticlePageDetailVO {
 
@@ -11,8 +13,6 @@ public class ArticlePageDetailVO {
 
     private String articleDecr;
 
-    private String groupName;
-
-    private Byte articleType;
+    private List<String> groupNameList;
 
 }

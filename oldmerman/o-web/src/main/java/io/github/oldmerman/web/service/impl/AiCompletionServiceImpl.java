@@ -66,7 +66,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
         String type = article.articleType();
         String prompt = ARTICLE_DIGEST_PROMPT.formatted(
                 type, article.getArticleName(), content,
-                type.equals("日常") ? LIFE_RULES : TECH_RULES
+                type.equals("技术") ? TECH_RULES : LIFE_RULES
         );
         CompletionRequest req = CompletionRequest.builder()
                 .maxToken(300)

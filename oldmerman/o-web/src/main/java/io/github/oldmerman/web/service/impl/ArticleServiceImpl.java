@@ -16,10 +16,7 @@ import io.github.oldmerman.model.dto.ArticlePriDTO;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.po.ArticleHistory;
 import io.github.oldmerman.model.po.ArticleImage;
-import io.github.oldmerman.model.vo.ArticleInfoVO;
-import io.github.oldmerman.model.vo.ArticlePageDetailVO;
-import io.github.oldmerman.model.vo.ArticleRenderVO;
-import io.github.oldmerman.model.vo.ArticleTopVO;
+import io.github.oldmerman.model.vo.*;
 import io.github.oldmerman.web.converter.ArticleConverter;
 import io.github.oldmerman.web.mapper.*;
 import io.github.oldmerman.web.service.ArticleService;
@@ -76,26 +73,32 @@ public class ArticleServiceImpl implements ArticleService {
         Long userId = UserContext.getUserId();
         List<Article> poList = articleMapper.selectByUserId(userId);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        return poList.stream()
-                .map(item -> {
-                    ArticleRenderVO vo = converter.poToRenderVO(item);
-                    vo.setId(item.getId().toString());
-                    vo.setCreatedAt(item.getCreatedAt().format(formatter));
-                    return vo;
-                }).toList();
+        return poList.stream().map(item -> {
+            ArticleRenderVO vo = converter.poToRenderVO(item);
+            vo.setId(item.getId().toString());
+            vo.setCreatedAt(item.getCreatedAt().format(formatter));
+            return vo;
+        }).toList();
     }
 
     @Override
     public PageResult<ArticlePageDetailVO> page(Long current, Long size, Byte articleType) {
         Long offset = (current - 1) * size;
-        List<ArticlePageDetailVO> articlePages = articleMapper.page(offset, size, articleType);
+        List<ArticleRenderVO> articlePages = articleMapper.page(offset, size, articleType);
+        List<String> ids = articlePages.stream().map(ArticleRenderVO::getId).toList();
+        Map<Long, List<String>> map = new HashMap<>(ids.size());
+        List<ArticleGroupNameVO> articleWithName = articleGroupLinkMapper.selectByArticleIds(ids);
+        for (ArticleGroupNameVO vo : articleWithName) {
+            map.computeIfAbsent(vo.getArticleId(), k -> new ArrayList<>()).add(vo.getGroupName());
+        }
+
+        List<ArticlePageDetailVO> articlePagesWithGroup = articlePages.stream().map(i -> {
+            ArticlePageDetailVO vo = converter.renderToPageDetailVO(i);
+            vo.setGroupNameList(map.getOrDefault(Long.valueOf(i.getId()), null));
+            return vo;
+        }).toList();
         Long total = articleMapper.selectTypeCount(articleType);
-        return PageResult.of(
-                current,
-                size,
-                total,
-                articlePages
-        );
+        return PageResult.of(current, size, total, articlePagesWithGroup);
     }
 
     @Override
@@ -110,10 +113,16 @@ public class ArticleServiceImpl implements ArticleService {
         if (articleType == 0) {
             vo = articleMapper.selectNotice();
         } else {
-            vo = articleMapper.selectArticle(articleType, size);
+            LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Article::getArticleStatus, Article.ArticleStatus.PUBLISHED);
+            wrapper.eq(Article::getArticleType, articleType);
+
+            List<Article> list = articleMapper.selectList(wrapper);
+            Collections.shuffle(list);
+            List<Article> articles = list.subList(0, Math.min(size.intValue(), list.size()));
+            vo = articles.stream().map(converter::poToRenderVO).toList();
         }
-        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(vo),
-                NumEnum.ARTICLE_EXPIRE_TIME.getValue(), TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(vo), NumEnum.ARTICLE_EXPIRE_TIME.getValue(), TimeUnit.DAYS);
         return vo;
     }
 
@@ -204,16 +213,13 @@ public class ArticleServiceImpl implements ArticleService {
         // 3.构建图片对象
         List<String> attrs = dto.getAttrs();
         if (attrs != null) {
-            List<ArticleImage> images = attrs.stream()
-                    .filter(s -> s != null && !s.isEmpty())
-                    .map(item -> {
-                        ArticleImage img = new ArticleImage();
-                        img.setId(IdGenerator.nextId());
-                        img.setArticleId(articleId);
-                        img.setUrl(item);
-                        return img;
-                    })
-                    .toList();
+            List<ArticleImage> images = attrs.stream().filter(s -> s != null && !s.isEmpty()).map(item -> {
+                ArticleImage img = new ArticleImage();
+                img.setId(IdGenerator.nextId());
+                img.setArticleId(articleId);
+                img.setUrl(item);
+                return img;
+            }).toList();
             articleImageMapper.insert(images);
         }
         // 4.插入数据库并更新用户文章信息
@@ -241,7 +247,8 @@ public class ArticleServiceImpl implements ArticleService {
             return vo;
         }
 
-        Map<Integer, List<ArticleRenderVO>> map = objectMapper.readValue(jsonStr, new TypeReference<>(){});
+        Map<Integer, List<ArticleRenderVO>> map = objectMapper.readValue(jsonStr, new TypeReference<>() {
+        });
 
         vo.setNewList(map.getOrDefault(0, Collections.emptyList()));
         vo.setTecList(map.getOrDefault(1, Collections.emptyList()));
@@ -252,7 +259,7 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     public void setTopArticle(Long articleId) throws JsonProcessingException {
         Article article = articleMapper.selectById(articleId);
-        if(article == null) {
+        if (article == null) {
             throw new BusinessException(BusErrorCode.ARTICLE_WAS_REMOVED);
         }
         Integer articleType = article.getArticleType().intValue();
@@ -264,13 +271,14 @@ public class ArticleServiceImpl implements ArticleService {
         if (!StringUtils.hasText(jsonStr)) {
             map = new HashMap<>();
         } else {
-            map = objectMapper.readValue(jsonStr, new TypeReference<>(){});
+            map = objectMapper.readValue(jsonStr, new TypeReference<>() {
+            });
         }
 
         List<ArticleRenderVO> toplist = map.computeIfAbsent(articleType, k -> new ArrayList<>());
 
         boolean exists = toplist.stream().anyMatch(value -> articleId.equals(Long.parseLong(value.getId())));
-        if(exists){
+        if (exists) {
             return;
         }
 
@@ -290,11 +298,12 @@ public class ArticleServiceImpl implements ArticleService {
             return;
         }
 
-        Map<Integer, List<ArticleRenderVO>> map = objectMapper.readValue(jsonStr,new TypeReference<>(){});
+        Map<Integer, List<ArticleRenderVO>> map = objectMapper.readValue(jsonStr, new TypeReference<>() {
+        });
 
         boolean changed = false;
         for (List<ArticleRenderVO> list : map.values()) {
-            if (list.removeIf(value -> articleId.equals(Long.parseLong(value.getId())))){
+            if (list.removeIf(value -> articleId.equals(Long.parseLong(value.getId())))) {
                 changed = true;
             }
         }
@@ -317,9 +326,7 @@ public class ArticleServiceImpl implements ArticleService {
         List<ArticleImage> articleImages = articleImageMapper.selectByArticleId(articleId);
         articleImageMapper.deleteByIds(articleImages.stream().map(ArticleImage::getId).toList());
         if (!articleImages.isEmpty()) {
-            List<String> keys = PathUtils.getOssPubKeys(articleImages.stream()
-                    .map(ArticleImage::getUrl)
-                    .toList());
+            List<String> keys = PathUtils.getOssPubKeys(articleImages.stream().map(ArticleImage::getUrl).toList());
             // 到oss删除key
             ossService.deleteBatch(keys, BUCKET);
             ossService.deleteOne(article.getKey(), null);

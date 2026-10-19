@@ -11,5 +11,18 @@
             (#{groupId}, #{articleId})
         </foreach>
     </insert>
+    <select id="selectByArticleIds" resultType="io.github.oldmerman.model.vo.ArticleGroupNameVO">
+        SELECT
+            ogl.article_id,
+            ogl.group_id,
+            oag.group_name
+        FROM o_blog.o_article_group_link ogl
+        LEFT JOIN o_blog.o_article_group oag
+        ON ogl.group_id = oag.id
+        WHERE ogl.article_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
 </mapper>
 

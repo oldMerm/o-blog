@@ -1,11 +1,8 @@
 package io.github.oldmerman.web.schedule;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.web.mapper.ArticleImageMapper;
-import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.service.OssService;
 import io.github.oldmerman.web.util.PathUtils;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @Description 文章相关的定时任务
@@ -30,24 +26,20 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class ArticleRefreshTask {
 
-    private final ArticleMapper articleMapper;
-
     private final ArticleImageMapper articleImageMapper;
 
     private final OssService ossService;
 
     private final StringRedisTemplate redisTemplate;
 
-    private final ObjectMapper objectMapper;
-
     @Value("${alias.oss.pub-bucket}")
     public String BUCKET;
 
     @Scheduled(cron = "0 0 1 ? * MON")
-    public void refreshArticle() throws JsonProcessingException {
-        log.info("执行定时任务 - 刷新文章内容 - {}", new Date());
-        toRedisCache(Article.ArticleType.TECHNOLOGY);
-        toRedisCache(Article.ArticleType.DAILY);
+    public void refreshArticle() {
+        log.info("执行定时任务 - 清除文章内容 - {}", new Date());
+        redisTemplate.delete(RedisPrefix.ARTICLE_RENDER + Article.ArticleType.TECHNOLOGY);
+        redisTemplate.delete(RedisPrefix.ARTICLE_RENDER + Article.ArticleType.DAILY);
     }
 
     @Scheduled(cron = "0 0 1 ? * TUE")
@@ -59,9 +51,4 @@ public class ArticleRefreshTask {
         }
     }
 
-    private void toRedisCache(byte type) throws JsonProcessingException {
-        redisTemplate.opsForValue().set(RedisPrefix.ARTICLE_RENDER + type,
-                objectMapper.writeValueAsString(articleMapper.selectArticle(type, 11L)),
-                7, TimeUnit.DAYS);
-    }
 }

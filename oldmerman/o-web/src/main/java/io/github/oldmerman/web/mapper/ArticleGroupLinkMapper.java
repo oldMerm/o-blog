@@ -1,5 +1,6 @@
 package io.github.oldmerman.web.mapper;
 
+import io.github.oldmerman.model.vo.ArticleGroupNameVO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Select;
 
@@ -21,4 +22,5 @@ public interface ArticleGroupLinkMapper {
 
     void insertBatch(Long groupId, List<Long> articleIds);
 
+    List<ArticleGroupNameVO> selectByArticleIds(List<String> ids);
 }
