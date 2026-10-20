@@ -1,6 +1,6 @@
 package io.github.oldmerman.web.util;
 
-import io.github.oldmerman.core.DeepseekClient;
+import io.github.oldmerman.core.api.chat.ChatClient;
 import io.github.oldmerman.core.enums.FinishReason;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -12,13 +12,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author oldmerman and deepseek
  * @date 2026-10-13
  */
-public class SseChunkListener implements DeepseekClient.ChunkListener {
+public class SseChunkListener implements ChatClient.ChunkListener {
 
     private final SseEmitter emitter;
-    private final DeepseekClient.StreamHandle handle;
+    private final ChatClient.StreamHandle handle;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public SseChunkListener(SseEmitter emitter, DeepseekClient.StreamHandle handle) {
+    public SseChunkListener(SseEmitter emitter, ChatClient.StreamHandle handle) {
         this.emitter = emitter;
         this.handle = handle;
 
@@ -35,7 +35,7 @@ public class SseChunkListener implements DeepseekClient.ChunkListener {
     }
 
     @Override
-    public void onStart(DeepseekClient.StreamHandle h) {}
+    public void onStart(ChatClient.StreamHandle h) {}
 
     @Override
     public void onContent(String chunk) {

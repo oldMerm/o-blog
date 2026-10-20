@@ -3,9 +3,9 @@ package io.github.oldmerman.web.service.impl;
 import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
-import io.github.oldmerman.core.CompletionRequest;
-import io.github.oldmerman.core.DeepseekClient;
-import io.github.oldmerman.core.entity.messages.HumanMessage;
+import io.github.oldmerman.core.api.chat.ChatClient;
+import io.github.oldmerman.core.api.chat.messages.HumanMessage;
+import io.github.oldmerman.core.api.chat.param.CompletionRequest;
 import io.github.oldmerman.core.enums.FinishReason;
 import io.github.oldmerman.core.enums.ToolChoice;
 import io.github.oldmerman.model.po.Article;
@@ -33,7 +33,7 @@ import static io.github.oldmerman.common.constant.ArticleDigestPrompt.LIFE_RULES
 @RequiredArgsConstructor
 public class AiCompletionServiceImpl implements AiCompletionService {
 
-    private final DeepseekClient client;
+    private final ChatClient client;
 
     private final OssService ossService;
 
@@ -75,12 +75,12 @@ public class AiCompletionServiceImpl implements AiCompletionService {
                 .messages(List.of(new HumanMessage(prompt)))
                 .build();
 
-        client.stream(req, new DeepseekClient.ChunkListener() {
+        client.stream(req, new ChatClient.ChunkListener() {
             private SseChunkListener delegate;
             private String content = "";
 
             @Override
-            public void onStart(DeepseekClient.StreamHandle handle) {
+            public void onStart(ChatClient.StreamHandle handle) {
                 delegate = new SseChunkListener(emitter, handle);
             }
 

@@ -24,20 +24,16 @@ const goDetail = () => {
 </script>
 
 <template>
-  <article
-    class="article-item"
-    :class="{ 'is-pinned': article.isTop }"
-    @click="goDetail"
-  >
-    <h3 class="title">
+  <article class="article-item" @click="goDetail">
+    <div class="title-row">
+      <h3 class="title">{{ article.articleName }}</h3>
       <span v-if="article.isTop" class="top-badge">
         <svg class="pin-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 3.6 19 11h-4v9h-6v-9H5l7-7.4Z" />
         </svg>
         置顶
       </span>
-      {{ article.articleName }}
-    </h3>
+    </div>
     <p class="desc">{{ article.articleDecr }}</p>
     <span v-if="groupLabel" class="group-tag" :title="groupNames.join('、')">{{ groupLabel }}</span>
   </article>
@@ -64,46 +60,19 @@ const goDetail = () => {
   box-shadow: 0 1px 4px rgba(60, 120, 180, 0.05);
 }
 
-/* --- 置顶卡片：淡蓝玻璃质感 --- */
-.article-item.is-pinned {
-  background:
-    radial-gradient(
-      120% 160% at 100% 0%,
-      rgba(132, 196, 238, 0.28) 0%,
-      rgba(255, 255, 255, 0) 55%
-    ),
-    linear-gradient(
-      135deg,
-      rgba(248, 252, 255, 0.96) 0%,
-      rgba(231, 244, 253, 0.9) 100%
-    );
-  border-color: rgba(112, 175, 225, 0.45);
-  box-shadow:
-    0 4px 22px rgba(60, 130, 190, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-.article-item.is-pinned:active {
-  box-shadow:
-    0 2px 10px rgba(60, 130, 190, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-.article-item.is-pinned .title {
-  color: rgb(36, 74, 110);
-}
-
-.article-item.is-pinned .group-tag {
-  background: rgba(255, 255, 255, 0.78);
-  color: rgb(50, 120, 185);
-  box-shadow: 0 1px 4px rgba(75, 155, 210, 0.14);
+.title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .title {
+  flex: 1;
+  min-width: 0;
   font-size: 1rem;
   font-weight: 600;
   color: rgb(40, 50, 65);
-  margin-bottom: 8px;
   line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -112,6 +81,7 @@ const goDetail = () => {
 }
 
 .top-badge {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -121,10 +91,8 @@ const goDetail = () => {
   background: linear-gradient(135deg, rgb(96, 178, 232), rgb(48, 118, 184));
   padding: 2px 8px 2px 6px;
   border-radius: 7px;
-  margin-right: 6px;
-  vertical-align: 2px;
+  margin-top: 2px;
   letter-spacing: 0.06em;
-  box-shadow: 0 2px 6px rgba(48, 118, 184, 0.32);
 }
 
 .pin-icon {

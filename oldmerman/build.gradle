@@ -101,8 +101,8 @@ subprojects {
             // 系统数据获取
             implementation 'com.github.oshi:oshi-core:6.9.3'
             // oldmerman-deepseek
-            implementation 'io.github.oldmerman:oldmerman-deepseek-core:1.0.1-SNAPSHOT'
-            implementation 'io.github.oldmerman:oldmerman-deepseek-agent:1.0.1-SNAPSHOT'
+            implementation 'io.github.oldmerman:oldmerman-deepseek-core:1.0.2'
+            implementation 'io.github.oldmerman:oldmerman-deepseek-agent:1.0.1'
             // 业务模块通常依赖这些基础模块
             implementation project(':common-config')
             implementation project(':merman-model')

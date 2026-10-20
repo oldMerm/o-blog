@@ -4,13 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.oldmerman.common.exception.BusinessException;
-import io.github.oldmerman.common.response.ResultCode;
-import io.github.oldmerman.core.Param;
-import io.github.oldmerman.core.Tool;
+import io.github.oldmerman.core.tool.Param;
+import io.github.oldmerman.core.tool.Tool;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.web.mapper.ArticleMapper;
-import io.github.oldmerman.web.service.ArticleService;
 import io.github.oldmerman.web.service.OssService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +30,8 @@ public class ArticleTools {
 
     @Tool(name = "get_all_article",
             description = "获取部分文章的基本信息，按时间分页查询")
-    public String getPageArticle(@Param(description = "起始页面，默认为1", required = false) Integer current,
-                                 @Param(description = "每页大小，默认为5", required = false) Integer size) throws JsonProcessingException {
+    public String getPageArticle(@Param(description = "当前页数") Integer current,
+                                 @Param(description = "每页大小") Integer size) throws JsonProcessingException {
         // 构建分页对象
         current = current == null ? 1 : current;
         size = (size == null ? 5 : size);
@@ -43,8 +40,7 @@ public class ArticleTools {
 
         // 构建查询wrapper
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(Article::getId, Article::getArticleName, Article::getArticleWriter,
-                Article::getArticleDecr, Article::getArticleType);
+        wrapper.select(Article::getId, Article::getArticleName);
         wrapper.eq(Article::getArticleStatus, 3);
 
         Page<Article> pageResult = mapper.selectPage(page, wrapper);
@@ -71,4 +67,5 @@ public class ArticleTools {
             return "[系统异常]后台系统异常，服务不可用...";
         }
     }
+
 }
