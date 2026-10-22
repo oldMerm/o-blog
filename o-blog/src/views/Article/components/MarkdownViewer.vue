@@ -595,6 +595,7 @@ onUnmounted(() => {
 }
 
 .vp-wrapper {
+  --vp-layout-max: 1728px;
   background-color: #fff;
   color: #3c3c43;
   font-family: var(--font-sans);
@@ -615,7 +616,7 @@ onUnmounted(() => {
 }
 
 .nav-layout {
-  max-width: 1440px;
+  max-width: var(--vp-layout-max);
   margin: 0 auto;
   height: 100%;
   display: flex;
@@ -699,7 +700,7 @@ onUnmounted(() => {
 
 /* 🗂 布局 */
 .vp-body {
-  max-width: 1440px;
+  max-width: var(--vp-layout-max);
   margin: 0 auto;
   padding-top: 64px;
 }
@@ -712,7 +713,7 @@ onUnmounted(() => {
   background: #fcfdfe;
   position: fixed;
   top: 64px;
-  left: max(calc((100vw - 1440px) / 2), 0px);
+  left: max(calc((100vw - var(--vp-layout-max)) / 2), 0px);
   height: calc(100vh - 64px);
   overflow-y: auto;
 }
@@ -1008,7 +1009,7 @@ onUnmounted(() => {
 }
 
 .vp-doc-container {
-  max-width: 768px;
+  max-width: 880px;
   margin: 0 auto;
 }
 
@@ -1034,7 +1035,7 @@ onUnmounted(() => {
   background: #fcfdfe;
   position: fixed;
   top: 64px;
-  right: max(calc((100vw - 1440px) / 2), 0px);
+  right: max(calc((100vw - var(--vp-layout-max)) / 2), 0px);
   height: calc(100vh - 64px);
 }
 
@@ -1311,6 +1312,36 @@ onUnmounted(() => {
   margin-left: 2.1%;
 }
 
+/* 无序列表：与有序列表对齐（略向右缩进），使用品牌蓝圆点 */
+:deep(.vp-doc ul) {
+  margin: 5px 0 14px 2.1%;
+  padding-left: 0.5em;
+  list-style: none;
+}
+
+:deep(.vp-doc ul > li) {
+  position: relative;
+  margin: 6px 0;
+}
+
+:deep(.vp-doc ul > li::before) {
+  content: "";
+  position: absolute;
+  left: -0.95em;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.7);
+}
+
+/* 二级列表改用空心圆点，层级更清晰 */
+:deep(.vp-doc ul ul > li::before) {
+  background: transparent;
+  border: 1.5px solid rgba(59, 130, 246, 0.55);
+  box-sizing: border-box;
+}
+
 /* ============================================================
    🌙 暗色风格
    仅在 [data-theme="dark"] 下覆盖颜色，布局 / 字体 / 亮色风格不变
@@ -1503,6 +1534,16 @@ onUnmounted(() => {
 
 .vp-wrapper[data-theme="dark"] :deep(p) {
   color: #d5d8de;
+}
+
+/* 无序列表圆点 */
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc ul > li::before) {
+  background: rgba(96, 165, 250, 0.75);
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc ul ul > li::before) {
+  background: transparent;
+  border-color: rgba(96, 165, 250, 0.7);
 }
 
 /* 代码块 */

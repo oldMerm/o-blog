@@ -35,17 +35,19 @@ onMounted(() => {
     <PixelHome v-if="isPixel" @switch-style="setPixel(false)" />
 
     <div v-else class="main">
-        <topbar @toggle-style="setPixel(true)" />
-        <div class="c">
-            <ontice />
-            <utitle2 />
-            <chat-card />
-        </div>
-        <mcontent />
-        <div class="a">
-            <user-info />
-            <utitle />
-            <ucontent />
+        <topbar class="topbar" @toggle-style="setPixel(true)" />
+        <div class="content">
+            <div class="c">
+                <ontice class="notice" />
+                <utitle2 class="utitle2" />
+                <chat-card class="chat" />
+            </div>
+            <mcontent class="m-article" />
+            <div class="a">
+                <user-info class="user-info" />
+                <utitle class="utitle" />
+                <ucontent class="ucontent" />
+            </div>
         </div>
         <div class="b">
             <bcontent />
@@ -56,23 +58,100 @@ onMounted(() => {
 <style scoped>
 .main {
     width: 100%;
+    height: 100vh;
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.topbar {
+    flex: 0 0 auto;
+}
+
+/* 三栏内容区：占满顶部栏与 footer 之间的剩余高度 */
+.content {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: stretch;
+    gap: 20px;
+    padding: 20px 24px 16px;
+    overflow: hidden;
 }
 
 .c {
-    width: 15%;
-    margin: 10px 10px;
+    flex: 0 0 15%;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.c>.notice {
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+}
+
+.c>.utitle2 {
+    flex: 0 0 3rem;
+    margin-top: 0;
+}
+
+.c>.chat {
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
+    margin-top: 0;
+    line-height: normal;
+    justify-content: center;
+}
+
+.content>.m-article {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    width: auto;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    align-self: stretch;
 }
 
 .a {
-    width: 28%;
+    flex: 0 0 28%;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.b {
-    position: absolute;
+.a>.user-info {
+    flex: 0 0 auto;
     width: 100%;
-    bottom: 0;
+    margin: 0;
+}
+
+.a>.utitle {
+    flex: 0 0 3rem;
+    width: auto;
+    margin-left: 0;
+}
+
+.a>.ucontent {
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    margin: 0;
+}
+
+/* footer：始终位于视口底部 */
+.b {
+    flex: 0 0 auto;
+    width: 100%;
 }
 </style>

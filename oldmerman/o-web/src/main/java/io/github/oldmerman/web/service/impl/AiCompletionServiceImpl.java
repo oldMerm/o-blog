@@ -1,10 +1,12 @@
 package io.github.oldmerman.web.service.impl;
 
+import io.github.oldmerman.common.constant.BlogSystemPrompt;
 import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.core.api.chat.ChatClient;
 import io.github.oldmerman.core.api.chat.messages.HumanMessage;
+import io.github.oldmerman.core.api.chat.messages.SystemMessage;
 import io.github.oldmerman.core.api.chat.param.CompletionRequest;
 import io.github.oldmerman.core.enums.FinishReason;
 import io.github.oldmerman.core.enums.ToolChoice;
@@ -65,14 +67,17 @@ public class AiCompletionServiceImpl implements AiCompletionService {
         String content = ossService.getArticleContent(article.getKey(), null);
         String type = article.articleType();
         String prompt = ARTICLE_DIGEST_PROMPT.formatted(
-                type, article.getArticleName(), content,
-                type.equals("技术") ? TECH_RULES : LIFE_RULES
+                type, article.getArticleName(),
+                type.equals("技术") ? TECH_RULES : LIFE_RULES, content
         );
         CompletionRequest req = CompletionRequest.builder()
                 .maxToken(300)
                 .thinking(false)
                 .toolChoice(ToolChoice.NONE) // 不允许任何工具请求
-                .messages(List.of(new HumanMessage(prompt)))
+                .messages(List.of(
+                        new SystemMessage(BlogSystemPrompt.SYSTEM_PROMPT),
+                        new HumanMessage(prompt)
+                ))
                 .build();
 
         client.stream(req, new ChatClient.ChunkListener() {

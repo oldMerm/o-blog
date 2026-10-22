@@ -17,7 +17,8 @@ const getNotice = async () => {
   try {
     const res = await httpInstance.get<any, Response>('/article/public/info', {
       params: {
-        id: articleType.LIFE
+        id: articleType.LIFE,
+        size: 11
       }
     });
     articleList.value = res.data;
