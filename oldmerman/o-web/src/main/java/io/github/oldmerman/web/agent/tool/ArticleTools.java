@@ -1,4 +1,4 @@
-package io.github.oldmerman.web.agent.tools;
+package io.github.oldmerman.web.agent.tool;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -13,6 +13,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -29,7 +33,7 @@ public class ArticleTools {
     private ObjectMapper objectMapper;
 
     @Tool(name = "get_all_article",
-            description = "获取部分文章的基本信息，按时间分页查询")
+            description = "分页获取部分文章基本信息(唯一id，文章名，文章简介，创建时间)，按时间降序")
     public String getPageArticle(@Param(description = "当前页数") Integer current,
                                  @Param(description = "每页大小") Integer size) throws JsonProcessingException {
         // 构建分页对象
@@ -40,11 +44,22 @@ public class ArticleTools {
 
         // 构建查询wrapper
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(Article::getId, Article::getArticleName);
+        wrapper.select(Article::getId, Article::getArticleName, Article::getArticleDecr, Article::getCreatedAt);
         wrapper.eq(Article::getArticleStatus, 3);
+        wrapper.orderByDesc(Article::getCreatedAt);
 
         Page<Article> pageResult = mapper.selectPage(page, wrapper);
-        return objectMapper.writeValueAsString(pageResult.getRecords());
+        List<Article> records = pageResult.getRecords();
+        if (records.isEmpty()) {
+            return "{\"error\": \"[业务异常]数据不存在, current=" + current + "，size=" + size + "\"}";
+        }
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("records", records);
+        map.put("current", pageResult.getCurrent());
+        map.put("size", pageResult.getSize());
+        map.put("total", pageResult.getTotal());
+        return objectMapper.writeValueAsString(map);
     }
 
     @Tool(name = "get_article_content", description = "根据id获取文章内容")
@@ -58,13 +73,13 @@ public class ArticleTools {
 
             String content = ossService.getArticleContent(article.getKey(), null);
             if (content == null || content.isBlank()) {
-                return "[业务异常]不存在文章，id：" + articleId;
+                return "{\"error\": \"[业务异常]不存在文章，id：" + articleId + "\"}";
             }
 
             return content;
         } catch (Exception e) {
             log.error("[模型工具调用]get_article_content调用失败，失败原因：{}", e.getMessage());
-            return "[系统异常]后台系统异常，服务不可用...";
+            return "{\"error\": \"[系统异常]后台系统异常，服务不可用...\"}";
         }
     }
 

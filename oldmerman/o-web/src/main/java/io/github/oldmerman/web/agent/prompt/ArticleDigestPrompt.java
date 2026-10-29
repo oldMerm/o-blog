@@ -1,4 +1,4 @@
-package io.github.oldmerman.common.constant;
+package io.github.oldmerman.web.agent.prompt;
 
 public class ArticleDigestPrompt {
     public static final String ARTICLE_DIGEST_PROMPT = """

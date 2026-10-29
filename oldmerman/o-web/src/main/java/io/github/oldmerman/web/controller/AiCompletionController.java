@@ -1,5 +1,7 @@
 package io.github.oldmerman.web.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.oldmerman.model.dto.AgentChatDTO;
 import io.github.oldmerman.web.service.AiCompletionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -14,7 +16,12 @@ public class AiCompletionController {
     private final AiCompletionService service;
 
     @PostMapping(value = "/{articleId}/digest", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter generateArticleDigest(@PathVariable("articleId") Long articleId){
+    public SseEmitter generateArticleDigest(@PathVariable("articleId") Long articleId) {
         return service.generateArticleDigest(articleId);
+    }
+
+    @PostMapping(value = "/v1", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter generateAgentChat(@RequestBody AgentChatDTO dto) throws JsonProcessingException {
+        return service.generateAgentChat(dto);
     }
 }

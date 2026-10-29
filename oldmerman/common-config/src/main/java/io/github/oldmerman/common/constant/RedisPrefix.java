@@ -14,4 +14,5 @@ public class RedisPrefix {
     public static final String ARTICLE_TOP = OLDMERMAN + "article:top:";
     public static final String ADMIN_CACHE = OLDMERMAN + "admin:";
     public static final String ARTICLE_DIGEST_CACHE = OLDMERMAN + "digest:";
+    public static final String BLOG_AGENT_CHAT = OLDMERMAN + "agent:chat:";
 }

@@ -33,7 +33,8 @@ public enum BusErrorCode implements IResultCode {
     ARTICLE_OPRE_FAILED(1099, "文章功能操作失败"),
     ARTICLE_TOP_EXCEED(1100, "置顶文章数量过多"),
 
-    AGENT_SERVICE_FAILED(1150, "智能体服务出错")
+    AGENT_SERVICE_FAILED(1150, "智能体服务出错"),
+    AGENT_SERVICE_BUSY(1151, "服务繁忙，请稍后再试...")
     ;
 
     private final Integer code;

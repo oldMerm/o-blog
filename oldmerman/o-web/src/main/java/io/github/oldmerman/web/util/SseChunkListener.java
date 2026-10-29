@@ -1,6 +1,8 @@
 package io.github.oldmerman.web.util;
 
-import io.github.oldmerman.core.api.chat.ChatClient;
+import io.github.oldmerman.core.api.chat.handle.ChunkListener;
+import io.github.oldmerman.core.api.chat.handle.StreamHandle;
+import io.github.oldmerman.core.api.chat.model.Usage;
 import io.github.oldmerman.core.enums.FinishReason;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -9,22 +11,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 流式适配器
+ *
  * @author oldmerman and deepseek
  * @date 2026-10-13
  */
-public class SseChunkListener implements ChatClient.ChunkListener {
+public class SseChunkListener implements ChunkListener {
 
     private final SseEmitter emitter;
-    private final ChatClient.StreamHandle handle;
+    private final StreamHandle handle;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public SseChunkListener(SseEmitter emitter, ChatClient.StreamHandle handle) {
+    public SseChunkListener(SseEmitter emitter, StreamHandle handle) {
         this.emitter = emitter;
         this.handle = handle;
 
         // 前端断开 / 超时 / 完成 → 取消上游 DeepSeek 请求
         emitter.onCompletion(this::cancelUpstream);
-        emitter.onTimeout(() -> { cancelUpstream(); emitter.complete(); });
+        emitter.onTimeout(() -> {
+            cancelUpstream();
+            emitter.complete();
+        });
         emitter.onError(e -> cancelUpstream());
     }
 
@@ -35,7 +41,8 @@ public class SseChunkListener implements ChatClient.ChunkListener {
     }
 
     @Override
-    public void onStart(ChatClient.StreamHandle h) {}
+    public void onStart(StreamHandle h) {
+    }
 
     @Override
     public void onContent(String chunk) {
@@ -52,6 +59,9 @@ public class SseChunkListener implements ChatClient.ChunkListener {
     public void onEnd(FinishReason finishReason) {
         send("end", finishReason.name());
     }
+
+    @Override
+    public void onUsage(Usage usage) {}
 
     @Override
     public void onComplete() {
@@ -75,6 +85,10 @@ public class SseChunkListener implements ChatClient.ChunkListener {
             }
             emitter.completeWithError(e);
         }
+    }
+
+    public void onCustom(String event, String data) {
+        send(event, data);
     }
 
     private void send(String event, String data) {

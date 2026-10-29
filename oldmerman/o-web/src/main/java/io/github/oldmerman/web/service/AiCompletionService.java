@@ -1,5 +1,7 @@
 package io.github.oldmerman.web.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.oldmerman.model.dto.AgentChatDTO;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
@@ -14,4 +16,10 @@ public interface AiCompletionService {
      * @param articleId 文章唯一id
      */
     SseEmitter generateArticleDigest(Long articleId);
+
+    /**
+     * 页面对话组件
+     * @param dto 封装dto
+     */
+    SseEmitter generateAgentChat(AgentChatDTO dto) throws JsonProcessingException;
 }
