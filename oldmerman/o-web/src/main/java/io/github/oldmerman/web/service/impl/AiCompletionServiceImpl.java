@@ -34,6 +34,7 @@ import io.github.oldmerman.web.util.UserContext;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -64,6 +65,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
 
     private final StringRedisTemplate redisTemplate;
 
+    @Qualifier("ignoreNullMapper")
     private final ObjectMapper objectMapper;
 
     /**
@@ -74,7 +76,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
     private ReactAgent webChatAgent;
 
     @PostConstruct
-    public void agentInitialization(){
+    public void agentInitialization() {
         ToolRegistry toolRegistry = new ToolRegistry();
         toolRegistry.register(tools);
 
@@ -189,7 +191,11 @@ public class AiCompletionServiceImpl implements AiCompletionService {
             }
             id = po.getId();
             state = objectMapper.readValue(po.getState(), AgentState.class);
+            state.getMessages().add(new HumanMessage(question));
         }
+
+        TokenTracker tokenTracker = new TokenTracker();
+        state.setTracker(tokenTracker);
 
         final AgentChat agentChat = new AgentChat();
         final AgentState agentState = state;
@@ -198,7 +204,6 @@ public class AiCompletionServiceImpl implements AiCompletionService {
         agentChat.setThreadId(threadId);
 
         SseEmitter sseEmitter = new SseEmitter(0L);
-        TokenTracker tokenTracker = new TokenTracker();
         webChatAgent.stream(state, new ChunkListener() {
             private SseChunkListener delegate;
 
@@ -232,8 +237,8 @@ public class AiCompletionServiceImpl implements AiCompletionService {
                 delegate.onCustom("thread", agentChat.getThreadId());
                 delegate.onComplete();
                 int totalTokens = 0;
-                for (TokenTracker.TokenUsage usage : tokenTracker.getUsageEnumMap().values()) {
-                    totalTokens += usage.getTotalTokens();
+                for (TokenTracker.TokenUsage tokenUsage : tokenTracker.getUsageList()) {
+                    totalTokens += tokenUsage.getTotalTokens();
                 }
                 log.info("[对话完成]共消耗token: {}", totalTokens);
 
@@ -242,7 +247,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
                     agentChat.setState(value);
                     agentChatMapper.insertOrUpdate(agentChat);
                 } catch (JsonProcessingException e) {
-                    log.warn("[对话异常]序列化失败, threadId = {}" , agentChat.getThreadId());
+                    log.warn("[对话异常]序列化失败, threadId = {}", agentChat.getThreadId());
                     throw new RuntimeException(e);
                 }
             }
