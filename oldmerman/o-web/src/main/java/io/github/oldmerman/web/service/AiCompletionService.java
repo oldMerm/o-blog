@@ -21,5 +21,5 @@ public interface AiCompletionService {
      * 页面对话组件
      * @param dto 封装dto
      */
-    SseEmitter generateAgentChat(AgentChatDTO dto) throws JsonProcessingException;
+    SseEmitter generateAgentChat(AgentChatDTO dto) throws JsonProcessingException, InterruptedException;
 }

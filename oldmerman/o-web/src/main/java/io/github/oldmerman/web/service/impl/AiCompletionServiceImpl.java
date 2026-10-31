@@ -7,6 +7,7 @@ import io.github.oldmerman.agent.state.AgentState;
 import io.github.oldmerman.agent.utils.TokenTracker;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.util.IdGenerator;
+import io.github.oldmerman.core.tool.ToolContext;
 import io.github.oldmerman.model.po.AgentChat;
 import io.github.oldmerman.web.agent.prompt.BlogSystemPrompt;
 import io.github.oldmerman.common.constant.RedisPrefix;
@@ -42,8 +43,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static io.github.oldmerman.web.agent.prompt.ArticleDigestPrompt.ARTICLE_DIGEST_PROMPT;
 import static io.github.oldmerman.web.agent.prompt.ArticleDigestPrompt.TECH_RULES;
@@ -54,6 +58,8 @@ import static io.github.oldmerman.web.agent.prompt.BlogSystemPrompt.BLOG_CHAT_PR
 @Slf4j
 @RequiredArgsConstructor
 public class AiCompletionServiceImpl implements AiCompletionService {
+
+    private final ConcurrentHashMap<String, ReentrantLock> locks = new ConcurrentHashMap<>();
 
     private final ChatClient client;
 
@@ -83,7 +89,6 @@ public class AiCompletionServiceImpl implements AiCompletionService {
         webChatAgent = ReactAgent.create(client, toolRegistry, false);
     }
 
-
     @Override
     public SseEmitter generateArticleDigest(Long articleId) {
         String digestCache = redisTemplate.opsForValue().get(RedisPrefix.ARTICLE_DIGEST_CACHE + articleId);
@@ -100,27 +105,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
             return emitter;
         }
 
-        Article article = articleMapper.selectById(articleId);
-        if (article == null || article.getKey() == null) {
-            throw new BusinessException(ResultCode.DATA_NOT_EXIST);
-        }
-
-        String content = ossService.getArticleContent(article.getKey(), null);
-        String type = article.articleType();
-        String prompt = ARTICLE_DIGEST_PROMPT.formatted(
-                type, article.getArticleName(),
-                type.equals("技术") ? TECH_RULES : LIFE_RULES, content
-        );
-        CompletionRequest req = CompletionRequest.builder()
-                .maxToken(300)
-                .thinking(false)
-                .toolChoice(ToolChoice.NONE) // 不允许任何工具请求
-                .messages(List.of(
-                        new SystemMessage(BlogSystemPrompt.SYSTEM_PROMPT),
-                        new HumanMessage(prompt)
-                ))
-                .build();
-
+        CompletionRequest req = buildDigestRequest(articleId, articleMapper, ossService);
         client.stream(req, new ChunkListener() {
             private SseChunkListener delegate;
             private String content = "";
@@ -159,7 +144,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
     }
 
     @Override
-    public SseEmitter generateAgentChat(AgentChatDTO dto) throws JsonProcessingException {
+    public SseEmitter generateAgentChat(AgentChatDTO dto) throws JsonProcessingException, InterruptedException {
         Long userId = UserContext.getUserId();
         if (userId == null) {
             throw new BusinessException(ResultCode.UNAUTHORIZED);
@@ -176,7 +161,8 @@ public class AiCompletionServiceImpl implements AiCompletionService {
             throw new BusinessException(ResultCode.PARAM_ERROR);
         }
 
-        AgentState state;
+        final AgentState state;
+        final AgentChat po;
         if (threadId == null) {
             id = IdGenerator.nextId();
             threadId = UUID.randomUUID().toString();
@@ -184,81 +170,133 @@ public class AiCompletionServiceImpl implements AiCompletionService {
                     new SystemMessage(BLOG_CHAT_PROMPT),
                     new HumanMessage(dto.getQuestion())
             ));
+            state.setContext(new ToolContext(Map.of("userId", userId)));
+
+            po = new AgentChat();
+            po.setId(id);
+            po.setUserId(userId);
+            po.setThreadId(threadId);
         } else {
-            AgentChat po = agentChatMapper.selectByThreadId(threadId);
-            if (!userId.equals(po.getUserId())) {
+            po = agentChatMapper.selectByThreadId(threadId);
+            if (po == null || !userId.equals(po.getUserId())) {
                 throw new BusinessException(ResultCode.FAIL);
             }
-            id = po.getId();
             state = objectMapper.readValue(po.getState(), AgentState.class);
+            state.getMessages().add(0, new SystemMessage(BLOG_CHAT_PROMPT));
             state.getMessages().add(new HumanMessage(question));
         }
 
         TokenTracker tokenTracker = new TokenTracker();
         state.setTracker(tokenTracker);
 
-        final AgentChat agentChat = new AgentChat();
-        final AgentState agentState = state;
-        agentChat.setId(id);
-        agentChat.setUserId(userId);
-        agentChat.setThreadId(threadId);
+        ReentrantLock lock = lockFor(threadId);
+        if (!lock.tryLock(0, TimeUnit.SECONDS)) {
+            throw new BusinessException(BusErrorCode.AGENT_SERVICE_BUSY);
+        }
 
         SseEmitter sseEmitter = new SseEmitter(0L);
-        webChatAgent.stream(state, new ChunkListener() {
-            private SseChunkListener delegate;
+        try {
+            webChatAgent.stream(state, new ChunkListener() {
+                private SseChunkListener delegate;
+                private int totalTokens = 0;
 
-            @Override
-            public void onStart(StreamHandle handle) {
-                delegate = new SseChunkListener(sseEmitter, handle);
-            }
-
-            @Override
-            public void onContent(String chunk) {
-                delegate.onContent(chunk);
-            }
-
-            @Override
-            public void onReasoning(String reasoning) {
-                delegate.onReasoning(reasoning);
-            }
-
-            @Override
-            public void onToolCall(ToolCall toolCall) {
-                delegate.onToolCall(toolCall);
-            }
-
-            @Override
-            public void onEnd(FinishReason finishReason) {
-                delegate.onEnd(finishReason);
-            }
-
-            @Override
-            public void onComplete() {
-                delegate.onCustom("thread", agentChat.getThreadId());
-                delegate.onComplete();
-                int totalTokens = 0;
-                for (TokenTracker.TokenUsage tokenUsage : tokenTracker.getUsageList()) {
-                    totalTokens += tokenUsage.getTotalTokens();
+                @Override
+                public void onStart(StreamHandle handle) {
+                    delegate = new SseChunkListener(sseEmitter, handle);
                 }
-                log.info("[对话完成]共消耗token: {}", totalTokens);
 
-                try {
-                    String value = objectMapper.writeValueAsString(agentState);
-                    agentChat.setState(value);
-                    agentChatMapper.insertOrUpdate(agentChat);
-                } catch (JsonProcessingException e) {
-                    log.warn("[对话异常]序列化失败, threadId = {}", agentChat.getThreadId());
-                    throw new RuntimeException(e);
+                @Override
+                public void onContent(String chunk) {
+                    delegate.onContent(chunk);
                 }
-            }
 
-            @Override
-            public void onError(IOException e) {
-                log.error("[对话异常]流意外结束，原因：{}", e.getMessage());
-                delegate.onError(e);
-            }
-        });
+                @Override
+                public void onReasoning(String reasoning) {
+                    delegate.onReasoning(reasoning);
+                }
+
+                @Override
+                public void onToolCall(ToolCall toolCall) {
+                    delegate.onToolCall(toolCall);
+                }
+
+                @Override
+                public void onEnd(FinishReason finishReason) {
+                    delegate.onEnd(finishReason);
+                }
+
+                @Override
+                public void onComplete() {
+                    String threadId = po.getThreadId();
+                    delegate.onCustom("thread", threadId);
+                    delegate.onComplete();
+                    for (TokenTracker.TokenUsage tokenUsage : tokenTracker.getUsageList()) {
+                        totalTokens += tokenUsage.getTotalTokens();
+                    }
+                    log.info("[对话完成]共消耗token: {}", totalTokens);
+
+                    try {
+                        state.getMessages().removeIf(i -> i instanceof SystemMessage);
+                        po.setState(objectMapper.writeValueAsString(state));
+                        agentChatMapper.insertOrUpdate(po);
+                    } catch (JsonProcessingException e) {
+                        log.warn("[对话异常]序列化失败, threadId = {}", threadId);
+                        throw new RuntimeException(e);
+                    } finally {
+                        lock.unlock();
+                        cleanupLock(threadId);
+                    }
+                }
+
+                @Override
+                public void onError(IOException e) {
+                    try {
+                        log.error("[对话异常]流意外结束，原因：{}", e.getMessage());
+                        delegate.onError(e);
+                    } finally {
+                        lock.unlock();
+                        cleanupLock(po.getThreadId());
+                    }
+                }
+            });
+        } catch (Exception e) {
+            lock.unlock();
+            cleanupLock(threadId);
+            throw e;
+        }
 
         return sseEmitter;
+    }
+
+    public static CompletionRequest buildDigestRequest(Long articleId, ArticleMapper articleMapper, OssService ossService) {
+        Article article = articleMapper.selectById(articleId);
+        if (article == null || article.getKey() == null) {
+            throw new BusinessException(ResultCode.DATA_NOT_EXIST);
+        }
+
+        String content = ossService.getArticleContent(article.getKey(), null);
+        String type = article.articleType();
+        String prompt = ARTICLE_DIGEST_PROMPT.formatted(
+                type, article.getArticleName(),
+                type.equals("技术") ? TECH_RULES : LIFE_RULES, content
+        );
+        return CompletionRequest.builder()
+                .maxToken(300)
+                .thinking(false)
+                .toolChoice(ToolChoice.NONE) // 不允许任何工具请求
+                .messages(List.of(
+                        new SystemMessage(BlogSystemPrompt.SYSTEM_PROMPT),
+                        new HumanMessage(prompt)
+                ))
+                .build();
+    }
+
+    private ReentrantLock lockFor(String threadId) {
+        return locks.computeIfAbsent(threadId, k -> new ReentrantLock());
+    }
+
+    private void cleanupLock(String threadId) {
+        locks.computeIfPresent(threadId, (k, lock) ->
+                lock.isLocked() || lock.hasQueuedThreads() ? lock : null);
     }
 }

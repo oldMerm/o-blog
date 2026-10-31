@@ -2,6 +2,7 @@ package io.github.oldmerman.web.config;
 
 import io.github.oldmerman.web.interceptor.AuthInterceptor;
 import io.github.oldmerman.web.interceptor.JwtInterceptor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -17,6 +18,7 @@ import org.springframework.web.filter.CorsFilter;
 import java.util.Arrays;
 import java.util.List;
 
+@Getter
 @Configuration
 @RequiredArgsConstructor
 public class CorsConfig implements WebMvcConfigurer {

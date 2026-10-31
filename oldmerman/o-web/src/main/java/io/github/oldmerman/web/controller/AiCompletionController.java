@@ -21,7 +21,7 @@ public class AiCompletionController {
     }
 
     @PostMapping(value = "/v1", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter generateAgentChat(@RequestBody AgentChatDTO dto) throws JsonProcessingException {
+    public SseEmitter generateAgentChat(@RequestBody AgentChatDTO dto) throws JsonProcessingException, InterruptedException {
         return service.generateAgentChat(dto);
     }
 }

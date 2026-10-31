@@ -37,7 +37,7 @@ public interface OssService {
     String getArticleContent(String key, String bucket);
 
     /**
-     * 生成公共url，只生产一次
+     * 生成公共url，只生产一次(
      *
      * @param keys   文件路径
      * @param bucket 所属bucket
