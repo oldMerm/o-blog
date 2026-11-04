@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.oldmerman.common.constant.RedisPrefix;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
@@ -14,9 +15,12 @@ import io.github.oldmerman.core.tool.Param;
 import io.github.oldmerman.core.tool.Tool;
 import io.github.oldmerman.core.tool.ToolContext;
 import io.github.oldmerman.model.po.Article;
+import io.github.oldmerman.model.vo.ArticleGroupRenderVO;
 import io.github.oldmerman.model.vo.ArticleHistoryVO;
+import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.config.CorsConfig;
 import io.github.oldmerman.web.mapper.ArticleMapper;
+import io.github.oldmerman.web.service.ArticleGroupService;
 import io.github.oldmerman.web.service.ArticleHistoryService;
 import io.github.oldmerman.web.service.OssService;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +30,10 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.github.oldmerman.web.service.impl.AiCompletionServiceImpl.buildDigestRequest;
 
@@ -38,6 +45,8 @@ public class ArticleTools {
     private final ChatClient client;
 
     private final ArticleHistoryService articleHistoryService;
+
+    private final ArticleGroupService articleGroupService;
 
     private final OssService ossService;
 
@@ -52,7 +61,7 @@ public class ArticleTools {
 
     @Tool(name = "get_article_page",
             description = "分页获取部分文章基本信息(唯一id，文章名，创建时间)，按时间降序")
-    public List<Article> getPageArticle(@Param(name = "current", description = "当前页数") Integer current,
+    public String getPageArticle(@Param(name = "current", description = "当前页数") Integer current,
                                         @Param(name = "size", description = "每页大小") Integer size) throws JsonProcessingException {
         // 构建分页对象
         current = current == null ? 1 : current;
@@ -72,10 +81,10 @@ public class ArticleTools {
             throw new BusinessException(ResultCode.DATA_NOT_EXIST);
         }
 
-        return records;
+        return objectMapper.writeValueAsString(records);
     }
 
-    @Tool(name = "get_article_url", description = "获取文章的公共访问链接(供用户访问)")
+    @Tool(name = "get_article_url", description = "获取文章的公共访问链接(供用户访问)，注意用url相关markdown标签修饰")
     public String getArticleUrl(@Param(name = "articleId", description = "文章唯一id") Long articleId) {
         try {
             log.info("[模型工具调用]get_article_url: articleId={}", articleId);
@@ -118,27 +127,65 @@ public class ArticleTools {
     @Tool(name = "get_article_history",
             description = "获取用户近五条文章浏览历史")
     public String getArticleHistory(ToolContext ctx) throws JsonProcessingException {
-        Long userId = ctx.get("userId", Long.class);
-        if (userId == null) {
-            throw new BusinessException(ResultCode.DATA_NOT_EXIST);
+        try {
+            Long userId = ctx.get("userId", Long.class);
+            if (userId == null) {
+                throw new BusinessException(ResultCode.USER_NOT_EXIST);
+            }
+            List<ArticleHistoryVO> historyVOList = articleHistoryService.getArticleHistory(userId);
+            if (historyVOList.isEmpty()) {
+                throw new BusinessException(ResultCode.DATA_NOT_EXIST);
+            }
+
+            List<ArticleHistoryVO> voList = historyVOList.stream().limit(5).toList();
+            return objectMapper.writeValueAsString(voList);
+        } catch (Exception e) {
+            log.error("[模型工具调用]get_article_history调用失败，异常信息：{}", e.getMessage());
+            throw e;
         }
-        List<ArticleHistoryVO> historyVOList = articleHistoryService.getArticleHistory(userId);
-        if (historyVOList.isEmpty()) {
+    }
+
+    @Tool(name = "get_article_link", description = "获取同类型文章(用于相关文章的推荐)")
+    public String getArticleLink(@Param(description = "文章唯一id") Long articleId) throws JsonProcessingException {
+        List<ArticleGroupRenderVO> ids = articleGroupService.getGroupArticle(articleId);
+        if (ids.isEmpty()) {
+            log.info("[模型工具调用]get_article_link，{}：不存在相关文章", articleId);
             throw new BusinessException(ResultCode.DATA_NOT_EXIST);
         }
 
-        List<ArticleHistoryVO> voList = historyVOList.stream().limit(5).toList();
-        try {
-            return objectMapper.writeValueAsString(voList);
-        } catch (JsonProcessingException e) {
-            log.error("[模型工具调用]get_article_history调用失败，序列化异常：{}", e.getMessage());
-            throw e;
+        Map<ArticleGroupRenderVO, List<String>> map = new HashMap<>(ids.size());
+        for (ArticleGroupRenderVO vo : ids) {
+            vo.setNumber(null);
+            vo.setCreatedAt(null);
+
+            if (vo.getNumber() <= 1) {
+                map.put(vo, Collections.emptyList());
+                continue;
+            }
+
+            List<ArticleRenderVO> articlesByGroup = articleGroupService.getArticleByGroup(vo.getId());
+            articlesByGroup.removeIf(i -> i.getId().equals(String.valueOf(articleId)));
+
+            map.put(vo, groupArticlesToVO(articlesByGroup));
         }
+
+        return objectMapper.writeValueAsString(map);
     }
 
     private String generateArticleDigestSync(Long articleId) {
         CompletionRequest req = buildDigestRequest(articleId, articleMapper, ossService);
         CompletionResponse res = client.chat(req);
         return res.finalResponse();
+    }
+
+    private List<String> groupArticlesToVO(List<ArticleRenderVO> vos) {
+        return vos.stream().map(vo -> {
+            ObjectNode node = objectMapper.createObjectNode();
+            node.put("id", vo.getId());
+            node.put("articleName", vo.getArticleName());
+            node.put("articleDesc", StringUtils.hasText(vo.getArticleDecr())
+                    ? vo.getArticleDecr() : "作者比较懒，没有写介绍哟！");
+            return node.toString();
+        }).toList();
     }
 }

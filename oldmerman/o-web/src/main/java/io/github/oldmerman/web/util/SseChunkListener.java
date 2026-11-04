@@ -2,8 +2,10 @@ package io.github.oldmerman.web.util;
 
 import io.github.oldmerman.core.api.chat.handle.ChunkListener;
 import io.github.oldmerman.core.api.chat.handle.StreamHandle;
+import io.github.oldmerman.core.api.chat.model.ToolCall;
 import io.github.oldmerman.core.api.chat.model.Usage;
 import io.github.oldmerman.core.enums.FinishReason;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -15,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author oldmerman and deepseek
  * @date 2026-10-13
  */
+@Slf4j
 public class SseChunkListener implements ChunkListener {
 
     private final SseEmitter emitter;
@@ -61,6 +64,12 @@ public class SseChunkListener implements ChunkListener {
     }
 
     @Override
+    public void onToolCall(ToolCall toolCall) {
+        String toolName = toolCall.function().get("name");
+        send("tool", toolName == null ? "unknown tool" : toolName);
+    }
+
+    @Override
     public void onUsage(Usage usage) {}
 
     @Override
@@ -83,7 +92,7 @@ public class SseChunkListener implements ChunkListener {
                         .data(e.getMessage() == null ? "unknown" : e.getMessage()));
             } catch (IOException ignored) {
             }
-            emitter.completeWithError(e);
+            emitter.complete();
         }
     }
 
@@ -100,8 +109,9 @@ public class SseChunkListener implements ChunkListener {
             String safe = data.replace("\r", "").replace("\n", "\\n");
             emitter.send(SseEmitter.event().name(event).data(safe));
         } catch (IOException e) {
+            log.debug("SSE客户端断开连接: {}", e.getMessage());
             cancelUpstream();
-            emitter.completeWithError(e);
+            emitter.complete();
         }
     }
 }

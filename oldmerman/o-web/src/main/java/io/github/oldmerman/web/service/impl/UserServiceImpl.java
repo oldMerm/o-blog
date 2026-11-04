@@ -1,16 +1,19 @@
 package io.github.oldmerman.web.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.common.util.HmacSHA256Util;
 import io.github.oldmerman.common.util.RegexUtils;
 import io.github.oldmerman.model.dto.UserManageDTO;
+import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.model.po.Counter;
 import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.model.vo.UserInfoVO;
 import io.github.oldmerman.web.converter.UserConverter;
+import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.mapper.UserMapper;
 import io.github.oldmerman.web.service.LoginService;
 import io.github.oldmerman.web.service.OssService;
@@ -33,6 +36,8 @@ public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
 
+    private final ArticleMapper articleMapper;
+
     private final UserConverter converter;
 
     @Override
@@ -42,6 +47,21 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResultCode.USERNAME_OR_PASSWORD_ERROR);
         }
         UserInfoVO vo = converter.poToInfoVO(user);
+
+        if (user.getUpdatedAt().isBefore(LocalDateTime.now().minusDays(1))) {
+            LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Article::getWriterId, userId);
+            queryWrapper.eq(Article::getArticleStatus, Article.ArticleStatus.PUBLISHED);
+            queryWrapper.select(Article::getLike);
+            List<Article> articles = articleMapper.selectList(queryWrapper);
+            int likesNum = 0;
+            for (Article article : articles) {
+                likesNum += article.getLike();
+            }
+
+            userMapper.updateUserLikes(likesNum, userId);
+            vo.setLike(likesNum);
+        }
         vo.setAttrURL(ossService.genPreviewURL(user.getAttr(), null));
         return vo;
     }

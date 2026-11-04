@@ -8,12 +8,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import java.io.IOException;
 import java.util.stream.Collectors;
 
 /**
@@ -67,6 +69,27 @@ public class GlobalExceptionHandler {
         log.error("系统异常：", e);
         return Result.fail(ResultCode.INTERNAL_ERROR)
                 .setPath(request.getRequestURI());
+    }
+
+    /**
+     * 处理IO异常
+     */
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<Void> handleIOException(IOException e, HttpServletRequest request) {
+        // 识别客户端断开：消息匹配 + 异步请求
+        if (isClientDisconnect(e)) {
+            log.info("SSE客户端断开: {}", e.getMessage());
+            return ResponseEntity.noContent().build();  // 204，不写响应体
+        }
+        log.error("io异常：", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+
+    private boolean isClientDisconnect(IOException e) {
+        String msg = e.getMessage();
+        if (msg == null) return false;
+        return msg.contains("中止") || msg.contains("Broken pipe")
+                || msg.contains("Connection reset") || msg.contains("连接");
     }
 
     /**

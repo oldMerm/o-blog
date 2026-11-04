@@ -1043,6 +1043,16 @@ onUnmounted(() => {
   height: 100%;
   overflow-y: auto;
   padding-bottom: 72px;
+  /* 保留下拉滚动能力，但隐藏滚动条本身 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* 旧版 Edge / IE */
+}
+
+/* 隐藏滚动条（Chrome / Edge / Safari） */
+.aside-content::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .aside-title {
@@ -1220,6 +1230,32 @@ onUnmounted(() => {
 :deep(p) {
   margin-bottom: 10px;
   color: black;
+}
+
+/* 引用块：全局 reset 的 * { margin:0; padding:0 } 抹掉了浏览器默认缩进，
+   这里必须显式给出边距与边框，否则 <blockquote> 与普通段落无法区分 */
+:deep(.vp-doc blockquote) {
+  margin: 16px 0;
+  padding: 10px 16px;
+  border-left: 3px solid #b9d3f2;
+  border-radius: 0 6px 6px 0;
+  background: #f8fafc;
+  color: #475569;
+}
+
+:deep(.vp-doc blockquote p) {
+  margin-bottom: 0;
+  color: inherit;
+}
+
+:deep(.vp-doc blockquote > :last-child) {
+  margin-bottom: 0;
+}
+
+/* 嵌套引用：颜色再淡一层 */
+:deep(.vp-doc blockquote blockquote) {
+  border-left-color: #e2e8f0;
+  background: #f1f5f9;
 }
 
 :deep(img) {
@@ -1534,6 +1570,22 @@ onUnmounted(() => {
 
 .vp-wrapper[data-theme="dark"] :deep(p) {
   color: #d5d8de;
+}
+
+/* 引用块 */
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc blockquote) {
+  border-left-color: #3a3f47;
+  background: #1a1c22;
+  color: #9aa4b2;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc blockquote p) {
+  color: inherit;
+}
+
+.vp-wrapper[data-theme="dark"] :deep(.vp-doc blockquote blockquote) {
+  border-left-color: #2f333b;
+  background: #22252c;
 }
 
 /* 无序列表圆点 */

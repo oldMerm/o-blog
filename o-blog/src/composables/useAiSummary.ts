@@ -13,9 +13,9 @@ const parseSseBlock = (block: string): SseBlock | null => {
     if (line.startsWith('event:')) {
       event = line.slice(6).trim();
     } else if (line.startsWith('data:')) {
-      let value = line.slice(5);
-      if (value.startsWith(' ')) value = value.slice(1);
-      dataLines.push(value);
+      // 后端 Spring SseEmitter 写出的是 "data:" + 内容，冒号后没有分隔空格，
+      // 不能按 SSE 规范再移除一个前导空格，否则会把内容自带的空格吃掉。
+      dataLines.push(line.slice(5));
     }
   }
   if (dataLines.length === 0 && event === 'message') return null;

@@ -7,6 +7,7 @@ import io.github.oldmerman.agent.state.AgentState;
 import io.github.oldmerman.agent.utils.TokenTracker;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.util.IdGenerator;
+import io.github.oldmerman.core.api.chat.messages.Message;
 import io.github.oldmerman.core.tool.ToolContext;
 import io.github.oldmerman.model.po.AgentChat;
 import io.github.oldmerman.web.agent.prompt.BlogSystemPrompt;
@@ -26,6 +27,8 @@ import io.github.oldmerman.core.tool.ToolRegistry;
 import io.github.oldmerman.model.dto.AgentChatDTO;
 import io.github.oldmerman.model.po.Article;
 import io.github.oldmerman.web.agent.tool.ArticleTools;
+import io.github.oldmerman.web.agent.tool.SystemTools;
+import io.github.oldmerman.web.agent.tool.UserTools;
 import io.github.oldmerman.web.mapper.AgentChatMapper;
 import io.github.oldmerman.web.mapper.ArticleMapper;
 import io.github.oldmerman.web.service.AiCompletionService;
@@ -42,12 +45,11 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static io.github.oldmerman.web.agent.prompt.ArticleDigestPrompt.ARTICLE_DIGEST_PROMPT;
 import static io.github.oldmerman.web.agent.prompt.ArticleDigestPrompt.TECH_RULES;
@@ -58,8 +60,6 @@ import static io.github.oldmerman.web.agent.prompt.BlogSystemPrompt.BLOG_CHAT_PR
 @Slf4j
 @RequiredArgsConstructor
 public class AiCompletionServiceImpl implements AiCompletionService {
-
-    private final ConcurrentHashMap<String, ReentrantLock> locks = new ConcurrentHashMap<>();
 
     private final ChatClient client;
 
@@ -75,16 +75,20 @@ public class AiCompletionServiceImpl implements AiCompletionService {
     private final ObjectMapper objectMapper;
 
     /**
-     * article tools
+     * blog agent tools
      */
-    private final ArticleTools tools;
+    private final ArticleTools articleTools;
+    private final UserTools userTools;
+    private final SystemTools systemTools;
 
     private ReactAgent webChatAgent;
 
     @PostConstruct
     public void agentInitialization() {
         ToolRegistry toolRegistry = new ToolRegistry();
-        toolRegistry.register(tools);
+        toolRegistry.register(articleTools);
+        toolRegistry.register(userTools);
+        toolRegistry.register(systemTools);
 
         webChatAgent = ReactAgent.create(client, toolRegistry, false);
     }
@@ -106,7 +110,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
         }
 
         CompletionRequest req = buildDigestRequest(articleId, articleMapper, ossService);
-        client.stream(req, new ChunkListener() {
+        client.stream(req, null, new ChunkListener() {
             private SseChunkListener delegate;
             private String content = "";
 
@@ -144,7 +148,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
     }
 
     @Override
-    public SseEmitter generateAgentChat(AgentChatDTO dto) throws JsonProcessingException, InterruptedException {
+    public SseEmitter generateAgentChat(AgentChatDTO dto) throws JsonProcessingException {
         Long userId = UserContext.getUserId();
         if (userId == null) {
             throw new BusinessException(ResultCode.UNAUTHORIZED);
@@ -152,7 +156,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
 
         long callTimes = redisTemplate.opsForValue().increment(RedisPrefix.BLOG_AGENT_CHAT);
         if (callTimes == 1) redisTemplate.expire(RedisPrefix.BLOG_AGENT_CHAT, 10, TimeUnit.MINUTES);
-        if (callTimes > 5) throw new BusinessException(BusErrorCode.AGENT_SERVICE_BUSY);
+        if (callTimes > 10) throw new BusinessException(BusErrorCode.AGENT_SERVICE_BUSY);
 
         Long id;
         String threadId = dto.getThreadId();
@@ -170,7 +174,6 @@ public class AiCompletionServiceImpl implements AiCompletionService {
                     new SystemMessage(BLOG_CHAT_PROMPT),
                     new HumanMessage(dto.getQuestion())
             ));
-            state.setContext(new ToolContext(Map.of("userId", userId)));
 
             po = new AgentChat();
             po.setId(id);
@@ -184,86 +187,102 @@ public class AiCompletionServiceImpl implements AiCompletionService {
             state = objectMapper.readValue(po.getState(), AgentState.class);
             state.getMessages().add(0, new SystemMessage(BLOG_CHAT_PROMPT));
             state.getMessages().add(new HumanMessage(question));
+            state.setStep(0);
         }
 
         TokenTracker tokenTracker = new TokenTracker();
+        state.setModelName("deepseek-flash");
         state.setTracker(tokenTracker);
+        state.setContext(new ToolContext(Map.of("userId", userId)));
 
-        ReentrantLock lock = lockFor(threadId);
-        if (!lock.tryLock(0, TimeUnit.SECONDS)) {
+        final String lockKey = RedisPrefix.AGENT_CHAT_LOCK + userId;
+        Boolean simpleLock = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", Duration.ofSeconds(90));
+        if (!Boolean.TRUE.equals(simpleLock)) {
             throw new BusinessException(BusErrorCode.AGENT_SERVICE_BUSY);
         }
 
-        SseEmitter sseEmitter = new SseEmitter(0L);
-        try {
-            webChatAgent.stream(state, new ChunkListener() {
-                private SseChunkListener delegate;
-                private int totalTokens = 0;
-
-                @Override
-                public void onStart(StreamHandle handle) {
-                    delegate = new SseChunkListener(sseEmitter, handle);
-                }
-
-                @Override
-                public void onContent(String chunk) {
-                    delegate.onContent(chunk);
-                }
-
-                @Override
-                public void onReasoning(String reasoning) {
-                    delegate.onReasoning(reasoning);
-                }
-
-                @Override
-                public void onToolCall(ToolCall toolCall) {
-                    delegate.onToolCall(toolCall);
-                }
-
-                @Override
-                public void onEnd(FinishReason finishReason) {
-                    delegate.onEnd(finishReason);
-                }
-
-                @Override
-                public void onComplete() {
-                    String threadId = po.getThreadId();
-                    delegate.onCustom("thread", threadId);
-                    delegate.onComplete();
-                    for (TokenTracker.TokenUsage tokenUsage : tokenTracker.getUsageList()) {
-                        totalTokens += tokenUsage.getTotalTokens();
-                    }
-                    log.info("[对话完成]共消耗token: {}", totalTokens);
-
-                    try {
-                        state.getMessages().removeIf(i -> i instanceof SystemMessage);
-                        po.setState(objectMapper.writeValueAsString(state));
-                        agentChatMapper.insertOrUpdate(po);
-                    } catch (JsonProcessingException e) {
-                        log.warn("[对话异常]序列化失败, threadId = {}", threadId);
-                        throw new RuntimeException(e);
-                    } finally {
-                        lock.unlock();
-                        cleanupLock(threadId);
-                    }
-                }
-
-                @Override
-                public void onError(IOException e) {
-                    try {
-                        log.error("[对话异常]流意外结束，原因：{}", e.getMessage());
-                        delegate.onError(e);
-                    } finally {
-                        lock.unlock();
-                        cleanupLock(po.getThreadId());
-                    }
-                }
-            });
-        } catch (Exception e) {
-            lock.unlock();
-            cleanupLock(threadId);
-            throw e;
+        // 简单处理历史信息，数量 <= 10，保留系统提示词，和后五条数据
+        List<Message> messages = state.getMessages();
+        int size = messages.size();
+        if (size > 12) {
+            // 只保留12轮会话，超过直接暴力清空
+            log.info("[上下文压缩]博客助手上下文压缩，threadId: {}", threadId);
+            messages.subList(1, size - 1).clear();
         }
+
+        // 准备适配器，调用Agent服务
+        SseEmitter sseEmitter = new SseEmitter(0L);
+        webChatAgent.stream(state, () -> {
+            log.info("[对话中断]Agent对话被中断");
+            redisTemplate.opsForValue().decrement(RedisPrefix.BLOG_AGENT_CHAT);
+            redisTemplate.delete(lockKey);
+        }, new ChunkListener() {
+            private SseChunkListener delegate;
+            private int totalTokens = 0;
+
+            @Override
+            public void onStart(StreamHandle handle) {
+                delegate = new SseChunkListener(sseEmitter, handle);
+            }
+
+            @Override
+            public void onContent(String chunk) {
+                delegate.onContent(chunk);
+            }
+
+            @Override
+            public void onReasoning(String reasoning) {
+                delegate.onReasoning(reasoning);
+            }
+
+            @Override
+            public void onToolCall(ToolCall toolCall) {
+                delegate.onToolCall(toolCall);
+            }
+
+            @Override
+            public void onEnd(FinishReason finishReason) {
+                if (finishReason == FinishReason.ABORTED) {
+                    log.info("[对话中断]Agent对话被中断");
+                    redisTemplate.delete(lockKey);
+                }
+                delegate.onEnd(finishReason);
+            }
+
+            @Override
+            public void onComplete() {
+                String threadId = po.getThreadId();
+                delegate.onCustom("thread", threadId);
+                delegate.onComplete();
+                for (TokenTracker.TokenUsage tokenUsage : tokenTracker.getUsageList()) {
+                    totalTokens += tokenUsage.getTotalTokens();
+                }
+                log.info("[对话完成]共消耗token: {}", totalTokens);
+
+                try {
+                    state.getMessages().removeIf(i -> i instanceof SystemMessage);
+                    po.setState(objectMapper.writeValueAsString(state));
+                    agentChatMapper.insertOrUpdate(po);
+                } catch (JsonProcessingException e) {
+                    log.warn("[对话异常]序列化失败, threadId = {}", threadId);
+                    throw new RuntimeException(e);
+                } finally {
+                    redisTemplate.delete(lockKey);
+                }
+            }
+
+            @Override
+            public void onError(IOException e) {
+                try {
+                    log.error("[对话异常]流意外结束，原因：{}", e.getMessage());
+                    delegate.onError(e);
+                } finally {
+                    redisTemplate.opsForValue().decrement(RedisPrefix.BLOG_AGENT_CHAT);
+                    redisTemplate.delete(lockKey);
+                }
+
+            }
+        });
 
         return sseEmitter;
     }
@@ -291,12 +310,4 @@ public class AiCompletionServiceImpl implements AiCompletionService {
                 .build();
     }
 
-    private ReentrantLock lockFor(String threadId) {
-        return locks.computeIfAbsent(threadId, k -> new ReentrantLock());
-    }
-
-    private void cleanupLock(String threadId) {
-        locks.computeIfPresent(threadId, (k, lock) ->
-                lock.isLocked() || lock.hasQueuedThreads() ? lock : null);
-    }
 }

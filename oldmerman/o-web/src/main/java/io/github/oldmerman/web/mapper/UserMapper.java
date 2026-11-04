@@ -17,7 +17,7 @@ public interface UserMapper extends BaseMapper<User> {
     @Update("UPDATE o_blog.o_user SET attr = #{key} WHERE id = #{id}")
     void updateUserAttrKey(Long id, String key);
 
-    @Select("SELECT id, username, article, `like`, attr, is_delete FROM o_blog.o_user WHERE id = #{userId}")
+    @Select("SELECT id, username, article, `like`, attr, is_delete, updated_at FROM o_blog.o_user WHERE id = #{userId}")
     User selectSimUserInfo(Long userId);
 
     @Select("SELECT * FROM o_blog.o_user WHERE id = #{userId}")
@@ -41,5 +41,8 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Update("UPDATE o_blog.o_user SET article = article + #{articleNumber} WHERE id = #{userId}")
     void updateUserArticleNum(Integer articleNumber, Long userId);
+
+    @Update("UPDATE o_blog.o_user SET `like` = #{likesNum} WHERE id = #{userId}")
+    void updateUserLikes(int likesNum, Long userId);
 
 }

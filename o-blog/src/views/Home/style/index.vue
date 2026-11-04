@@ -8,6 +8,7 @@ import PlayerCard from './component/PlayerCard.vue';
 import PixelSteve from './component/PixelSteve.vue';
 import PixelFooter from './component/PixelFooter.vue';
 import PixelToast from './component/PixelToast.vue';
+import PixelChatCard from '@/components/agent-chat-pixel/PixelChatCard.vue';
 import { usePinnedStore } from '@/stores/articleTop';
 import './pixel.css';
 
@@ -264,6 +265,7 @@ onUnmounted(removeFonts);
                         <div ref="playerRef">
                             <PlayerCard @toast="showToast" />
                         </div>
+                        <PixelChatCard @toast="showToast" />
                     </div>
 
                     <!-- 技术 -->
