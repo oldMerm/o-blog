@@ -96,6 +96,7 @@ const showToolSection = (turn: AgentTurn) =>
       <div class="pixel-placeholder-title">PIXEL_AI_OS // STANDBY</div>
       <p class="pixel-placeholder-desc">输入问题，开始和博客智能体对话</p>
       <span class="pixel-placeholder-hint">支持多轮追问 · 回答由 AI 生成，仅供参考</span>
+      <span class="pixel-placeholder-hint">使用请先浏览<a class="pixel-placeholder-url" href="https://blog.oldmerman.cn/markdown/2118564556585046016?isPublic=public">相关细则</a></span>
     </div>
 
     <div v-for="turn in turns" :key="turn.id" class="pixel-turn">
@@ -271,6 +272,13 @@ const showToolSection = (turn: AgentTurn) =>
 .pixel-placeholder-hint {
   color: #94a3b8;
   font-size: 12px;
+}
+
+.pixel-placeholder-url {
+  color: #656f7d;
+  font-weight: 600;
+  font-size: 12px;
+  text-decoration: underline;
 }
 
 /* ---------- 轮次 ---------- */

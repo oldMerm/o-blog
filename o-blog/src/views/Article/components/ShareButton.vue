@@ -56,7 +56,10 @@ const writeToClipboard = async (text: string): Promise<boolean> => {
 const share = async () => {
   const name = props.articleName.trim() || document.title || '文章';
   const link = props.url.trim() || window.location.href;
-  const copied = await writeToClipboard(`【${name}-来自o-blog】${link}`);
+  const tooltip = (link && link.includes("mobile"))
+    ? "手机点击浏览"
+    : "电脑点击浏览";
+  const copied = await writeToClipboard(`【${name}-来自o-blog-${tooltip}】${link}`);
   if (copied) {
     showToast('success', '链接已复制到剪贴板');
   } else {
@@ -70,8 +73,7 @@ const share = async () => {
     <button class="share-btn" type="button" aria-label="转发这篇文章" @click="share">
       <svg class="share-icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
         <path
-          d="M565.934 817.574a34.816 34.816 0 0 0 9.818 29.394l0.302 0.241a35.539 35.539 0 0 0 25.6 10.963c11.143 0 20.66-5.42 27.226-13.312l354.545-387.072a35.117 35.117 0 0 0 10.24-27.106 35.057 35.057 0 0 0-10.24-27.106L626.892 14.336a36.503 36.503 0 0 0-51.2 0 34.936 34.936 0 0 0-9.758 29.395V253.35c-295.996 0-535.974 238.893-535.974 533.684a529.468 529.468 0 0 0 44.454 212.51C116.7 777.276 329.812 608.437 565.332 608.437l0.602 209.137z"
-        />
+          d="M565.934 817.574a34.816 34.816 0 0 0 9.818 29.394l0.302 0.241a35.539 35.539 0 0 0 25.6 10.963c11.143 0 20.66-5.42 27.226-13.312l354.545-387.072a35.117 35.117 0 0 0 10.24-27.106 35.057 35.057 0 0 0-10.24-27.106L626.892 14.336a36.503 36.503 0 0 0-51.2 0 34.936 34.936 0 0 0-9.758 29.395V253.35c-295.996 0-535.974 238.893-535.974 533.684a529.468 529.468 0 0 0 44.454 212.51C116.7 777.276 329.812 608.437 565.332 608.437l0.602 209.137z" />
       </svg>
       <span class="share-label">转发</span>
     </button>

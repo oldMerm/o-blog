@@ -91,6 +91,7 @@ const showToolSection = (turn: AgentTurn) =>
       <div class="placeholder-topbar">欢迎使用老鱼人博客助手</div>
       <p class="placeholder-title">输入问题，开始和博客智能体对话</p>
       <span class="placeholder-desc">支持多轮追问，回答内容由 AI 生成，仅供参考</span>
+      <span class="placeholder-desc">使用请先浏览<a class="placeholder-url" href="https://blog.oldmerman.cn/markdown/2118564556585046016?isPublic=public">相关细则</a></span>
     </div>
 
     <div v-for="turn in turns" :key="turn.id" class="turn">
@@ -201,6 +202,13 @@ const showToolSection = (turn: AgentTurn) =>
 .placeholder-desc {
   font-size: 12px;
   color: #a8abb2;
+}
+
+.placeholder-url {
+  font-size: 12px;
+  font-weight: 600;
+  color: #737579;
+  text-decoration: underline;
 }
 
 .turn + .turn {
