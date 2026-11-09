@@ -29,6 +29,12 @@ const totalPages = computed(() => pageResult.value?.pages || 1)
 const hasNext = computed(() => currentPage.value < totalPages.value)
 const hasPrev = computed(() => currentPage.value > 1)
 
+// 备案信息排在文章和分页之后，用与 item 相同的入场动画错开出现
+const footerAnimationDelay = computed(() => {
+  const paginationOffset = !loading.value && totalPages.value > 1 ? 1 : 0
+  return `${(displayArticles.value.length + paginationOffset) * 0.07}s`
+})
+
 const pinnedStore = usePinnedStore()
 // 置顶文章由 /article/top 返回，不包含集合信息，需要按文章 id 单独查询
 const pinnedGroups = ref<Record<string, string[]>>({})
@@ -187,36 +193,41 @@ onMounted(async () => {
             <span class="empty-icon">~</span>
             <span>暂无文章</span>
           </div>
+
+          <div v-if="!loading && totalPages > 1" class="pagination">
+            <button
+              :class="['page-btn', { disabled: !hasPrev }]"
+              :disabled="!hasPrev"
+              @click="goPrevPage"
+            >
+              ‹
+            </button>
+            <div class="page-dots">
+              <span
+                v-for="p in totalPages"
+                :key="p"
+                :class="['dot', { active: p === currentPage }]"
+              />
+            </div>
+            <button
+              :class="['page-btn', { disabled: !hasNext }]"
+              :disabled="!hasNext"
+              @click="goNextPage"
+            >
+              ›
+            </button>
+          </div>
+
+          <!-- 备案信息跟随文章列表一起进入/离开，避免切换分类时闪烁 -->
+          <div
+            v-if="!loading"
+            class="footer-wrapper item-enter"
+            :style="{ animationDelay: footerAnimationDelay }"
+          >
+            <FooterBar />
+          </div>
         </div>
       </Transition>
-
-      <div v-if="!loading && totalPages > 1" class="pagination">
-        <button
-          :class="['page-btn', { disabled: !hasPrev }]"
-          :disabled="!hasPrev"
-          @click="goPrevPage"
-        >
-          ‹
-        </button>
-        <div class="page-dots">
-          <span
-            v-for="p in totalPages"
-            :key="p"
-            :class="['dot', { active: p === currentPage }]"
-          />
-        </div>
-        <button
-          :class="['page-btn', { disabled: !hasNext }]"
-          :disabled="!hasNext"
-          @click="goNextPage"
-        >
-          ›
-        </button>
-      </div>
-
-      <div v-if="!loading" class="footer-wrapper">
-        <FooterBar />
-      </div>
     </div>
   </section>
 </template>
@@ -276,6 +287,7 @@ onMounted(async () => {
 
 .footer-wrapper {
   margin-top: auto;
+  padding-top: 8px;
 }
 
 .swipe-area::-webkit-scrollbar {
@@ -284,6 +296,10 @@ onMounted(async () => {
 
 .article-list {
   padding: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .state-box {

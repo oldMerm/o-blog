@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.github.oldmerman.web.agent.prompt.ArticleDigestPrompt.ARTICLE_DIGEST_PROMPT;
 import static io.github.oldmerman.web.agent.prompt.ArticleDigestPrompt.TECH_RULES;
@@ -110,7 +111,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
         }
 
         CompletionRequest req = buildDigestRequest(articleId, articleMapper, ossService);
-        client.stream(req, null, new ChunkListener() {
+        client.stream(req, new ChunkListener() {
             private SseChunkListener delegate;
             private String content = "";
 
@@ -195,28 +196,49 @@ public class AiCompletionServiceImpl implements AiCompletionService {
         state.setTracker(tokenTracker);
         state.setContext(new ToolContext(Map.of("userId", userId)));
 
+        // 简单处理历史信息，数量 <= 10，保留系统提示词，和后五条数据
+        List<Message> messages = state.getMessages();
+        int size = messages.size();
+        if (size > 12) {
+            // 只保留12轮会话，超过暴力清空并新增会话
+            po.setId(IdGenerator.nextId());
+            po.setThreadId(UUID.randomUUID().toString());
+            po.setCreatedAt(null);
+            po.setUpdatedAt(null);
+            log.info("[上下文压缩]博客助手上下文压缩，threadId: {}， 原threadId: {}", po.getThreadId(), threadId);
+            messages.subList(1, size - 1).clear();
+        }
+
+        // 采用redis锁，多线程共用
         final String lockKey = RedisPrefix.AGENT_CHAT_LOCK + userId;
         Boolean simpleLock = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", Duration.ofSeconds(90));
         if (!Boolean.TRUE.equals(simpleLock)) {
             throw new BusinessException(BusErrorCode.AGENT_SERVICE_BUSY);
         }
 
-        // 简单处理历史信息，数量 <= 10，保留系统提示词，和后五条数据
-        List<Message> messages = state.getMessages();
-        int size = messages.size();
-        if (size > 12) {
-            // 只保留12轮会话，超过直接暴力清空
-            log.info("[上下文压缩]博客助手上下文压缩，threadId: {}", threadId);
-            messages.subList(1, size - 1).clear();
-        }
-
         // 准备适配器，调用Agent服务
         SseEmitter sseEmitter = new SseEmitter(0L);
-        webChatAgent.stream(state, () -> {
-            log.info("[对话中断]Agent对话被中断");
+
+        // 使用AtomicBoolean防止重复删锁
+        AtomicBoolean lockReleased = new AtomicBoolean(false);
+        Runnable releaseLock = () -> {
+            if (lockReleased.compareAndSet(false, true)) {
+                redisTemplate.delete(lockKey);
+            }
+        };
+        // 注册相关回调进行兜底
+        sseEmitter.onCompletion(releaseLock);
+        sseEmitter.onTimeout(() -> {
+            log.warn("[对话超时]SSE 超时，threadId: {}", po.getThreadId());
+            releaseLock.run();
             redisTemplate.opsForValue().decrement(RedisPrefix.BLOG_AGENT_CHAT);
-            redisTemplate.delete(lockKey);
-        }, new ChunkListener() {
+        });
+        sseEmitter.onError(ex -> {
+            log.warn("[对话异常]SSE 连接异常: {}", po.getThreadId());
+            releaseLock.run();
+            redisTemplate.opsForValue().decrement(RedisPrefix.BLOG_AGENT_CHAT);
+        });
+        webChatAgent.stream(state, new ChunkListener() {
             private SseChunkListener delegate;
             private int totalTokens = 0;
 
@@ -244,7 +266,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
             public void onEnd(FinishReason finishReason) {
                 if (finishReason == FinishReason.ABORTED) {
                     log.info("[对话中断]Agent对话被中断");
-                    redisTemplate.delete(lockKey);
+                    releaseLock.run();
                 }
                 delegate.onEnd(finishReason);
             }
@@ -267,7 +289,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
                     log.warn("[对话异常]序列化失败, threadId = {}", threadId);
                     throw new RuntimeException(e);
                 } finally {
-                    redisTemplate.delete(lockKey);
+                    releaseLock.run();
                 }
             }
 
@@ -277,8 +299,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
                     log.error("[对话异常]流意外结束，原因：{}", e.getMessage());
                     delegate.onError(e);
                 } finally {
-                    redisTemplate.opsForValue().decrement(RedisPrefix.BLOG_AGENT_CHAT);
-                    redisTemplate.delete(lockKey);
+                    releaseLock.run();
                 }
 
             }

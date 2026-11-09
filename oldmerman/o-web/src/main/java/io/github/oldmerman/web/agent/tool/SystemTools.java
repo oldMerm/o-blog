@@ -30,7 +30,7 @@ public class SystemTools {
                                     @Param(description = "每页大小", required = false) Long size) throws JsonProcessingException {
         PageResult<Version> page = service.page(
                 (current == null ? 1 : current),
-                (size == null ? 5 : size)
+                (size == null ? 3 : size)
         );
 
         ObjectNode node = objectMapper.createObjectNode();

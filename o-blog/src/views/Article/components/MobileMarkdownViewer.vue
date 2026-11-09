@@ -22,11 +22,45 @@ interface Heading {
 
 const renderedHtml = ref('');
 const loading = ref(true);
+const articleRef = ref<HTMLElement | null>(null);
 const allHeadings = ref<Heading[]>([]);
 const scrollProgress = ref(0);
 const isNearBottom = ref(false);
 
-mermaid.initialize({ startOnLoad: false, theme: 'default' });
+// 移动端图表配置：
+// useMaxWidth: false 让图表按原始尺寸渲染，避免被压缩到屏幕宽度后文字小到无法阅读，
+// 超出屏幕的部分交给 .mermaid 容器横向滚动查看。
+const mermaidDiagramOptions = { useMaxWidth: false };
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'default',
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif',
+  flowchart: mermaidDiagramOptions,
+  sequence: mermaidDiagramOptions,
+  gantt: mermaidDiagramOptions,
+  journey: mermaidDiagramOptions,
+  timeline: mermaidDiagramOptions,
+  class: mermaidDiagramOptions,
+  state: mermaidDiagramOptions,
+  er: mermaidDiagramOptions,
+  pie: mermaidDiagramOptions,
+  quadrantChart: mermaidDiagramOptions,
+  xyChart: mermaidDiagramOptions,
+  requirement: mermaidDiagramOptions,
+  architecture: mermaidDiagramOptions,
+  mindmap: mermaidDiagramOptions,
+  ishikawa: mermaidDiagramOptions,
+  kanban: mermaidDiagramOptions,
+  gitGraph: mermaidDiagramOptions,
+  c4: mermaidDiagramOptions,
+  sankey: mermaidDiagramOptions,
+  packet: mermaidDiagramOptions,
+  block: mermaidDiagramOptions,
+  eventmodeling: mermaidDiagramOptions,
+  treeView: mermaidDiagramOptions,
+  radar: mermaidDiagramOptions,
+});
 
 const authorMeta = { writer: '', createdAt: '', len: 0 };
 
@@ -85,11 +119,24 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
 };
 
 const triggerMermaid = async () => {
+  // 必须等 loading 关闭、v-html 真正挂载后再查找节点，
+  // 否则 querySelector 拿不到任何 .mermaid 元素。
   await nextTick();
-  const elements = document.querySelectorAll('.mermaid');
-  if (elements.length > 0) {
-    await mermaid.run({ nodes: elements as any });
+  const root = articleRef.value;
+  if (!root) return;
+  const elements = Array.from(root.querySelectorAll<HTMLElement>('.mermaid'));
+  if (elements.length === 0) return;
+  // suppressErrors：单个图表语法有误时不中断其余图表的渲染
+  try {
+    await mermaid.run({ nodes: elements, suppressErrors: true });
+  } catch (error) {
+    console.error('Mermaid 渲染失败:', error);
+    return;
   }
+  // 记录横向溢出状态，方便后续样式或交互按需处理
+  elements.forEach((el) => {
+    el.classList.toggle('is-scrollable', el.scrollWidth - el.clientWidth > 4);
+  });
 };
 
 interface ArticleInfo {
@@ -114,7 +161,10 @@ const route = useRoute();
 
 const loadArticle = async (id: string | string[] | undefined) => {
   loading.value = true;
-  if (!id) return;
+  if (!id) {
+    loading.value = false;
+    return;
+  }
   try {
     const res = await httpInstance.get<any, Response>(`/article/public/${id}`);
     if (res.code !== 200) {
@@ -131,13 +181,14 @@ const loadArticle = async (id: string | string[] | undefined) => {
       authorMeta.len = articleLength.value;
       renderedHtml.value = md.render(text);
       extractHeadings(text);
-      await triggerMermaid();
     }
   } catch (error) {
     renderedHtml.value = `<div class="error-msg">网络错误，请稍后重试</div>`;
   } finally {
     loading.value = false;
   }
+  // loading 关闭后文章 DOM 才会出现，此时再渲染 Mermaid 才能拿到节点
+  await triggerMermaid();
 };
 
 const extractHeadings = (content: string) => {
@@ -283,7 +334,7 @@ onUnmounted(() => {
           <span v-for="i in 3" :key="i" class="ldot" :style="{ animationDelay: `${i * 0.2}s` }" />
         </div>
       </div>
-      <article v-else class="mob-doc" v-html="renderedHtml" @click="onDocClick" />
+      <article v-else ref="articleRef" class="mob-doc" v-html="renderedHtml" @click="onDocClick" />
 
       <div class="mob-actions" v-if="!loading">
         <LikeButton
@@ -613,15 +664,40 @@ html, body {
 }
 
 .mob-doc :deep(.mermaid) {
-  display: flex;
-  justify-content: center;
-  margin: 20px 0;
+  position: relative;
+  display: block;
+  margin: 20px -16px;
+  padding: 10px 16px;
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .mob-doc :deep(.mermaid svg) {
-  max-width: 100%;
-  height: auto;
+  display: block;
+  max-width: none !important;
+  height: auto !important;
+  margin: 0 auto;
+}
+
+/* 图表比屏幕宽时给出滑动提示，避免用户误以为内容被截断 */
+.mob-doc :deep(.mermaid.is-scrollable)::before {
+  content: '← 左右滑动查看完整图表 →';
+  position: sticky;
+  left: 0;
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #94a3b8;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .mob-doc :deep(.author-info) {
