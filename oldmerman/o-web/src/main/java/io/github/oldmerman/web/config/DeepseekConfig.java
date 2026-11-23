@@ -2,6 +2,7 @@ package io.github.oldmerman.web.config;
 
 import io.github.oldmerman.core.DeepSeekClient;
 import io.github.oldmerman.core.api.chat.ChatClient;
+import io.github.oldmerman.core.api.provider.ProviderClient;
 import io.github.oldmerman.core.api.search.SearchClient;
 import io.github.oldmerman.core.config.DeepSeekConfig;
 import jakarta.annotation.PostConstruct;
@@ -20,17 +21,22 @@ public class DeepseekConfig {
     private DeepSeekConfig config;
 
     @PostConstruct
-    public void init(){
+    public void init() {
         this.config = new DeepSeekConfig(key);
     }
 
     @Bean
-    public ChatClient deepseekClient(){
+    public ChatClient deepseekClient() {
         return DeepSeekClient.chat(config);
     }
 
     @Bean
-    public SearchClient searchClient(){
+    public SearchClient searchClient() {
         return DeepSeekClient.search(config);
+    }
+
+    @Bean
+    public ProviderClient providerClient() {
+        return DeepSeekClient.provider(config);
     }
 }

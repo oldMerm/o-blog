@@ -40,4 +40,7 @@ public interface ArticleMapper extends BaseMapper<Article> {
 
     @Update("UPDATE o_blog.o_article SET `like` = `like` + #{like} WHERE id = #{articleId}")
     void incrLikeRecords(Long articleId, int like);
+
+    @Select("SELECT id, article_name, article_decr FROM o_blog.o_article LIMIT #{i}, #{size}")
+    List<Article> selectLimit(int i, int size);
 }

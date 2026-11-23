@@ -35,6 +35,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             "/version", "/version/*",
             "/article/group/public/**",
             "/article/top",
+            "/article/search/**",
             "/chat/completion/*/digest"
     );
 

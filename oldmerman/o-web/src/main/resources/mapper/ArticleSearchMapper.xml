@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.github.oldmerman.web.mapper.ArticleSearchMapper">
+
+
+    <select id="search" resultType="io.github.oldmerman.model.po.ArticleSearch">
+        SELECT *
+        FROM o_blog.o_article_search
+        WHERE title LIKE CONCAT('%', #{keyword}, '%')
+           OR summary LIKE CONCAT('%', #{keyword}, '%')
+        LIMIT 20
+    </select>
+
+    <insert id="insertOrIgnoreBatch">
+        INSERT INTO o_blog.o_article_search (article_id, title, summary)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.articleId}, #{item.title}, #{item.summary})
+        </foreach>
+        AS new_data
+        ON DUPLICATE KEY UPDATE
+        article_id = new_data.article_id
+    </insert>
+</mapper>
+

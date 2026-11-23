@@ -8,6 +8,7 @@ import io.github.oldmerman.agent.utils.TokenTracker;
 import io.github.oldmerman.common.enums.BusErrorCode;
 import io.github.oldmerman.common.util.IdGenerator;
 import io.github.oldmerman.core.api.chat.messages.Message;
+import io.github.oldmerman.core.api.provider.ProviderClient;
 import io.github.oldmerman.core.tool.ToolContext;
 import io.github.oldmerman.model.po.AgentChat;
 import io.github.oldmerman.web.agent.prompt.BlogSystemPrompt;
@@ -63,6 +64,8 @@ import static io.github.oldmerman.web.agent.prompt.BlogSystemPrompt.BLOG_CHAT_PR
 public class AiCompletionServiceImpl implements AiCompletionService {
 
     private final ChatClient client;
+
+    private final ProviderClient providerClient;
 
     private final OssService ossService;
 
@@ -155,6 +158,11 @@ public class AiCompletionServiceImpl implements AiCompletionService {
             throw new BusinessException(ResultCode.UNAUTHORIZED);
         }
 
+        // 余额不足
+        if (!checkToppedUpBalance()) {
+            throw new BusinessException(BusErrorCode.AGENT_SERVICE_UNUSED);
+        }
+
         long callTimes = redisTemplate.opsForValue().increment(RedisPrefix.BLOG_AGENT_CHAT);
         if (callTimes == 1) redisTemplate.expire(RedisPrefix.BLOG_AGENT_CHAT, 10, TimeUnit.MINUTES);
         if (callTimes > 10) throw new BusinessException(BusErrorCode.AGENT_SERVICE_BUSY);
@@ -196,7 +204,7 @@ public class AiCompletionServiceImpl implements AiCompletionService {
         state.setTracker(tokenTracker);
         state.setContext(new ToolContext(Map.of("userId", userId)));
 
-        // 简单处理历史信息，数量 <= 10，保留系统提示词，和后五条数据
+        // 简单处理历史信息，数量 <= 12，保留系统提示词
         List<Message> messages = state.getMessages();
         int size = messages.size();
         if (size > 12) {
@@ -329,6 +337,10 @@ public class AiCompletionServiceImpl implements AiCompletionService {
                         new HumanMessage(prompt)
                 ))
                 .build();
+    }
+
+    private boolean checkToppedUpBalance(){
+        return Double.parseDouble(providerClient.balance().info().toppedUpBalance()) >= 10;
     }
 
 }
