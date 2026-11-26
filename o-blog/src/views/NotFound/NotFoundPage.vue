@@ -3,6 +3,10 @@
         <h1>404 Not Found</h1>
         <p>页面跑丢了，此处<RouterLink to="/">返回主页</RouterLink></p>
     </div>
+
+    <footer class="page-footer">
+        <span>© 2026 鱼人博客 · All Rights Reserved</span>
+    </footer>
 </template>
 
 <style scoped>
@@ -13,7 +17,7 @@
     justify-content: center;
     gap: 1.5rem;
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 2rem 5rem;
     text-align: center;
     color: #111;
     background: #fff;
@@ -44,5 +48,18 @@
 
 .notfound-main a:hover {
     opacity: 0.5;
+}
+
+.page-footer {
+    position: fixed;
+    right: 0;
+    bottom: 1.5rem;
+    left: 0;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    color: #aaa;
+    pointer-events: none;
 }
 </style>

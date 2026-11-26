@@ -31,11 +31,11 @@ public class JwtInterceptor implements HandlerInterceptor {
     // 完全放行：不校验 token，也不设置上下文
     private static final Set<String> SKIP = Set.of(
             "/auth/login", "/auth/captcha", "/auth/email", "/auth/register", "/auth/refresh",
-            "/counter/newArt", "/counter/health",
+            "/counter/newArt", "/counter/health", "/counter/system/status",
             "/version", "/version/*",
             "/article/group/public/**",
             "/article/top",
-            "/article/search/**",
+            "/article/search/*",
             "/chat/completion/*/digest"
     );
 

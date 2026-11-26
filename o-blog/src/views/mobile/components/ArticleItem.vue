@@ -48,7 +48,10 @@ const goDetail = () => {
   margin: 0 16px 12px;
   box-shadow: 0 2px 16px rgba(60, 120, 180, 0.08);
   border: 1px solid rgba(180, 210, 240, 0.25);
-  min-height: 110px;
+  /* 固定高度：标题一行 + 介绍两行，保证不同内容长度的卡片大小一致 */
+  height: 134px;
+  box-sizing: border-box;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   cursor: pointer;
@@ -62,22 +65,24 @@ const goDetail = () => {
 
 .title-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+  height: 24px;
   margin-bottom: 8px;
 }
 
 .title {
   flex: 1;
   min-width: 0;
+  height: 24px;
   font-size: 1rem;
   font-weight: 600;
   color: rgb(40, 50, 65);
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  line-height: 24px;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .top-badge {
@@ -91,7 +96,6 @@ const goDetail = () => {
   background: linear-gradient(135deg, rgb(96, 178, 232), rgb(48, 118, 184));
   padding: 2px 8px 2px 6px;
   border-radius: 7px;
-  margin-top: 2px;
   letter-spacing: 0.06em;
 }
 
@@ -102,18 +106,22 @@ const goDetail = () => {
 }
 
 .desc {
+  flex-shrink: 0;
+  /* 固定两行高度：即使只有一行介绍，也保留两行空间 */
+  height: 41px;
+  margin: 0 0 8px;
   font-size: 0.82rem;
   color: rgb(115, 138, 158);
   line-height: 1.55;
-  flex: 1;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 10px;
+  word-break: break-word;
 }
 
 .group-tag {
+  margin-top: auto;
   align-self: flex-end;
   font-size: 0.72rem;
   color: rgb(75, 155, 210);

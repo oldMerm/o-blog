@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ArticleSearch from '@/components/article-search/ArticleSearch.vue';
+
 const emit = defineEmits<{
     (e: 'toggle-style'): void;
 }>();
@@ -11,10 +13,13 @@ const emit = defineEmits<{
         </div>
         <div class="rb">
             <ul>
-                <li>
-                    <button class="style-btn" title="切换到像素风格(测试)" @click="emit('toggle-style')">
+                <li class="style-item">
+                    <button class="style-btn" title="切换到像素风格" @click="emit('toggle-style')">
                         <img src="../../../static/样式.svg" alt="">
                     </button>
+                </li>
+                <li class="search-item">
+                    <ArticleSearch variant="plain" />
                 </li>
                 <li>
                     <a href="https://github.com/oldMerm">
@@ -56,8 +61,14 @@ const emit = defineEmits<{
 }
 
 .rb li {
-    margin-left: 1.5rem;
+    margin-left: 3rem;
     width: 5rem;
+}
+
+/* 搜索图标：只占图标宽度，并靠近切换风格按钮 */
+.rb li.search-item {
+    width: auto;
+    margin-left: 1rem;
 }
 
 .style-btn {

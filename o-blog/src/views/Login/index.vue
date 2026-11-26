@@ -99,9 +99,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { useRoute } from 'vue-router';
 import {httpInstance, type Response} from '@/utils/http';
 import router from '@/router';
+import { useAuthStore } from '@/stores/auth';
+
+const route = useRoute();
+const isMobileEntry = () => route.query.from === 'mobile';
+const auth = useAuthStore();
 
 // 状态控制
 const isLogin = ref(true);
@@ -144,7 +150,17 @@ const fetchCaptcha = async () => {
 };
 // 进入到登录页面，自动调用一次渲染验证码
 onMounted(() => {
+  // 从 mobile 端进入时解除桌面端最小宽度限制，避免移动端出现横向滚动
+  if (isMobileEntry()) {
+    document.body.style.minWidth = 'unset';
+    document.body.style.overflowX = 'hidden';
+  }
   if (isLogin.value) fetchCaptcha();
+});
+
+onUnmounted(() => {
+  document.body.style.minWidth = '';
+  document.body.style.overflowX = '';
 });
 
 // 发送验证码逻辑
@@ -186,20 +202,21 @@ const handleLogin = async () => {
       return;
     }
     const {token, refreshToken, timeout} = <any>data.data;
-    localStorage.setItem('token', token);
-    localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('timeout', timeout);
+    auth.setAuth({ token, refreshToken, timeout });
     alert('登录成功!');
   } catch (error) {
     alert(error)
     return;
   }
   
-  setInterval(() => {
-    router.push({name:'home'});
+  setTimeout(() => {
+    if (isMobileEntry()) {
+      router.push({ path: '/mobile-home' });
+    } else {
+      router.push({ name: 'home' });
+    }
   }, 1000)
 };
-
 // 📝 注册提交
 const handleRegister = async () => {
   // 逻辑校验
@@ -363,5 +380,29 @@ const handleRegister = async () => {
 
 .footer-tip a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 560px) {
+  .auth-container {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 24px 16px;
+  }
+
+  .auth-box {
+    width: 100%;
+    max-width: 400px;
+    padding: 28px 20px;
+  }
+
+  .auth-title {
+    margin-bottom: 24px;
+    font-size: 22px;
+  }
+
+  .captcha-img {
+    width: 92px;
+  }
 }
 </style>

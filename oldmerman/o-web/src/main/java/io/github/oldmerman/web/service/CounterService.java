@@ -33,5 +33,17 @@ public interface CounterService {
      */
     ArticleRenderVO getArticleUpdateInfo();
 
+    /**
+     * 获取系统状态
+     *
+     * @return 系统状态
+     */
+    Integer getSystemStatus();
 
+    /**
+     * 修改系统状态
+     *
+     * @param status 状态
+     */
+    void setSystemStatus(int status);
 }

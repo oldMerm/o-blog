@@ -1,5 +1,6 @@
 package io.github.oldmerman.web.controller;
 
+import io.github.oldmerman.common.annotation.RequireAdmin;
 import io.github.oldmerman.common.response.Result;
 import io.github.oldmerman.model.po.ArticleSearch;
 import io.github.oldmerman.web.service.ArticleSearchService;
@@ -20,7 +21,8 @@ public class ArticleSearchController {
         return Result.success(service.search(keyword));
     }
 
-    @PostMapping("/sync")
+    @RequireAdmin
+    @PostMapping
     public Result<Void> refreshSearchArticle(){
         service.refreshSearchArticle(false, null);
         return Result.success();

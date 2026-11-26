@@ -47,7 +47,7 @@ public class ArticleSearchServiceImpl implements ArticleSearchService {
         while (true) {
             List<Article> articleList = articleMapper.selectLimit((current - 1) * size, size);
             mapper.insertOrIgnoreBatch(articleList.stream().map(this::articleToSearch).toList());
-            if (articleList.size() <= 50) {
+            if (articleList.size() <= size) {
                 break;
             }
             log.info("进行第 {} 次同步，{}", ++current, LocalDateTime.now());

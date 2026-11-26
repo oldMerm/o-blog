@@ -2,6 +2,8 @@ package io.github.oldmerman.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.github.oldmerman.common.constant.RedisPrefix;
+import io.github.oldmerman.common.exception.BusinessException;
+import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.model.po.Counter;
 import io.github.oldmerman.model.vo.ArticleRenderVO;
 import io.github.oldmerman.web.mapper.ArticleMapper;
@@ -27,6 +29,8 @@ public class CounterServiceImpl implements CounterService {
     private final ArticleMapper articleMapper;
 
     private final StringRedisTemplate redisTemplate;
+
+    private static int STATUS = 1; // 1.正常 2.维护
 
     @PostConstruct
     public void init(){
@@ -60,6 +64,19 @@ public class CounterServiceImpl implements CounterService {
     @Override
     public ArticleRenderVO getArticleUpdateInfo() {
         return articleMapper.getNewMessage();
+    }
+
+    @Override
+    public Integer getSystemStatus() {
+        return STATUS;
+    }
+
+    @Override
+    public void setSystemStatus(int status){
+        if (status != 1 && status != 2) {
+            throw new BusinessException(ResultCode.FAIL);
+        }
+        STATUS = status;
     }
 
 }

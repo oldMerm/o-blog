@@ -16,7 +16,7 @@ onMounted(async () => {
     // 等待首次路由解析完成，避免访问不存在的地址时被跳转到移动端首页
     await router.isReady();
     const current = router.currentRoute.value;
-    if (current.name === 'not-found') {
+    if (current.name === 'not-found' || current.name === 'maintenance') {
         return;
     }
 

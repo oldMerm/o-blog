@@ -41,4 +41,9 @@ public class CounterController {
     public Result<String> health(){
         return Result.success("I am healthy");
     }
+
+    @GetMapping("/system/status")
+    public Result<Integer> systemStatus(){
+        return Result.success(counterService.getSystemStatus());
+    }
 }

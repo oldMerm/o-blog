@@ -3,7 +3,9 @@ package io.github.oldmerman.web.service.impl;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.github.oldmerman.common.constant.BusinessMap;
+import io.github.oldmerman.common.exception.BusinessException;
 import io.github.oldmerman.common.response.PageResult;
+import io.github.oldmerman.common.response.ResultCode;
 import io.github.oldmerman.model.dto.UserToggleDTO;
 import io.github.oldmerman.model.po.User;
 import io.github.oldmerman.model.vo.UserManageVO;
@@ -49,6 +51,9 @@ public class UserAdminServiceImpl implements UserAdminService {
     @Override
     public String getUserPermission() {
         User user = userMapper.selectUserById(UserContext.getUserId());
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
         return BusinessMap.USER_TYPE_MAP.get(user.getType());
     }
 

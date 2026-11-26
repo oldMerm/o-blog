@@ -130,6 +130,16 @@ const openModal = () => {
   uploadModalRef.value?.openModal();
 };
 
+const syncSearchTable = async () => {
+    const response = await httpInstance.post<any, Response>("/article/search");
+    if (response.code === 200) {
+        alert("搜索表同步成功！！！");
+        return;
+    }
+
+    alert(`同步失败: ${response.message}`);
+}
+
 const handleCheckAction = async (type: 'publish' | 'unpublish', item:ArticlePageVO) => {
     try {
         const req = {
@@ -196,6 +206,9 @@ const removeTopArticle = async(articleId: string) => {
             <div class="actions">
                 <button class="btn-primary" @click="openModal">
                     <span>+ 发布新文章</span>
+                </button>
+                <button class="btn-primary" style="margin-left: 1rem;" @click="syncSearchTable">
+                    <span>= 同步搜索表</span>
                 </button>
                 <UploadModal ref="uploadModalRef" />
             </div>
